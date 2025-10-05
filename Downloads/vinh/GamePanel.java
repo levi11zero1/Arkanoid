@@ -3,6 +3,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.List;
+import NTT.Pause;
 
 public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private Ball ball;
@@ -27,6 +28,20 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         timer = new Timer(10, this);
         timer.start();
 
+    // Kết nối pause với Swing timer: dừng timer khi tạm dừng, khởi động lại khi tiếp tục
+        Pause.getInstance().setListener(new Pause.PauseListener() {
+            @Override
+            public void onPause() {
+                timer.stop();
+            }
+
+            @Override
+            public void onResume() {
+                timer.start();
+            }
+        });
+        
+
         setFocusable(true);
         addKeyListener(this);
     }
@@ -45,22 +60,22 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     public void actionPerformed(ActionEvent e) {
         ball.move();
 
-        // Va chạm với mép màn hình
+    // Va chạm với mép màn hình
         if (ball.x <= 0 || ball.x + ball.size >= getWidth()) ball.bounceX();
         if (ball.y <= 0) ball.bounceY();
 
-        // Va chạm với paddle
+    // Va chạm với paddle
         if (paddle.isHit(ball.x, ball.y, ball.size)) ball.bounceY();
 
-        // Va chạm với block
+    // Va chạm với viên gạch (block)
         for (Block block : blocks) {
             if (block.isHit(ball.x, ball.y, ball.size)) {
                 ball.bounceY();
-                break; // tránh va chạm nhiều block cùng lúc
+                break; // tránh va chạm nhiều viên gạch cùng lúc
             }
         }
 
-        // Game Over nếu bóng rơi xuống dưới
+    // Game Over nếu bóng rơi xuống dưới
         if (ball.y > getHeight()) {
             timer.stop();
             JOptionPane.showMessageDialog(this, "Game Over!");
@@ -71,8 +86,18 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
     @Override
     public void keyPressed(KeyEvent e) {
-        if (e.getKeyCode() == KeyEvent.VK_LEFT) paddle.moveLeft();
-        if (e.getKeyCode() == KeyEvent.VK_RIGHT) paddle.moveRight(getWidth());
+        int code = e.getKeyCode();
+    //chuyển trạng thái tạm dừng
+        if (code == KeyEvent.VK_P) {
+            Pause.getInstance().toggle();
+        }
+
+    // khi đang tạm dừng, bỏ qua phím di chuyển
+        if (Pause.getInstance().isPaused()) return;
+
+        if (code == KeyEvent.VK_LEFT) paddle.moveLeft();
+        if (code == KeyEvent.VK_RIGHT) paddle.moveRight(getWidth());
+
     }
 
     @Override public void keyReleased(KeyEvent e) {}
