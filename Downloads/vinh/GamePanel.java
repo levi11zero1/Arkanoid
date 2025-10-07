@@ -11,11 +11,9 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private List<Block> blocks;
     private Timer timer;
 
-    // New key state flags
     private boolean leftPressed = false;
     private boolean rightPressed = false;
 
-    // For delta time (optional but nice)
     private long lastNanos;
 
     public GamePanel() {
