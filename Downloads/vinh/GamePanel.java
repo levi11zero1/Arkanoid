@@ -1,14 +1,22 @@
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.*;
 
 public class GamePanel extends JPanel implements ActionListener, KeyListener {
+
     private Ball ball;
     private Paddle paddle;
     private List<Block> blocks;
     private Timer timer;
+
+    // New key state flags
+    private boolean leftPressed = false;
+    private boolean rightPressed = false;
+
+    // For delta time (optional but nice)
+    private long lastNanos;
 
     public GamePanel() {
         ball = new Ball(200, 300);
@@ -20,12 +28,18 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             for (int col = 0; col < 8; col++) {
                 int x = 50 + col * 45;
                 int y = 50 + row * 25;
-                blocks.add(new Block(x, y, 40, 20));
+
+                switch (row) {
+                    case 0 -> blocks.add(new Block(x, y, 40, 20, 3));
+                    case 1 -> blocks.add(new Block(x, y, 40, 20, 2));
+                    default -> blocks.add(new Block(x, y, 40, 20, 1));
+                }
             }
         }
 
         timer = new Timer(10, this);
         timer.start();
+        lastNanos = System.nanoTime();
 
         setFocusable(true);
         addKeyListener(this);
@@ -43,6 +57,10 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
+        long now = System.nanoTime();
+        double dt = (now - lastNanos) / 1_000_000_000.0;
+        lastNanos = now;
+
         ball.move();
 
         // Va chạm với mép màn hình
@@ -56,7 +74,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         for (Block block : blocks) {
             if (block.isHit(ball.x, ball.y, ball.size)) {
                 ball.bounceY();
-                break; // tránh va chạm nhiều block cùng lúc
+                break;
             }
         }
 
@@ -66,16 +84,23 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             JOptionPane.showMessageDialog(this, "Game Over!");
         }
 
+        paddle.update(leftPressed, rightPressed, getWidth(), dt);
+
         repaint();
     }
 
     @Override
     public void keyPressed(KeyEvent e) {
-        if (e.getKeyCode() == KeyEvent.VK_LEFT) paddle.moveLeft();
-        if (e.getKeyCode() == KeyEvent.VK_RIGHT) paddle.moveRight(getWidth());
+        if (e.getKeyCode() == KeyEvent.VK_LEFT)  leftPressed = true;
+        if (e.getKeyCode() == KeyEvent.VK_RIGHT) rightPressed = true;
     }
 
-    @Override public void keyReleased(KeyEvent e) {}
+    @Override
+    public void keyReleased(KeyEvent e) {
+        if (e.getKeyCode() == KeyEvent.VK_LEFT)  leftPressed = false;
+        if (e.getKeyCode() == KeyEvent.VK_RIGHT) rightPressed = false;
+    }
+
     @Override public void keyTyped(KeyEvent e) {}
 }
 

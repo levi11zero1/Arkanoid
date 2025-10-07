@@ -21,6 +21,7 @@ public class Ball {
 
     public void bounceX() { dx = -dx; }
     public void bounceY() { dy = -dy; }
+    
 }
 
 /**

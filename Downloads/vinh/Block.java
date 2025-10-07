@@ -5,25 +5,40 @@ public class Block {
     private int x, y, width, height;
     private boolean destroyed = false;
 
-    public Block(int x, int y, int width, int height) {
+    private int hitsRemaining;
+
+    public Block(int x, int y, int width, int height, int hitsRemaining) {
         this.x = x; this.y = y;
         this.width = width; this.height = height;
+        this.hitsRemaining = Math.max(1, hitsRemaining);
     }
 
     public void draw(Graphics g) {
         if (!destroyed) {
-            g.setColor(Color.RED);
+            Color c;
+            c = switch (hitsRemaining) {
+                case 3 -> Color.MAGENTA;
+                case 2 -> Color.ORANGE;
+                default -> Color.RED;
+            };
+            g.setColor(c);
             g.fillRect(x, y, width, height);
         }
     }
 
     public boolean isHit(int ballX, int ballY, int ballSize) {
-        if (!destroyed && ballX + ballSize > x && ballX < x + width &&
-                ballY + ballSize > y && ballY < y + height) {
-            destroyed = true;
+        if (!destroyed && ballX + ballSize > x && ballX < x + width && ballY + ballSize > y && ballY < y + height) {
+            hitsRemaining--;
+            if (hitsRemaining <= 0) {
+                destroyed = true;
+            }
             return true;
         }
         return false;
+    }
+
+    public boolean isDestroyed() {
+        return destroyed;
     }
 }
 
@@ -31,6 +46,8 @@ public class Block {
  * Đại diện cho một viên gạch trong game.
  *
  * Lưu vị trí và kích thước của viên gạch (x, y, width, height).
+ * 
+ * Kiểm tra số va chạm còn lại qua biến hitsRemaining
  *
  * Kiểm tra va chạm với bóng bằng hàm isHit(...).
  *
