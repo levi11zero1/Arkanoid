@@ -3,15 +3,23 @@ import java.awt.Graphics;
 
 public class Ball {
     public int x, y, size = 20;
-    public int dx = 2, dy = -2;
+    private Velocity velocity;
 
     public Ball(int x, int y) {
-        this.x = x; this.y = y;
+        this.x = x; 
+        this.y = y;
+        this.velocity = new Velocity(3, -3);
+    }
+    
+    public Ball(int x, int y, Velocity velocity) {
+        this.x = x;
+        this.y = y;
+        this.velocity = velocity;
     }
 
     public void move() {
-        x += dx;
-        y += dy;
+        x += (int) velocity.getDx();
+        y += (int) velocity.getDy();
     }
 
     public void draw(Graphics g) {
@@ -19,8 +27,21 @@ public class Ball {
         g.fillOval(x, y, size, size);
     }
 
-    public void bounceX() { dx = -dx; }
-    public void bounceY() { dy = -dy; }
+    public void bounceX() { 
+        velocity.setDx(-velocity.getDx()); 
+    }
+    
+    public void bounceY() { 
+        velocity.setDy(-velocity.getDy()); 
+    }
+    
+    public Velocity getVelocity() {
+        return velocity;
+    }
+    
+    public void setVelocity(Velocity velocity) {
+        this.velocity = velocity;
+    }
     
 }
 

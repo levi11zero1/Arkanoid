@@ -10,6 +10,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private Paddle paddle;
     private List<Block> blocks;
     private Timer timer;
+    private Level level;
 
     private boolean leftPressed = false;
     private boolean rightPressed = false;
@@ -17,11 +18,38 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private long lastNanos;
 
     public GamePanel() {
+        level = new Level();
+        initializeLevel();
+
+        timer = new Timer(10, this);
+        timer.start();
+        lastNanos = System.nanoTime();
+
+        setFocusable(true);
+        addKeyListener(this);
+    }
+
+    //tạo level
+    private void initializeLevel() {
         ball = new Ball(200, 300);
         paddle = new Paddle(150, 550);
         blocks = new ArrayList<>();
 
-        // Tạo lưới block: 5 hàng × 8 cột
+        createBlocks(level.getCurrentLevel());
+    }
+
+    private void createBlocks(int levelNumber) {
+        blocks.clear();
+        
+        switch (levelNumber) {
+            case 1 -> createLevel1();
+            case 2 -> createLevel2();
+            case 3 -> createLevel3();
+        }
+    }
+
+    private void createLevel1() {
+        // Level 1: 5x8
         for (int row = 0; row < 5; row++) {
             for (int col = 0; col < 8; col++) {
                 int x = 50 + col * 45;
@@ -34,18 +62,57 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
                 }
             }
         }
+    }
 
-        timer = new Timer(10, this);
-        timer.start();
-        lastNanos = System.nanoTime();
+    private void createLevel2() {
+        // Level 2: Kiểu tháp tháp
+        for (int row = 0; row < 6; row++) {
+            int blocksInRow = 8 - row;
+            int startX = 50 + (row * 22);
+            
+            for (int col = 0; col < blocksInRow; col++) {
+                int x = startX + col * 45;
+                int y = 50 + row * 25;
+                
+                if (row < 2) {
+                    blocks.add(new Block(x, y, 40, 20, 3));
+                } else if (row < 4) {
+                    blocks.add(new Block(x, y, 40, 20, 2));
+                } else {
+                    blocks.add(new Block(x, y, 40, 20, 1));
+                }
+            }
+        }
+    }
 
-        setFocusable(true);
-        addKeyListener(this);
+    private void createLevel3() {
+        // Level 3:
+        int centerX = 200;
+        
+        for (int row = 0; row < 7; row++) {
+            int blocksInRow = row < 4 ? row + 1 : 7 - row;
+            int startX = centerX - (blocksInRow * 22);
+            
+            for (int col = 0; col < blocksInRow; col++) {
+                int x = startX + col * 45;
+                int y = 50 + row * 25;
+                
+                // Randomize block strength for added challenge
+                int hits = ((row + col) % 3) + 1;
+                blocks.add(new Block(x, y, 40, 20, hits));
+            }
+        }
     }
 
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
+        
+        //vẽ level
+        g.setColor(Color.BLACK);
+        g.setFont(new Font("Arial", Font.BOLD, 16));
+        g.drawString("Level: " + level.getCurrentLevel(), 10, 25);
+        
         ball.draw(g);
         paddle.draw(g);
         for (Block block : blocks) {
@@ -76,10 +143,35 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             }
         }
 
+        // Kiểm tra tất cả blocks đã bị phá chưa
+        boolean allBlocksDestroyed = blocks.stream().allMatch(Block::isDestroyed);
+        if (allBlocksDestroyed) {
+            if (level.isFinalLevel()) {
+                timer.stop();
+                JOptionPane.showMessageDialog(this, "Bạn đã thắng!!!");
+            } else {
+                level.advanceLevel();
+                timer.stop();
+                int choice = JOptionPane.showConfirmDialog(this, 
+                    "Level " + (level.getCurrentLevel() - 1) + " hoàn thành, tiếp tục tới level " + level.getCurrentLevel() + "?", 
+                    "Thắng level", 
+                    JOptionPane.YES_NO_OPTION);
+                
+                if (choice == JOptionPane.YES_OPTION) {
+                    createBlocks(level.getCurrentLevel());
+                    ball = new Ball(200, 300);  // Reset
+                    paddle = new Paddle(150, 550);  // Reset
+                    timer.start();
+                } else {
+                    System.exit(0);
+                }
+            }
+        }
+
         // Game Over nếu bóng rơi xuống dưới
         if (ball.y > getHeight()) {
             timer.stop();
-            JOptionPane.showMessageDialog(this, "Game Over!");
+            JOptionPane.showMessageDialog(this, "Game Over! Reached Level: " + level.getCurrentLevel());
         }
 
         paddle.update(leftPressed, rightPressed, getWidth(), dt);

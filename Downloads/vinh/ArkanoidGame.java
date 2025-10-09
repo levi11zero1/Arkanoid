@@ -5,8 +5,13 @@ public class ArkanoidGame {
         JFrame frame = new JFrame("Arkanoid Basic");
         GamePanel panel = new GamePanel();
         frame.add(panel);
-        frame.setSize(400, 600);
+        
+        frame.setSize(450, 650);
+        
+        frame.setResizable(false);
+        
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 }

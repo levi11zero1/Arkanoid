@@ -1,6 +1,6 @@
 public class Level {
     private int currentLevel = 1;
-    private final int maxLevel = 2;
+    private final int maxLevel = 3;
 
     public int getCurrentLevel() {
         return currentLevel;
@@ -16,5 +16,9 @@ public class Level {
 
     public boolean isFinalLevel() {
         return currentLevel == maxLevel;
+    }
+
+    public void reset() {
+        currentLevel = 1;
     }
 }
