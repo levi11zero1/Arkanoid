@@ -25,6 +25,10 @@ public class Block {
         }
         return false;
     }
+
+    public boolean isDestroyed() {
+        return destroyed;
+    }
 }
 
 /**
