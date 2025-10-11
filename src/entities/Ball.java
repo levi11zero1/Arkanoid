@@ -1,17 +1,18 @@
+package entities;
+
 import java.awt.Color;
 import java.awt.Graphics;
+import utils.GameConfig;
+import utils.Velocity;
 
 public class Ball {
     private double x, y;
-    public int size = 20;
     private Velocity velocity;
-    private static final double MIN_SPEED = 2.0;
-    private static final double MAX_SPEED = 6.0;
 
     public Ball(int x, int y) {
         this.x = x; 
         this.y = y;
-        this.velocity = new Velocity(3, -3);
+        this.velocity = new Velocity(GameConfig.BALL_DEFAULT_SPEED, -GameConfig.BALL_DEFAULT_SPEED);
     }
     
     public Ball(int x, int y, Velocity velocity) {
@@ -25,18 +26,19 @@ public class Ball {
         y += velocity.getDy();
         
         // Speed cap
-        double speed = Math.sqrt(velocity.getDx() * velocity.getDx() + velocity.getDy() * velocity.getDy());
-        if (speed < MIN_SPEED) {
-            velocity = velocity.scale(MIN_SPEED / speed);
-        } else if (speed > MAX_SPEED) {
-            velocity = velocity.scale(MAX_SPEED / speed);
+        double speed = velocity.getMagnitude();
+        if (speed < GameConfig.BALL_MIN_SPEED) {
+            velocity = velocity.scale(GameConfig.BALL_MIN_SPEED / speed);
+        } else if (speed > GameConfig.BALL_MAX_SPEED) {
+            velocity = velocity.scale(GameConfig.BALL_MAX_SPEED / speed);
         }
     }
     
+
     public int getX() { 
         return (int) Math.round(x); 
     }
-
+ 
     public int getY() { 
         return (int) Math.round(y); 
     }
@@ -44,9 +46,9 @@ public class Ball {
     public double getPreciseX() { 
         return x; 
     }
-
-    public double getPreciseY() {
-        return y;
+    
+    public double getPreciseY() { 
+        return y; 
     }
     
     public void setPosition(double x, double y) {
@@ -56,7 +58,7 @@ public class Ball {
 
     public void draw(Graphics g) {
         g.setColor(Color.BLUE);
-        g.fillOval(getX(), getY(), size, size);
+        g.fillOval(getX(), getY(), GameConfig.BALL_SIZE, GameConfig.BALL_SIZE);
     }
 
     public void bounceX() { 
@@ -68,26 +70,26 @@ public class Ball {
         velocity.setDy(-velocity.getDy()); 
         addRandomVariation();
     }
-
-    // Nảy bóng dựa trên điểm chạm    
+    
+    // Nảy bóng dựa trên điểm chạm
     public void bounceOffPaddle(double paddleX, double paddleWidth) {
         double paddleCenter = paddleX + paddleWidth / 2;
-        double ballCenter = x + size / 2;
+        double ballCenter = x + GameConfig.BALL_SIZE / 2;
         double hitOffset = (ballCenter - paddleCenter) / (paddleWidth / 2); // -1 -> 1
         
         hitOffset = Math.max(-1.0, Math.min(1.0, hitOffset));
         
-        double angle = hitOffset * 60; 
-        double speed = Math.sqrt(velocity.getDx() * velocity.getDx() + velocity.getDy() * velocity.getDy());
+        double angle = hitOffset * GameConfig.MAX_PADDLE_ANGLE;
+        double speed = velocity.getMagnitude();
         
-        velocity = Velocity.AngVelocity(angle - 90, speed); // -90 to make it go upward
+        // Bắn thẳng
+        velocity = Velocity.fromAngle(angle - 90, speed);
         addRandomVariation();
     }
     
-    // Randomize cho nó chất
+    //Randomize cho nó chất
     private void addRandomVariation() {
-        double variation = 0.1; // 10% variation
-        double randomFactor = 1 + (Math.random() - 0.5) * variation;
+        double randomFactor = 1 + (Math.random() - 0.5) * GameConfig.VELOCITY_VARIATION;
         velocity = velocity.scale(randomFactor);
     }
     
@@ -95,6 +97,7 @@ public class Ball {
         return velocity;
     }
     
+
     public void setVelocity(Velocity velocity) {
         this.velocity = velocity;
     }
@@ -109,8 +112,8 @@ public class Ball {
             bounced = true;
         }
         
-        if (x + size > screenWidth) {
-            x = screenWidth - size;
+        if (x + GameConfig.BALL_SIZE > screenWidth) {
+            x = screenWidth - GameConfig.BALL_SIZE;
             velocity.setDx(-Math.abs(velocity.getDx()));
             bounced = true;
         }
@@ -125,20 +128,4 @@ public class Ball {
             addRandomVariation();
         }
     }
-    
 }
-
-/**
- * Quản lý vị trí bóng trên màn hình (x, y).
- *
- * Di chuyển bóng theo hướng (dx, dy) bằng hàm move().
- *
- * Vẽ bóng lên giao diện bằng hàm draw(Graphics g).
- *
- * Xử lý va chạm bằng cách đảo chiều chuyển động:
- *
- * bounceX() → đổi hướng ngang khi chạm tường trái/phải.
- *
- * bounceY() → đổi hướng dọc khi chạm tường trên, paddle, hoặc block.
- *
- */

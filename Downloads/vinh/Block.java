@@ -36,6 +36,29 @@ public class Block {
         }
         return false;
     }
+    
+    //Xem xem bóng đập vào bên nào của paddle
+    public String getCollisionSide(double ballX, double ballY, double ballSize, double ballVx, double ballVy) {
+        if (destroyed) return null;
+        
+        double ballCenterX = ballX + ballSize / 2;
+        double ballCenterY = ballY + ballSize / 2;
+        
+        // TÍnh khoảng cách tới mép
+        double leftDist = Math.abs(ballCenterX - x);
+        double rightDist = Math.abs(ballCenterX - (x + width));
+        double topDist = Math.abs(ballCenterY - y);
+        double bottomDist = Math.abs(ballCenterY - (y + height));
+        
+        double minHorizontal = Math.min(leftDist, rightDist);
+        double minVertical = Math.min(topDist, bottomDist);
+        
+        if (minHorizontal < minVertical) {
+            return (ballVx > 0) ? "left" : "right";
+        } else {
+            return (ballVy > 0) ? "top" : "bottom";
+        }
+    }
 
     public boolean isDestroyed() {
         return destroyed;

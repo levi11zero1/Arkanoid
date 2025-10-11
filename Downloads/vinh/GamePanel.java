@@ -128,17 +128,27 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
         ball.move();
 
-        // Va chạm với mép màn hình
-        if (ball.x <= 0 || ball.x + ball.size >= getWidth()) ball.bounceX();
-        if (ball.y <= 0) ball.bounceY();
+        // Check mép
+        ball.checkBounds(getWidth(), getHeight());
 
         // Va chạm với paddle
-        if (paddle.isHit(ball.x, ball.y, ball.size)) ball.bounceY();
+        if (paddle.isHit(ball.getX(), ball.getY(), ball.size)) {
+            ball.bounceOffPaddle(paddle.x, paddle.width);
+        }
 
         // Va chạm với block
         for (Block block : blocks) {
-            if (block.isHit(ball.x, ball.y, ball.size)) {
-                ball.bounceY();
+            if (block.isHit(ball.getX(), ball.getY(), ball.size)) {
+                String collisionSide = block.getCollisionSide(
+                    ball.getPreciseX(), ball.getPreciseY(), ball.size,
+                    ball.getVelocity().getDx(), ball.getVelocity().getDy()
+                );
+                
+                if ("left".equals(collisionSide) || "right".equals(collisionSide)) {
+                    ball.bounceX();
+                } else {
+                    ball.bounceY();
+                }
                 break;
             }
         }
@@ -159,8 +169,8 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
                 
                 if (choice == JOptionPane.YES_OPTION) {
                     createBlocks(level.getCurrentLevel());
-                    ball = new Ball(200, 300);  // Reset
-                    paddle = new Paddle(150, 550);  // Reset
+                    ball = new Ball(200, 300);
+                    paddle = new Paddle(150, 550);
                     timer.start();
                 } else {
                     System.exit(0);
@@ -169,7 +179,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         }
 
         // Game Over nếu bóng rơi xuống dưới
-        if (ball.y > getHeight()) {
+        if (ball.getY() > getHeight()) {
             timer.stop();
             JOptionPane.showMessageDialog(this, "Game Over! Reached Level: " + level.getCurrentLevel());
         }
