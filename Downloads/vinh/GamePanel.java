@@ -9,6 +9,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private Paddle paddle;
     private List<Block> blocks;
     private Timer timer;
+    private GameEvents eventsListener;
 
     public GamePanel() {
         ball = new Ball(200, 300);
@@ -78,6 +79,10 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         if (ball.y > getHeight()) {
             timer.stop();
             JOptionPane.showMessageDialog(this, "Game Over!");
+            if (eventsListener != null) {
+                // Chuyển về menu thông qua listener
+                eventsListener.onGameOver();
+            }
         }
 
         repaint();
@@ -101,6 +106,15 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
     @Override public void keyReleased(KeyEvent e) {}
     @Override public void keyTyped(KeyEvent e) {}
+
+    // Cho phép ArkanoidGame đăng ký lắng nghe sự kiện trong game
+    public void setEventsListener(GameEvents listener) {
+        this.eventsListener = listener;
+    }
+
+    public interface GameEvents {
+        void onGameOver();
+    }
 }
 
 /**
