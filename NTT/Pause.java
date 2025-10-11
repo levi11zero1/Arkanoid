@@ -1,4 +1,4 @@
-package NTT;
+
 
 /**
  * Bộ điều khiển tạm dừng.
