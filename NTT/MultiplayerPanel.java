@@ -4,6 +4,7 @@ import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.List;
 
+
 public class MultiplayerPanel extends JPanel implements ActionListener, KeyListener {
     private Ball ball;
     private Paddle paddleTop;
@@ -102,7 +103,7 @@ public class MultiplayerPanel extends JPanel implements ActionListener, KeyListe
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        
+
         ball.move();
 
         // va chạm với tường ngang (đổi hướng X)
