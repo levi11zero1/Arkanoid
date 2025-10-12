@@ -3,8 +3,8 @@ package utils;
 //Liệt kê các Constant hết vào đây cho dễ xem
 public class GameConfig {
     // Screen
-    public static final int SCREEN_WIDTH = 450;
-    public static final int SCREEN_HEIGHT = 650;
+    public static final int SCREEN_WIDTH = 684;
+    public static final int SCREEN_HEIGHT = 800;
     
     // Ball
     public static final int BALL_SIZE = 20;

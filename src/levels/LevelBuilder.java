@@ -19,15 +19,22 @@ public class LevelBuilder {
     private static List<Block> createLevel1() {
         List<Block> blocks = new ArrayList<>();
         
-        for (int row = 0; row < 5; row++) {
-            for (int col = 0; col < 8; col++) {
-                int x = GameConfig.BLOCKS_START_X + col * GameConfig.BLOCK_SPACING;
+        int cols = 12;
+        int rows = 8;
+        
+        // Calculate centered starting position
+        int totalWidth = cols * GameConfig.BLOCK_SPACING - (GameConfig.BLOCK_SPACING - GameConfig.BLOCK_WIDTH);
+        int startX = (GameConfig.SCREEN_WIDTH - totalWidth) / 2;
+        
+        for (int row = 0; row < rows; row++) {
+            for (int col = 0; col < cols; col++) {
+                int x = startX + col * GameConfig.BLOCK_SPACING;
                 int y = GameConfig.BLOCKS_START_Y + row * GameConfig.BLOCK_ROW_SPACING;
 
                 int hits = switch (row) {
-                    case 0 -> 3;  
-                    case 1 -> 2;
-                    default -> 1;
+                    case 0, 1 -> 3;  // Top 2 rows: 3 hits
+                    case 2, 3 -> 2;  // Middle 2 rows: 2 hits
+                    default -> 1;    // Bottom rows: 1 hit
                 };
                 
                 blocks.add(new Block(x, y, hits));
@@ -40,18 +47,28 @@ public class LevelBuilder {
     private static List<Block> createLevel2() {
         List<Block> blocks = new ArrayList<>();
         
-        for (int row = 0; row < 6; row++) {
-            int blocksInRow = 8 - row;
-            int startX = GameConfig.BLOCKS_START_X + (row * (GameConfig.BLOCK_SPACING / 2));
-            
-            for (int col = 0; col < blocksInRow; col++) {
+        int cols = 12;
+        int rows = 9;
+        
+        // Calculate centered starting position
+        int totalWidth = cols * GameConfig.BLOCK_SPACING - (GameConfig.BLOCK_SPACING - GameConfig.BLOCK_WIDTH);
+        int startX = (GameConfig.SCREEN_WIDTH - totalWidth) / 2;
+        
+        // Create a checkerboard pattern with varying hits
+        for (int row = 0; row < rows; row++) {
+            for (int col = 0; col < cols; col++) {
+                // Skip some blocks to create pattern
+                if ((row + col) % 3 == 0) {
+                    continue;
+                }
+                
                 int x = startX + col * GameConfig.BLOCK_SPACING;
                 int y = GameConfig.BLOCKS_START_Y + row * GameConfig.BLOCK_ROW_SPACING;
                 
                 int hits;
-                if (row < 2) {
+                if (row < 3) {
                     hits = 3;
-                } else if (row < 4) {
+                } else if (row < 6) {
                     hits = 2;
                 } else {
                     hits = 1;
@@ -66,17 +83,35 @@ public class LevelBuilder {
 
     private static List<Block> createLevel3() {
         List<Block> blocks = new ArrayList<>();
-        int centerX = GameConfig.SCREEN_WIDTH / 2 - GameConfig.BLOCK_WIDTH / 2;
         
-        for (int row = 0; row < 7; row++) {
-            int blocksInRow = row < 4 ? row + 1 : 7 - row;
-            int startX = centerX - (blocksInRow * GameConfig.BLOCK_SPACING / 2);
+        int cols = 12;
+        int maxRows = 10;
+        
+        // Calculate centered starting position
+        int totalWidth = cols * GameConfig.BLOCK_SPACING - (GameConfig.BLOCK_SPACING - GameConfig.BLOCK_WIDTH);
+        int startX = (GameConfig.SCREEN_WIDTH - totalWidth) / 2;
+        
+        // Create a pyramid/diamond pattern
+        for (int row = 0; row < maxRows; row++) {
+            int blocksInRow;
+            int offsetCols;
+            
+            if (row < 5) {
+                // Expanding pyramid
+                blocksInRow = cols - (row * 2);
+                offsetCols = row;
+            } else {
+                // Contracting pyramid
+                int reverseRow = row - 5;
+                blocksInRow = cols - (reverseRow * 2);
+                offsetCols = reverseRow;
+            }
             
             for (int col = 0; col < blocksInRow; col++) {
-                int x = startX + col * GameConfig.BLOCK_SPACING;
+                int x = startX + (offsetCols + col) * GameConfig.BLOCK_SPACING;
                 int y = GameConfig.BLOCKS_START_Y + row * GameConfig.BLOCK_ROW_SPACING;
                 
-                //randomize
+                // Varied hits based on position
                 int hits = ((row + col) % 3) + 1;
                 blocks.add(new Block(x, y, hits));
             }

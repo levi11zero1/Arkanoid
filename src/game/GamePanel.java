@@ -17,10 +17,12 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private List<Block> blocks;
     private Timer gameTimer;
     private LevelManager levelManager;
+    private GameEvents eventsListener;
 
     private boolean leftPressed = false;
     private boolean rightPressed = false;
     private long lastNanos;
+    private int collisionCooldown = 0; // Tránh nhiều va chạm trong 1 frame
 
 
     public GamePanel() {
@@ -87,26 +89,49 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         ball.move();
         ball.checkBounds(getWidth(), getHeight());
         paddle.update(leftPressed, rightPressed, getWidth(), deltaTime);
+        
+        if (collisionCooldown > 0) {
+            collisionCooldown--;
+        }
     }
     
     private void handleCollisions() {
+        // Paddle collision
         if (paddle.isHit(ball.getX(), ball.getY(), GameConfig.BALL_SIZE)) {
             ball.bounceOffPaddle(paddle.getX(), paddle.getWidth());
+            // Tránh nhiều va chạm
+            ball.setPosition(ball.getPreciseX(), paddle.getY() - GameConfig.BALL_SIZE - 1);
+            collisionCooldown = 2; // Set cooldown va chạm
         }
 
-        for (Block block : blocks) {
-            if (block.isHit(ball.getX(), ball.getY(), GameConfig.BALL_SIZE)) {
-                String collisionSide = block.getCollisionSide(
-                    ball.getPreciseX(), ball.getPreciseY(), GameConfig.BALL_SIZE,
-                    ball.getVelocity().getDx(), ball.getVelocity().getDy()
-                );
-                
-                if ("left".equals(collisionSide) || "right".equals(collisionSide)) {
-                    ball.bounceX();
-                } else {
-                    ball.bounceY();
+        if (collisionCooldown == 0) {
+            for (Block block : blocks) {
+                if (block.isHit(ball.getX(), ball.getY(), GameConfig.BALL_SIZE)) {
+                    String collisionSide = block.getCollisionSide(
+                        ball.getPreciseX(), ball.getPreciseY(), GameConfig.BALL_SIZE,
+                        ball.getVelocity().getDx(), ball.getVelocity().getDy()
+                    );
+                    
+                    double ballX = ball.getPreciseX();
+                    double ballY = ball.getPreciseY();
+                    
+                    if ("left".equals(collisionSide)) {
+                        ball.bounceX();
+                        ball.setPosition(block.getX() - GameConfig.BALL_SIZE - 1, ballY);
+                    } else if ("right".equals(collisionSide)) {
+                        ball.bounceX();
+                        ball.setPosition(block.getX() + GameConfig.BLOCK_WIDTH + 1, ballY);
+                    } else if ("top".equals(collisionSide)) {
+                        ball.bounceY();
+                        ball.setPosition(ballX, block.getY() - GameConfig.BALL_SIZE - 1);
+                    } else { // bottom
+                        ball.bounceY();
+                        ball.setPosition(ballX, block.getY() + GameConfig.BLOCK_HEIGHT + 1);
+                    }
+                    
+                    collisionCooldown = 2; 
+                    break; // Xử lý 1 va chạm/frame
                 }
-                break; // Xử lý 1 va chạm/frame
             }
         }
     }
@@ -134,6 +159,14 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     
     private void handleGameOver() {
         gameTimer.stop();
+        
+        // If event listener is set (menu integration), notify it
+        if (eventsListener != null) {
+            eventsListener.onGameOver();
+            return;
+        }
+        
+        // Otherwise, show default dialog
         int choice = JOptionPane.showConfirmDialog(
             this, 
             "Game Over! You reached Level " + levelManager.getCurrentLevel() + 
@@ -226,5 +259,14 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
     @Override 
     public void keyTyped(KeyEvent e) {
+    }
+    
+    // Cho phép ArkanoidGame đăng ký lắng nghe sự kiện trong game
+    public void setEventsListener(GameEvents listener) {
+        this.eventsListener = listener;
+    }
+
+    public interface GameEvents {
+        void onGameOver();
     }
 }
