@@ -1,24 +1,28 @@
+import game.GamePanel;
+import ui.MenuPanel;
+import ui.InstructionsPanel;
+import utils.GameConfig;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.*;
 
 public class ArkanoidGame {
-
+    
     private static final String CARD_MENU = "menu";
     private static final String CARD_GAME = "game";
     private static final String CARD_INSTRUCTIONS = "instructions";
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("Arkanoid Basic");
-
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            JFrame frame = new JFrame("Arkanoid");
+            
             // Sử dụng CardLayout để chuyển màn hình Menu/Game/Instructions
             CardLayout cardLayout = new CardLayout();
             JPanel cards = new JPanel(cardLayout);
 
-            // Đường dẫn ảnh nền (bạn có thể thay bằng ảnh của bạn)
-            String backgroundPath = "images/arkanoid-background-intro.jpg"; // Đặt ảnh vào cùng thư mục này hoặc cập nhật đường dẫn
+            // Đường dẫn ảnh nền
+            String backgroundPath = "images/arkanoid-background-intro.jpg";
 
             // Tạo MenuPanel
             MenuPanel menu = new MenuPanel(backgroundPath);
@@ -73,7 +77,8 @@ public class ArkanoidGame {
             });
 
             frame.setContentPane(cards);
-            frame.setSize(684, 800);
+            frame.setSize(GameConfig.SCREEN_WIDTH, GameConfig.SCREEN_HEIGHT);
+            frame.setResizable(false);
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
@@ -83,4 +88,3 @@ public class ArkanoidGame {
         });
     }
 }
-
