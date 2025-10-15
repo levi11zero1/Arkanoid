@@ -3,6 +3,8 @@ package game;
 import entities.Ball;
 import entities.Block;
 import entities.Paddle;
+import function.GameState;
+import function.SaveManager;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.List;
@@ -48,6 +50,46 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         
         // Tạo block
         blocks = LevelBuilder.createLevel(levelManager.getCurrentLevel());
+    }
+
+    // --- Save/Load helpers ---
+    // Chuyển trạng thái hiện tại của game thành GameState (ảnh chụp) để SaveManager ghi ra tệp.
+    // Bao gồm: level hiện tại, vị trí + vận tốc bóng, vị trí paddle, danh sách block (vị trí/số đòn/destroyed)
+    private GameState toGameState() {
+        java.util.ArrayList<GameState.BlockState> bs = new java.util.ArrayList<>();
+        for (Block b : blocks) {
+            bs.add(new GameState.BlockState(b.getX(), b.getY(), b.getHitsRemaining(), b.isDestroyed()));
+        }
+        return new GameState(
+            levelManager.getCurrentLevel(),
+            ball.getPreciseX(), ball.getPreciseY(),
+            ball.getVelocity().getDx(), ball.getVelocity().getDy(),
+            paddle.getX(), paddle.getY(),
+            bs
+        );
+    }
+
+    // Áp ảnh chụp trạng thái (đọc từ SaveManager.load()) để khôi phục game đúng vị trí đã lưu.
+    // Trình tự khôi phục:
+    // 1) Cập nhật level về đúng màn đã lưu
+    // 2) Dựng lại danh sách block theo thông tin trong save (x, y, hitsRemaining, destroyed)
+    // 3) Đặt lại vị trí & vận tốc bóng
+    // 4) Khởi tạo paddle với X theo save (Y dùng theo cấu hình)
+    public void applyGameState(GameState state) {
+        // Set level
+        levelManager.setLevel(state.level);
+        // Rebuild blocks from save
+        java.util.ArrayList<Block> newBlocks = new java.util.ArrayList<>();
+        for (GameState.BlockState b : state.blocks) {
+            newBlocks.add(new Block(b.x, b.y, b.hitsRemaining, b.destroyed));
+        }
+        this.blocks = newBlocks;
+        // Ball
+        ball.setPosition(state.ballX, state.ballY);
+        ball.setVelocity(new utils.Velocity(state.ballDx, state.ballDy));
+        // Paddle: reconstruct to set X in current API
+        this.paddle = new Paddle((int)Math.round(state.paddleX), state.paddleY);
+        repaint();
     }
 
     @Override
@@ -230,6 +272,29 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         switch (e.getKeyCode()) {
             case KeyEvent.VK_LEFT, KeyEvent.VK_A -> leftPressed = true;
             case KeyEvent.VK_RIGHT, KeyEvent.VK_D -> rightPressed = true;
+            case KeyEvent.VK_S -> {
+                // Save current state
+                // Gọi SaveManager.save(...) với ảnh chụp hiện tại do toGameState() tạo ra.
+                // Nếu thành công: beep() báo hiệu; nếu thất bại: hiện hộp thoại lỗi và giữ nguyên game.
+                try {
+                    SaveManager.save(toGameState());
+                    Toolkit.getDefaultToolkit().beep();
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this, "Save failed: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+            case KeyEvent.VK_L -> {
+                // Load state
+                // Đọc trạng thái từ SaveManager.load() rồi áp vào game bằng applyGameState(...).
+                // Lưu ý: nếu tệp không đúng định dạng hoặc không tồn tại -> bắt lỗi và báo cho người chơi.
+                try {
+                    GameState state = SaveManager.load();
+                    applyGameState(state);
+                    Toolkit.getDefaultToolkit().beep();
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this, "Load failed: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
             case KeyEvent.VK_SPACE -> {
                 if (!gameTimer.isRunning()) {
                     gameTimer.start();

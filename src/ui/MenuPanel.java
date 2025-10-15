@@ -10,6 +10,7 @@ import javax.swing.*;
 public class MenuPanel extends JPanel {
 
     private final StyledButton playButton = new StyledButton("Chơi");
+    private final StyledButton continueButton = new StyledButton("Tiếp tục");
     private final StyledButton instructionsButton = new StyledButton("Hướng dẫn");
     private Image backgroundImage;
     // Khối chứa tiêu đề + nút để dễ điều chỉnh vị trí
@@ -50,9 +51,11 @@ public class MenuPanel extends JPanel {
         // Tùy chỉnh nút
         Dimension btnSize = new Dimension(200, 44);
         playButton.setPreferredSize(btnSize);
-        instructionsButton.setPreferredSize(btnSize);
+    instructionsButton.setPreferredSize(btnSize);
+    continueButton.setPreferredSize(btnSize);
         playButton.setCornerRadius(20);
         instructionsButton.setCornerRadius(20);
+    continueButton.setCornerRadius(20);
 
         // Container dọc cho các nút
         vbox = new JPanel();
@@ -65,7 +68,8 @@ public class MenuPanel extends JPanel {
         title.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         playButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        instructionsButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+    instructionsButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+    continueButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         // Spacer trên cùng để điều chỉnh vị trí khối theo trục dọc
         topSpacer = Box.createVerticalStrut(0);
@@ -73,11 +77,13 @@ public class MenuPanel extends JPanel {
 
         vbox.add(title);
         vbox.add(Box.createVerticalStrut(24));
-        vbox.add(playButton);
-        // Spacer giữa hai nút để điều chỉnh khoảng cách
-        betweenButtons = Box.createVerticalStrut(24);
-        vbox.add(betweenButtons);
-        vbox.add(instructionsButton);
+    vbox.add(playButton);
+    // Spacer giữa các nút
+    betweenButtons = Box.createVerticalStrut(16);
+    vbox.add(betweenButtons);
+    vbox.add(continueButton);
+    vbox.add(Box.createVerticalStrut(16));
+    vbox.add(instructionsButton);
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0; gbc.gridy = 0;
@@ -107,9 +113,11 @@ public class MenuPanel extends JPanel {
     }
 
     public JButton getPlayButton() { return playButton; }
+    public JButton getContinueButton() { return continueButton; }
     public JButton getInstructionsButton() { return instructionsButton; }
     // getters kiểu StyledButton để tiện tùy biến màu sắc/hình dạng
     public StyledButton getPlayStyledButton() { return playButton; }
+    public StyledButton getContinueStyledButton() { return continueButton; }
     public StyledButton getInstructionsStyledButton() { return instructionsButton; }
 
     // ====== API điều chỉnh vị trí ======
