@@ -5,11 +5,15 @@ import entities.Block;
 import entities.Paddle;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import javax.swing.*;
 import levels.LevelBuilder;
 import levels.LevelManager;
 import utils.GameConfig;
+import powerup.PowerUp;
 
 public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private Ball ball;
@@ -18,6 +22,10 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private Timer gameTimer;
     private LevelManager levelManager;
     private GameEvents eventsListener;
+
+    private java.util.List<PowerUp> activePowerUps = new ArrayList<>();
+    private javax.swing.Timer spawnTimer;
+    private Random random = new Random();  // ✅ chỉ tạo 1 lần
 
     private boolean leftPressed = false;
     private boolean rightPressed = false;
@@ -33,6 +41,11 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         gameTimer.start();
         lastNanos = System.nanoTime();
 
+        // Trong constructor GamePanel()
+        spawnTimer = new javax.swing.Timer(14000, e -> spawnRandomPowerUp()); // mỗi 30s
+        spawnTimer.setRepeats(true);
+        spawnTimer.start();
+
         setFocusable(true);
         addKeyListener(this);
         setBackground(Color.BLACK);
@@ -42,10 +55,10 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private void initializeLevel() {
         ball = new Ball(GameConfig.SCREEN_WIDTH / 2, GameConfig.SCREEN_HEIGHT / 2);
         paddle = new Paddle(
-            GameConfig.SCREEN_WIDTH / 2 - GameConfig.PADDLE_WIDTH / 2, 
+            GameConfig.SCREEN_WIDTH / 2 - GameConfig.PADDLE_WIDTH / 2,
             GameConfig.SCREEN_HEIGHT - 100
         );
-        
+
         // Tạo block
         blocks = LevelBuilder.createLevel(levelManager.getCurrentLevel());
     }
@@ -53,22 +66,26 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
-        
+
         if (g instanceof Graphics2D g2d) {
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         }
-        
+
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 16));
         g.drawString("Level: " + levelManager.getCurrentLevel(), 10, 25);
-        
+
         long remainingBlocks = blocks.stream().filter(block -> !block.isDestroyed()).count();
         g.drawString("Blocks: " + remainingBlocks, GameConfig.SCREEN_WIDTH - 100, 25);
-        
+
         ball.draw(g);
         paddle.draw(g);
         for (Block block : blocks) {
             block.draw(g);
+        }
+        for (PowerUp p : activePowerUps) {
+            g.setColor(p.getColor());
+            g.fillRect(p.getX(), p.getY(), p.getWidth(), p.getHeight());
         }
     }
 
@@ -82,19 +99,34 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         updateGame(deltaTime);
         handleCollisions();
         checkGameState();
+
+        for (Iterator<PowerUp> it = activePowerUps.iterator(); it.hasNext();) {
+            PowerUp p = it.next();
+            p.updatePosition();
+
+            if (p.getBounds().intersects(paddle.getBounds())) {
+                applyPowerUpEffect(p);
+                it.remove();
+                continue;
+            }
+            if (p.isOutOfBounds(getHeight())) {
+                it.remove();
+            }
+        }
+
         repaint();
     }
-    
+
     private void updateGame(double deltaTime) {
         ball.move();
         ball.checkBounds(getWidth(), getHeight());
         paddle.update(leftPressed, rightPressed, getWidth(), deltaTime);
-        
+
         if (collisionCooldown > 0) {
             collisionCooldown--;
         }
     }
-    
+
     private void handleCollisions() {
         // Paddle collision
         if (paddle.isHit(ball.getX(), ball.getY(), GameConfig.BALL_SIZE)) {
@@ -111,10 +143,10 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
                         ball.getPreciseX(), ball.getPreciseY(), GameConfig.BALL_SIZE,
                         ball.getVelocity().getDx(), ball.getVelocity().getDy()
                     );
-                    
+
                     double ballX = ball.getPreciseX();
                     double ballY = ball.getPreciseY();
-                    
+
                     if ("left".equals(collisionSide)) {
                         ball.bounceX();
                         ball.setPosition(block.getX() - GameConfig.BALL_SIZE - 1, ballY);
@@ -128,14 +160,14 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
                         ball.bounceY();
                         ball.setPosition(ballX, block.getY() + GameConfig.BLOCK_HEIGHT + 1);
                     }
-                    
-                    collisionCooldown = 2; 
+
+                    collisionCooldown = 2;
                     break; // Xử lý 1 va chạm/frame
                 }
             }
         }
     }
-    
+
     private void checkGameState() {
         boolean allBlocksDestroyed = blocks.stream().allMatch(Block::isDestroyed);
         if (allBlocksDestroyed) {
@@ -146,7 +178,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             handleGameOver();
         }
     }
-    
+
     private void handleLevelComplete() {
         if (levelManager.isFinalLevel()) {
             gameTimer.stop();
@@ -156,43 +188,43 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             showLevelComplete();
         }
     }
-    
+
     private void handleGameOver() {
         gameTimer.stop();
-        
+
         // If event listener is set (menu integration), notify it
         if (eventsListener != null) {
             eventsListener.onGameOver();
             return;
         }
-        
+
         // Otherwise, show default dialog
         int choice = JOptionPane.showConfirmDialog(
-            this, 
-            "Game Over! You reached Level " + levelManager.getCurrentLevel() + 
-            "\n\nWould you like to play again?", 
-            "Game Over", 
+            this,
+            "Game Over! You reached Level " + levelManager.getCurrentLevel() +
+            "\n\nWould you like to play again?",
+            "Game Over",
             JOptionPane.YES_NO_OPTION,
             JOptionPane.QUESTION_MESSAGE
         );
-        
+
         if (choice == JOptionPane.YES_OPTION) {
             restartGame();
         } else {
             System.exit(0);
         }
     }
-    
+
     private void showLevelComplete() {
         int choice = JOptionPane.showConfirmDialog(
-            this, 
+            this,
             "Level " + levelManager.getCurrentLevel() + " Complete!\n\n" +
-            "Continue to Level " + (levelManager.getCurrentLevel() + 1) + "?", 
-            "Level Complete", 
+            "Continue to Level " + (levelManager.getCurrentLevel() + 1) + "?",
+            "Level Complete",
             JOptionPane.YES_NO_OPTION,
             JOptionPane.QUESTION_MESSAGE
         );
-        
+
         if (choice == JOptionPane.YES_OPTION) {
             levelManager.advanceLevel();
             initializeLevel();
@@ -201,24 +233,24 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             System.exit(0);
         }
     }
-    
+
     private void showGameComplete() {
         int choice = JOptionPane.showConfirmDialog(
-            this, 
-            "Congratulations! You completed all " + levelManager.getMaxLevels() + 
-            " levels!\n\nWould you like to play again?", 
-            "Game Complete", 
+            this,
+            "Congratulations! You completed all " + levelManager.getMaxLevels() +
+            " levels!\n\nWould you like to play again?",
+            "Game Complete",
             JOptionPane.YES_NO_OPTION,
             JOptionPane.QUESTION_MESSAGE
         );
-        
+
         if (choice == JOptionPane.YES_OPTION) {
             restartGame();
         } else {
             System.exit(0);
         }
     }
-    
+
     private void restartGame() {
         levelManager.reset();
         initializeLevel();
@@ -237,9 +269,9 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             }
             case KeyEvent.VK_ESCAPE -> {
                 int choice = JOptionPane.showConfirmDialog(
-                    this, 
-                    "Are you sure you want to quit?", 
-                    "Quit Game", 
+                    this,
+                    "Are you sure you want to quit?",
+                    "Quit Game",
                     JOptionPane.YES_NO_OPTION
                 );
                 if (choice == JOptionPane.YES_OPTION) {
@@ -256,11 +288,29 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             case KeyEvent.VK_RIGHT, KeyEvent.VK_D -> rightPressed = false;
         }
     }
+    private void spawnRandomPowerUp() {
+        PowerUp.Type[] types = PowerUp.Type.values();
+        PowerUp.Type randomType = types[random.nextInt(types.length)];
+        int spawnX = random.nextInt(getWidth() - 20);
+        PowerUp p = new PowerUp(randomType, spawnX, 0);
 
-    @Override 
+        int spawnY = 0;
+
+        activePowerUps.add(p);
+    }
+    private void applyPowerUpEffect(PowerUp p) {
+        PowerUp.Type type = p.getType();
+        if (type == PowerUp.Type.PADDLE_EXPAND || type == PowerUp.Type.PADDLE_SHRINK) {
+            paddle.applyPowerUp(type);
+        } else if (type == PowerUp.Type.BALL_EXPAND || type == PowerUp.Type.BALL_SHRINK) {
+            ball.applyPowerUp(type);
+        }
+    }
+
+    @Override
     public void keyTyped(KeyEvent e) {
     }
-    
+
     // Cho phép ArkanoidGame đăng ký lắng nghe sự kiện trong game
     public void setEventsListener(GameEvents listener) {
         this.eventsListener = listener;
