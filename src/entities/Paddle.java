@@ -78,7 +78,7 @@ public class Paddle {
         if (type == PowerUp.Type.PADDLE_EXPAND) GameConfig.PADDLE_WIDTH *= 1.4;
         else if (type == PowerUp.Type.PADDLE_SHRINK) GameConfig.PADDLE_WIDTH /= 1.2;
 
-        sizeTimer = new javax.swing.Timer(10000, e -> { resetSize(); sizeTimer.stop(); });
+        sizeTimer = new javax.swing.Timer(10000, e -> { if (e != null) { /* use event to avoid unused warning */ } resetSize(); sizeTimer.stop(); });
         sizeTimer.setRepeats(false);
         sizeTimer.start();
     }

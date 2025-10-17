@@ -8,6 +8,7 @@ public class Block {
     private int x, y;
     private boolean destroyed = false;
     private int hitsRemaining;
+    private Color customColor = null;
 
 
     public Block(int x, int y, int hitsRemaining) {
@@ -16,14 +17,21 @@ public class Block {
         this.hitsRemaining = Math.max(1, hitsRemaining);
     }
 
+    public Block(int x, int y, int hitsRemaining, Color colorOverride) {
+        this(x, y, hitsRemaining);
+        this.customColor = colorOverride;
+    }
+
     // Set màu các block khác nhàu 
     public void draw(Graphics g) {
         if (!destroyed) {
-            Color color = switch (hitsRemaining) {
-                case 3 -> Color.MAGENTA; 
-                case 2 -> Color.ORANGE; 
-                default -> Color.RED;
-            };
+            Color color = (customColor != null)
+                ? customColor
+                : switch (hitsRemaining) {
+                    case 3 -> Color.MAGENTA; 
+                    case 2 -> Color.ORANGE; 
+                    default -> Color.RED;
+                };
             
             g.setColor(color);
             g.fillRect(x, y, GameConfig.BLOCK_WIDTH, GameConfig.BLOCK_HEIGHT);
@@ -71,6 +79,16 @@ public class Block {
 
     public boolean isDestroyed() {
         return destroyed;
+    }
+
+    // Áp dụng 1 lần sát thương bất kể có overlap hình học hay không (dùng cho CCD)
+    public void applyHit() {
+        if (!destroyed) {
+            hitsRemaining--;
+            if (hitsRemaining <= 0) {
+                destroyed = true;
+            }
+        }
     }
     
     public int getX() {
