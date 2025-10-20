@@ -274,6 +274,73 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         gameTimer.start();
     }
 
+    private void showLevelMap() {
+        // Yêu cầu người dùng nhập số level
+        String input = JOptionPane.showInputDialog(
+            this,
+            "Nhập số level (1-" + GameConfig.MAX_LEVELS + "):",
+            "Xem Map Level",
+            JOptionPane.QUESTION_MESSAGE
+        );
+
+        if (input == null) return; // User cancelled
+
+        try {
+            int levelNum = Integer.parseInt(input.trim());
+            if (levelNum < 1 || levelNum > GameConfig.MAX_LEVELS) {
+                JOptionPane.showMessageDialog(
+                    this,
+                    "Level phải từ 1 đến " + GameConfig.MAX_LEVELS,
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE
+                );
+                return;
+            }
+
+            // Tạo blocks cho level được chọn
+            List<Block> previewBlocks = LevelBuilder.createLevel(levelNum);
+
+            // Tạo dialog để hiển thị map
+            JDialog mapDialog = new JDialog((JFrame) SwingUtilities.getWindowAncestor(this), "Map Level " + levelNum, true);
+            
+            JPanel mapPanel = new JPanel() {
+                @Override
+                protected void paintComponent(Graphics g) {
+                    super.paintComponent(g);
+                    g.setColor(Color.BLACK);
+                    g.fillRect(0, 0, getWidth(), getHeight());
+                    
+                    // Vẽ các block
+                    for (Block block : previewBlocks) {
+                        block.draw(g);
+                    }
+                    
+                    // Vẽ thông tin level
+                    g.setColor(Color.WHITE);
+                    g.setFont(new Font("Arial", Font.BOLD, 16));
+                    g.drawString("Level " + levelNum + " Preview", 10, 25);
+                    g.drawString("Total Blocks: " + previewBlocks.size(), 10, 45);
+                }
+            };
+            
+            mapPanel.setPreferredSize(new Dimension(GameConfig.SCREEN_WIDTH, GameConfig.SCREEN_HEIGHT));
+            mapPanel.setBackground(Color.BLACK);
+            
+            mapDialog.add(mapPanel);
+            mapDialog.pack();
+            mapDialog.setLocationRelativeTo(this);
+            mapDialog.setVisible(true);
+
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(
+                this,
+                "Vui lòng nhập số hợp lệ!",
+                "Lỗi",
+                JOptionPane.ERROR_MESSAGE
+            );
+        }
+    }
+
     @Override
     public void keyPressed(KeyEvent e) {
         switch (e.getKeyCode()) {
@@ -307,6 +374,23 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
                 if (choice == JOptionPane.YES_OPTION) {
                     System.exit(0);
                 }
+            }
+            case KeyEvent.VK_R -> {
+                // Skip to next level, hoặc về level đầu nếu đang ở cuối
+                if (!levelManager.isFinalLevel()) {
+                    levelManager.advanceLevel();
+                    initializeLevel();
+                    gameTimer.start();
+                } else {
+                    // Nếu đang ở level cuối, chuyển về level đầu tiên
+                    levelManager.reset();
+                    initializeLevel();
+                    gameTimer.start();
+                }
+            }
+            case KeyEvent.VK_M -> {
+                // Hiển thị map của level khi nhập số level
+                showLevelMap();
             }
         }
     }
