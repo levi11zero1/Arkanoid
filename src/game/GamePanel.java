@@ -3,20 +3,20 @@ package game;
 import entities.Ball;
 import entities.Block;
 import entities.Paddle;
+import function.GameState;
+import function.Pause;
+import function.SaveManager;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
-import java.util.Random;
-import javax.swing.*;
-import function.GameState;           // Ảnh chụp trạng thái game để lưu/khôi phục
-import function.SaveManager;         // Quản lý đọc/ghi file save
-import function.Pause;               // Điều khiển tạm dừng/tiếp tục
+import java.util.List;           // Ảnh chụp trạng thái game để lưu/khôi phục
+import java.util.Random;         // Quản lý đọc/ghi file save
+import javax.swing.*;               // Điều khiển tạm dừng/tiếp tục
 import levels.LevelBuilder;
 import levels.LevelManager;
-import utils.GameConfig;
 import powerup.PowerUp;
+import utils.GameConfig;
 
 public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private Ball ball;
@@ -33,7 +33,8 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private boolean leftPressed = false;
     private boolean rightPressed = false;
     private long lastNanos;
-    private int collisionCooldown = 0; // Tránh nhiều va chạm trong 1 frame
+    // Quản lý va chạm tách riêng
+    private final CollisionManager collisionManager = new CollisionManager();
 
 
     public GamePanel() {
@@ -176,50 +177,12 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         ball.checkBounds(getWidth(), getHeight());
         paddle.update(leftPressed, rightPressed, getWidth(), deltaTime);
 
-        if (collisionCooldown > 0) {
-            collisionCooldown--;
-        }
+        // Tick cooldown trong bộ xử lý va chạm
+        collisionManager.tickCooldown();
     }
 
     private void handleCollisions() {
-        // Paddle collision
-        if (paddle.isHit(ball.getX(), ball.getY(), GameConfig.BALL_SIZE)) {
-            ball.bounceOffPaddle(paddle.getX(), paddle.getWidth());
-            // Tránh nhiều va chạm
-            ball.setPosition(ball.getPreciseX(), paddle.getY() - GameConfig.BALL_SIZE - 1);
-            collisionCooldown = 2; // Set cooldown va chạm
-        }
-
-        if (collisionCooldown == 0) {
-            for (Block block : blocks) {
-                if (block.isHit(ball.getX(), ball.getY(), GameConfig.BALL_SIZE)) {
-                    String collisionSide = block.getCollisionSide(
-                        ball.getPreciseX(), ball.getPreciseY(), GameConfig.BALL_SIZE,
-                        ball.getVelocity().getDx(), ball.getVelocity().getDy()
-                    );
-
-                    double ballX = ball.getPreciseX();
-                    double ballY = ball.getPreciseY();
-
-                    if ("left".equals(collisionSide)) {
-                        ball.bounceX();
-                        ball.setPosition(block.getX() - GameConfig.BALL_SIZE - 1, ballY);
-                    } else if ("right".equals(collisionSide)) {
-                        ball.bounceX();
-                        ball.setPosition(block.getX() + GameConfig.BLOCK_WIDTH + 1, ballY);
-                    } else if ("top".equals(collisionSide)) {
-                        ball.bounceY();
-                        ball.setPosition(ballX, block.getY() - GameConfig.BALL_SIZE - 1);
-                    } else { // bottom
-                        ball.bounceY();
-                        ball.setPosition(ballX, block.getY() + GameConfig.BLOCK_HEIGHT + 1);
-                    }
-
-                    collisionCooldown = 2;
-                    break; // Xử lý 1 va chạm/frame
-                }
-            }
-        }
+        collisionManager.handleCollisions(ball, paddle, blocks);
     }
 
     private void checkGameState() {
@@ -444,8 +407,6 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         PowerUp.Type randomType = types[random.nextInt(types.length)];
         int spawnX = random.nextInt(getWidth() - 20);
         PowerUp p = new PowerUp(randomType, spawnX, 0);
-
-        int spawnY = 0;
 
         activePowerUps.add(p);
     }
