@@ -11,12 +11,26 @@ public class Block {
     private Color customColor = null;
 
 
+    /**
+     * Khởi tạo block mới cho level đang chơi.
+     * @param x vị trí X (pixel theo lưới)
+     * @param y vị trí Y
+     * @param hitsRemaining số lần chịu đòn còn lại trước khi vỡ (>=1)
+     */
     public Block(int x, int y, int hitsRemaining) {
         this.x = x; 
         this.y = y;
         this.hitsRemaining = Math.max(1, hitsRemaining);
     }
 
+    // Overload for restore from save
+    // Dùng khi khôi phục từ GameState: có thể block đã bị phá (destroyed=true) hoặc còn lại số lần đập cụ thể.
+    public Block(int x, int y, int hitsRemaining, boolean destroyed) {
+        this(x, y, hitsRemaining);
+        this.destroyed = destroyed;
+    }
+
+    // Overload để khởi tạo block với màu tuỳ chỉnh (ví dụ level editor)
     public Block(int x, int y, int hitsRemaining, Color colorOverride) {
         this(x, y, hitsRemaining);
         this.customColor = colorOverride;
@@ -41,6 +55,10 @@ public class Block {
         }
     }
 
+    /**
+     * Xử lý va chạm bóng - block. Giảm hitsRemaining; nếu về 0 thì đánh dấu destroyed.
+     * Trả về true nếu có va chạm trong frame này.
+     */
     public boolean isHit(int ballX, int ballY, int ballSize) {
         if (!destroyed && 
             ballX + ballSize > x && ballX < x + GameConfig.BLOCK_WIDTH && 
@@ -56,6 +74,10 @@ public class Block {
     }
     
     // Check va chạm như paddle
+    /**
+     * Xác định hướng va chạm tương đối để điều chỉnh bật nảy của bóng (trái/phải/trên/dưới).
+     * Bỏ qua nếu block đã destroyed.
+     */
     public String getCollisionSide(double ballX, double ballY, double ballSize, double ballVx, double ballVy) {
         if (destroyed) return null;
         
