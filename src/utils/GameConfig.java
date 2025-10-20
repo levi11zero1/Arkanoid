@@ -25,7 +25,7 @@ public class GameConfig {
 
     // Layout
     public static final int BLOCKS_START_X = 50;
-    public static final int BLOCKS_START_Y = 50;
+    public static final int BLOCKS_START_Y = 30;  // Giảm từ 50 -> 30 để block cao hơn
 
     // Game properties
     public static final int TIMER_DELAY = 10;
