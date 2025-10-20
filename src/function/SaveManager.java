@@ -1,58 +1,44 @@
 package function;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-
-/**
- * Trình quản lý lưu/tải trạng thái game (Save/Load).
- *
- * Chức năng chính:
- * - Ghi (save) một ảnh chụp trạng thái (snapshot) của game ra tệp văn bản.
- * - Đọc (load) ảnh chụp trạng thái để khôi phục lại game.
- *
- * Cấu trúc lưu trữ:
- * - Thư mục lưu: "saves" (tự tạo nếu chưa tồn tại)
- * - Tệp lưu: "stage.txt"
- * - Định dạng tệp (dòng-đơn giản, dễ đọc/sửa):
- *   level=<số_màn>
- *   ball=<x>,<y>,<dx>,<dy>            // toạ độ và vận tốc bóng (double)
- *   paddle=<x>,<y>                    // toạ độ paddle (x double, y int)
- *   blocks=<n>                        // số lượng block
- *   <x>,<y>,<hitsRemaining>,<destroyedFlag> (lặp lại n dòng)
- *
- * Quy ước/Đảm bảo:
- * - Sử dụng UTF-8 cho ghi/đọc.
- * - Giá trị boolean destroyedFlag ghi 1 nếu đã bị phá hủy, 0 nếu còn.
- * - Khi đọc, nếu tệp thiếu hoặc sai cấu trúc sẽ ném IOException để nơi gọi xử lý.
- *
- * Mở rộng trong tương lai:
- * - Có thể thêm dòng metadata (thời gian lưu, điểm số, vv.) miễn là vẫn tuân thủ parse tuần tự theo từng "step" như hiện tại.
- */
 public class SaveManager {
     private static final String SAVE_DIR = "saves";
-    private static final String SAVE_FILE = "stage.txt";
 
-    /**
-     * Ghi trạng thái game ra tệp.
-     * @param state  ảnh chụp trạng thái cần lưu (không sửa đổi state bên trong hàm)
-     * @throws IOException nếu có lỗi I/O khi tạo thư mục/ghi tệp
-     */
+    // Tạo tên file theo timestamp: stage_yyyyMMdd_HHmmss.txt
+    private static String makeTimestampedFileName() {
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        String stamp = now.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+        return "stage_" + stamp + ".txt";
+    }
+
     public static void save(GameState state) throws IOException {
         Path dir = Path.of(SAVE_DIR);
         if (!Files.exists(dir)) {
             Files.createDirectories(dir);
         }
-        Path file = dir.resolve(SAVE_FILE);
+        // luôn tạo file mới theo timestamp
+        Path file = dir.resolve(makeTimestampedFileName());
+        writeStateToFile(state, file);
+
+        // Tự động dọn dẹp: chỉ giữ lại 3 bản save gần nhất (không tính file legacy)
+        try {
+            pruneOldSaves(3);
+        } catch (Exception ignored) {}
+    }
+
+    private static void writeStateToFile(GameState state, Path file) throws IOException {
         try (BufferedWriter w = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
-            // Ghi phần header/các trường chính
             w.write("level=" + state.level); w.newLine();
             w.write(String.format("ball=%.6f,%.6f,%.6f,%.6f", state.ballX, state.ballY, state.ballDx, state.ballDy)); w.newLine();
             w.write(String.format("paddle=%.6f,%d", state.paddleX, state.paddleY)); w.newLine();
-            // Ghi danh sách block
             w.write("blocks=" + state.blocks.size()); w.newLine();
             for (GameState.BlockState b : state.blocks) {
                 w.write(String.format("%d,%d,%d,%d", b.x, b.y, b.hitsRemaining, b.destroyed ? 1 : 0));
@@ -61,17 +47,13 @@ public class SaveManager {
         }
     }
 
-    /**
-     * Đọc trạng thái game từ tệp.
-     * @return GameState được khôi phục từ nội dung tệp
-     * @throws IOException nếu tệp không tồn tại hoặc lỗi định dạng/đọc tệp
-     */
-    public static GameState load() throws IOException {
-        Path file = Path.of(SAVE_DIR).resolve(SAVE_FILE);
+    
+
+    // Load từ một file cụ thể
+    public static GameState load(Path file) throws IOException {
         if (!Files.exists(file)) {
             throw new FileNotFoundException("Save file not found: " + file.toAbsolutePath());
         }
-
         int level = 1;
         double ballX = 0, ballY = 0, ballDx = 0, ballDy = 0;
         double paddleX = 0; int paddleY = 0;
@@ -119,4 +101,41 @@ public class SaveManager {
         }
         return new GameState(level, ballX, ballY, ballDx, ballDy, paddleX, paddleY, blocks);
     }
+
+    // Liệt kê các file save, trả về danh sách đã sắp xếp mới nhất trước
+    public static List<Path> listSaves() throws IOException {
+        Path dir = Path.of(SAVE_DIR);
+        List<Path> list = new ArrayList<>();
+        if (!Files.exists(dir)) return list;
+        try (var stream = Files.list(dir)) {
+            stream.filter(p -> p.getFileName().toString().toLowerCase().startsWith("stage_") && p.getFileName().toString().toLowerCase().endsWith(".txt"))
+                  .forEach(list::add);
+        }
+        // sort by last modified desc
+        list.sort((a, b) -> {
+            try {
+                long ma = Files.getLastModifiedTime(a).toMillis();
+                long mb = Files.getLastModifiedTime(b).toMillis();
+                return Long.compare(mb, ma);
+            } catch (IOException e) {
+                return 0;
+            }
+        });
+        return list;
+    }
+
+    // Xóa các save cũ, chỉ giữ lại 'keep' bản mới nhất (chỉ áp dụng cho file stage_*.txt)
+    public static void pruneOldSaves(int keep) throws IOException {
+        if (keep < 0) keep = 0;
+        List<Path> saves = listSaves();
+        if (saves.size() <= keep) return;
+        for (int i = keep; i < saves.size(); i++) {
+            try {
+                Files.deleteIfExists(saves.get(i));
+            } catch (IOException ignored) {
+                // bỏ qua lỗi xóa (có thể do quyền/đang bị mở); vẫn tiếp tục các file khác
+            }
+        }
+    }
 }
+

@@ -3,8 +3,6 @@ package game;
 import entities.Ball;
 import entities.Block;
 import entities.Paddle;
-import function.GameState;
-import function.SaveManager;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
@@ -12,6 +10,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import javax.swing.*;
+import function.GameState;           // Ảnh chụp trạng thái game để lưu/khôi phục
+import function.SaveManager;         // Quản lý đọc/ghi file save
 import levels.LevelBuilder;
 import levels.LevelManager;
 import utils.GameConfig;
@@ -65,11 +65,11 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         blocks = LevelBuilder.createLevel(levelManager.getCurrentLevel());
     }
 
-    // --- Save/Load helpers ---
-    // Chuyển trạng thái hiện tại của game thành GameState (ảnh chụp) để SaveManager ghi ra tệp.
-    // Bao gồm: level hiện tại, vị trí + vận tốc bóng, vị trí paddle, danh sách block (vị trí/số đòn/destroyed)
+    // ================== LƯU/LOAD (PHỤC VỤ NÚT "TIẾP TỤC" Ở MENU) ==================
+    // Tạo ảnh chụp trạng thái hiện tại để ghi xuống file save.
+    // Bao gồm: level đang chơi, vị trí/tốc độ bóng, vị trí thanh đỡ, và danh sách block còn lại.
     private GameState toGameState() {
-        java.util.ArrayList<GameState.BlockState> bs = new java.util.ArrayList<>();
+        ArrayList<GameState.BlockState> bs = new ArrayList<>();
         for (Block b : blocks) {
             bs.add(new GameState.BlockState(b.getX(), b.getY(), b.getHitsRemaining(), b.isDestroyed()));
         }
@@ -82,26 +82,25 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         );
     }
 
-    // Áp ảnh chụp trạng thái (đọc từ SaveManager.load()) để khôi phục game đúng vị trí đã lưu.
-    // Trình tự khôi phục:
-    // 1) Cập nhật level về đúng màn đã lưu
-    // 2) Dựng lại danh sách block theo thông tin trong save (x, y, hitsRemaining, destroyed)
-    // 3) Đặt lại vị trí & vận tốc bóng
-    // 4) Khởi tạo paddle với X theo save (Y dùng theo cấu hình)
+    // Áp dụng trạng thái đã lưu vào game panel này.
+    // Gọi từ ArkanoidGame khi người chơi chọn một bản save trong menu "Tiếp tục".
     public void applyGameState(GameState state) {
-        // Set level
+        // 1) Khớp level hiện tại
         levelManager.setLevel(state.level);
-        // Rebuild blocks from save
-        java.util.ArrayList<Block> newBlocks = new java.util.ArrayList<>();
+
+        // 2) Dựng lại danh sách block từ file save
+        ArrayList<Block> newBlocks = new ArrayList<>();
         for (GameState.BlockState b : state.blocks) {
             newBlocks.add(new Block(b.x, b.y, b.hitsRemaining, b.destroyed));
         }
         this.blocks = newBlocks;
-        // Ball
+
+        // 3) Khôi phục bóng và thanh đỡ
         ball.setPosition(state.ballX, state.ballY);
         ball.setVelocity(new utils.Velocity(state.ballDx, state.ballDy));
-        // Paddle: reconstruct to set X in current API
-        this.paddle = new Paddle((int)Math.round(state.paddleX), state.paddleY);
+        this.paddle = new Paddle((int) Math.round(state.paddleX), state.paddleY);
+
+        // 4) Vẽ lại
         repaint();
     }
 
@@ -305,26 +304,12 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             case KeyEvent.VK_LEFT, KeyEvent.VK_A -> leftPressed = true;
             case KeyEvent.VK_RIGHT, KeyEvent.VK_D -> rightPressed = true;
             case KeyEvent.VK_S -> {
-                // Save current state
-                // Gọi SaveManager.save(...) với ảnh chụp hiện tại do toGameState() tạo ra.
-                // Nếu thành công: beep() báo hiệu; nếu thất bại: hiện hộp thoại lỗi và giữ nguyên game.
+                // Lưu nhanh trạng thái hiện tại (phục vụ chức năng "Tiếp tục" trong menu)
                 try {
                     SaveManager.save(toGameState());
                     Toolkit.getDefaultToolkit().beep();
                 } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(this, "Save failed: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                }
-            }
-            case KeyEvent.VK_L -> {
-                // Load state
-                // Đọc trạng thái từ SaveManager.load() rồi áp vào game bằng applyGameState(...).
-                // Lưu ý: nếu tệp không đúng định dạng hoặc không tồn tại -> bắt lỗi và báo cho người chơi.
-                try {
-                    GameState state = SaveManager.load();
-                    applyGameState(state);
-                    Toolkit.getDefaultToolkit().beep();
-                } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(this, "Load failed: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "Lưu game thất bại: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
                 }
             }
             case KeyEvent.VK_SPACE -> {

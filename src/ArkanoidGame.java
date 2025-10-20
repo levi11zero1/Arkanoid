@@ -61,31 +61,72 @@ public class ArkanoidGame {
                 }
             });
 
-            // Nút Tiếp tục: nếu có save thì sẽ ĐẾM NGƯỢC 3s rồi vào game đã lưu
-            // Quy trình:
-            // 1) Kiểm tra tồn tại tệp save (saves/stage.txt)
-            // 2) Hiển thị dialog đếm ngược 3,2,1 để tạo cảm giác tiếp nối
-            // 3) Sau khi hết thời gian, tạo GamePanel, gọi SaveManager.load(), applyGameState(...)
-            // 4) Đăng ký listener để khi Game Over quay lại MENU
+            // Nút Tiếp tục: hiển thị 3 bản save gần nhất để chọn, sau đó đếm ngược 3s và vào game đã lưu
             menu.getContinueButton().addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    Path savePath = Path.of("saves").resolve("stage.txt");
-                    if (!Files.exists(savePath)) {
-                        JOptionPane.showMessageDialog(frame, "Không tìm thấy save để tiếp tục.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                    java.util.List<java.nio.file.Path> saves;
+                    try {
+                        saves = SaveManager.listSaves();
+                    } catch (Exception ex) {
+                        JOptionPane.showMessageDialog(frame, "Không thể liệt kê save: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
 
-                    // Hiển thị đếm ngược 3 giây trước khi vào game (dialog modal đơn giản)
+                    if (saves.isEmpty()) {
+                        JOptionPane.showMessageDialog(frame, "Chưa có bản lưu nào.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                        return;
+                    }
+
+                    // Lấy tối đa 3 bản gần nhất
+                    java.util.List<java.nio.file.Path> top = saves.size() > 3 ? saves.subList(0, 3) : saves;
+                    String[] options = new String[top.size()];
+                    for (int i = 0; i < top.size(); i++) {
+                        java.nio.file.Path p = top.get(i);
+                        String name = p.getFileName().toString();
+                        // Hiển thị thêm thời gian chỉnh sửa
+                        try {
+                            long ts = java.nio.file.Files.getLastModifiedTime(p).toMillis();
+                            java.time.Instant instant = java.time.Instant.ofEpochMilli(ts);
+                            java.time.ZoneId zone = java.time.ZoneId.systemDefault();
+                            java.time.LocalDateTime dt = java.time.LocalDateTime.ofInstant(instant, zone);
+                            String when = dt.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                            options[i] = name + "  (" + when + ")";
+                        } catch (Exception ex) {
+                            options[i] = name;
+                        }
+                    }
+
+                    String chosen = (String) JOptionPane.showInputDialog(
+                        frame,
+                        "Chọn bản lưu để tiếp tục:",
+                        "Tiếp tục",
+                        JOptionPane.QUESTION_MESSAGE,
+                        null,
+                        options,
+                        options[0]
+                    );
+
+                    if (chosen == null) return; // user cancelled
+
+                    // Map lại từ label đã chọn -> path
+                    java.nio.file.Path selected = null;
+                    for (int i = 0; i < options.length; i++) {
+                        if (options[i].equals(chosen)) { selected = top.get(i); break; }
+                    }
+                    if (selected == null) return;
+
+                    // Đếm ngược 3s trước khi vào game
                     JDialog dialog = new JDialog(frame, "Tiếp tục trò chơi", true);
                     JLabel label = new JLabel("Vào lại game sau 3s...", SwingConstants.CENTER);
                     label.setFont(new Font("Arial", Font.BOLD, 18));
                     dialog.getContentPane().add(label);
-                    dialog.setSize(320, 120);
+                    dialog.setSize(360, 130);
                     dialog.setLocationRelativeTo(frame);
 
                     Timer countdown = new Timer(1000, null);
                     final int[] remaining = {3};
+                    java.nio.file.Path fileToLoad = selected;
                     countdown.addActionListener(new ActionListener() {
                         @Override
                         public void actionPerformed(ActionEvent ev) {
@@ -95,10 +136,9 @@ public class ArkanoidGame {
                             } else {
                                 countdown.stop();
                                 dialog.dispose();
-                                // Tạo panel game và nạp (load) trạng thái đã lưu
                                 GamePanel gamePanel = new GamePanel();
                                 try {
-                                    GameState state = SaveManager.load();
+                                    GameState state = SaveManager.load(fileToLoad);
                                     gamePanel.applyGameState(state);
                                 } catch (Exception ex) {
                                     JOptionPane.showMessageDialog(frame, "Load save thất bại: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -106,7 +146,6 @@ public class ArkanoidGame {
                                 gamePanel.setEventsListener(new GamePanel.GameEvents() {
                                     @Override
                                     public void onGameOver() {
-                                        // Khi game kết thúc, xóa thẻ game hiện tại và quay lại MENU
                                         cards.remove(gamePanel);
                                         cardLayout.show(cards, CARD_MENU);
                                         menu.requestFocusInWindow();
@@ -119,7 +158,6 @@ public class ArkanoidGame {
                         }
                     });
 
-                    // chạy đếm ngược ở EDT; dialog modal được hiển thị sau khi timer bắt đầu
                     label.setText("Vào lại game sau 3s...");
                     countdown.start();
                     dialog.setVisible(true);
