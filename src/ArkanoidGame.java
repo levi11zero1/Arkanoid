@@ -1,4 +1,5 @@
 import game.GamePanel;
+import game.MultiplayerPanel;
 import ui.MenuPanel;
 import ui.InstructionsPanel;
 import ui.SaveListPanel;
@@ -39,26 +40,53 @@ public class ArkanoidGame {
             InstructionsPanel instructionsPanel = new InstructionsPanel();
             cards.add(instructionsPanel, CARD_INSTRUCTIONS);
 
-            // Lắng nghe nút Chơi
+            // Lắng nghe nút Chơi: mở lựa chọn chế độ (Solo hoặc Multiplayer)
             menu.getPlayButton().addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    // Khi bấm Chơi, tạo GamePanel mới và chuyển sang thẻ game
-                    GamePanel gamePanel = new GamePanel();
-                    // Đăng ký listener để khi Game Over thì quay lại menu
-                    gamePanel.setEventsListener(new GamePanel.GameEvents() {
-                        @Override
-                        public void onGameOver() {
-                            // Xóa thẻ game hiện tại (để tránh giữ timer cũ)
-                            cards.remove(gamePanel);
-                            cardLayout.show(cards, CARD_MENU);
-                            menu.requestFocusInWindow();
-                        }
-                    });
+                    String[] options = new String[]{"Solo", "Multiplayer"};
+                    int choice = JOptionPane.showOptionDialog(
+                            frame,
+                            "Chọn chế độ chơi:",
+                            "Chơi",
+                            JOptionPane.DEFAULT_OPTION,
+                            JOptionPane.QUESTION_MESSAGE,
+                            null,
+                            options,
+                            options[0]
+                    );
 
-                    cards.add(gamePanel, CARD_GAME);
-                    cardLayout.show(cards, CARD_GAME);
-                    gamePanel.requestFocusInWindow();
+                    if (choice == 0) {
+                        // Solo: dùng GamePanel trong cùng Frame (card)
+                        GamePanel gamePanel = new GamePanel();
+                        // Đăng ký listener để khi Game Over thì quay lại menu
+                        gamePanel.setEventsListener(new GamePanel.GameEvents() {
+                            @Override
+                            public void onGameOver() {
+                                // Xóa thẻ game hiện tại (để tránh giữ timer cũ)
+                                cards.remove(gamePanel);
+                                cardLayout.show(cards, CARD_MENU);
+                                menu.requestFocusInWindow();
+                            }
+                        });
+
+                        cards.add(gamePanel, CARD_GAME);
+                        cardLayout.show(cards, CARD_GAME);
+                        gamePanel.requestFocusInWindow();
+                    } else if (choice == 1) {
+                        // Multiplayer: mở cửa sổ mới chứa MultiplayerPanel (giữ menu tồn tại)
+                        SwingUtilities.invokeLater(() -> {
+                            JFrame mpFrame = new JFrame("Arkanoid - Multiplayer");
+                            MultiplayerPanel mpPanel = new MultiplayerPanel();
+                            mpFrame.add(mpPanel);
+                            mpFrame.setSize(utils.GameConfig.SCREEN_WIDTH, utils.GameConfig.SCREEN_HEIGHT);
+                            mpFrame.setResizable(false);
+                            mpFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                            mpFrame.setLocationRelativeTo(frame);
+                            mpFrame.setVisible(true);
+                            mpPanel.requestFocusInWindow();
+                        });
+                    } // else: user closed dialog or cancelled
                 }
             });
 
