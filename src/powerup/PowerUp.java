@@ -1,14 +1,14 @@
 package powerup;
 
 import java.awt.*;
-import java.util.Random;
 
 public class PowerUp {
     public enum Type {
         PADDLE_EXPAND,   // Tăng kích thước paddle
         PADDLE_SHRINK,   // Giảm kích thước paddle
         BALL_EXPAND,     // Tăng kích thước bóng
-        BALL_SHRINK      // Giảm kích thước bóng
+        BALL_SHRINK,     // Giảm kích thước bóng
+        BALL_MULTI_X10   // Nhân số lượng bóng lên 10x
     }
 
     private Type type;
@@ -27,6 +27,7 @@ public class PowerUp {
             case PADDLE_SHRINK: color = Color.MAGENTA; break;
             case BALL_EXPAND: color = Color.CYAN; break;
             case BALL_SHRINK: color = Color.YELLOW; break;
+            case BALL_MULTI_X10: color = Color.ORANGE; break;
         }
     }
 

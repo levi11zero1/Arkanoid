@@ -29,7 +29,7 @@ public class GameConfig {
 
     // Game properties
     public static final int TIMER_DELAY = 10;
-    public static final int MAX_LEVELS = 3;
+    public static final int MAX_LEVELS = 6;
 
     // Physics properties
     public static final double VELOCITY_VARIATION = 0.1;

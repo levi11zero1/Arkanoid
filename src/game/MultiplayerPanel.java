@@ -154,11 +154,66 @@ public class MultiplayerPanel extends JPanel implements ActionListener, KeyListe
             ball.bounceX();
         }
 
-        // collisions with top blocks first
+        // collisions with top blocks first (overlap -> applyHit; fallback to CCD)
+        boolean topHit = false;
         for (Block b : topBlocks) {
-            if (b.isHit(ball.getX(), ball.getY(), GameConfig.BALL_SIZE)) {
-                if (ball.getVelocity().getDy() < 0) ball.bounceY();
+            if (!b.isDestroyed() &&
+                ball.getX() + GameConfig.BALL_SIZE > b.getX() && ball.getX() < b.getX() + GameConfig.BLOCK_WIDTH &&
+                ball.getY() + GameConfig.BALL_SIZE > b.getY() && ball.getY() < b.getY() + GameConfig.BLOCK_HEIGHT) {
+                b.applyHit();
+                if (ball.getVelocity().getDy() < 0) {
+                    ball.bounceY();
+                    // push out just below the block to avoid sticking
+                    ball.setPosition(ball.getPreciseX(), b.getY() + GameConfig.BLOCK_HEIGHT + 0.01);
+                }
+                topHit = true;
                 break;
+            }
+        }
+        if (!topHit && ball.getVelocity().getDy() < 0) {
+            // swept AABB for top blocks
+            Block hitBlock = null;
+            double bestT = Double.POSITIVE_INFINITY;
+            boolean hitVertical = false;
+            double radius = GameConfig.BALL_SIZE / 2.0;
+            double prevCenterX = ball.getPrevX() + GameConfig.BALL_SIZE / 2.0;
+            double prevCenterY = ball.getPrevY() + GameConfig.BALL_SIZE / 2.0;
+            double curCenterX = ball.getPreciseX() + GameConfig.BALL_SIZE / 2.0;
+            double curCenterY = ball.getPreciseY() + GameConfig.BALL_SIZE / 2.0;
+            double dx = curCenterX - prevCenterX;
+            double dy = curCenterY - prevCenterY;
+            if (dx != 0 || dy != 0) {
+                for (Block b : topBlocks) {
+                    if (b.isDestroyed()) continue;
+                    double rx1 = b.getX() - radius;
+                    double ry1 = b.getY() - radius;
+                    double rx2 = b.getX() + GameConfig.BLOCK_WIDTH + radius;
+                    double ry2 = b.getY() + GameConfig.BLOCK_HEIGHT + radius;
+                    SweepResult r = sweptSegmentAABB(prevCenterX, prevCenterY, dx, dy, rx1, ry1, rx2, ry2);
+                    if (r.hit && r.tEnter >= 0 && r.tEnter <= 1.0) {
+                        if (r.tEnter < bestT) {
+                            bestT = r.tEnter;
+                            hitBlock = b;
+                            hitVertical = r.hitVertical;
+                        }
+                    }
+                }
+            }
+            if (hitBlock != null) {
+                double t = Math.max(0.0, Math.min(1.0, bestT));
+                double hitCenterX = prevCenterX + dx * t;
+                double hitCenterY = prevCenterY + dy * t;
+                double newX = hitCenterX - radius;
+                double newY = hitCenterY - radius;
+                double eps = 0.01;
+                if (hitVertical) {
+                    ball.setPosition(newX, newY + (dy > 0 ? -eps : eps));
+                    ball.bounceY();
+                } else {
+                    ball.setPosition(newX + (dx > 0 ? -eps : eps), newY);
+                    ball.bounceX();
+                }
+                hitBlock.applyHit();
             }
         }
 
@@ -171,11 +226,65 @@ public class MultiplayerPanel extends JPanel implements ActionListener, KeyListe
             }
         }
 
-        // bottom blocks
+        // bottom blocks (overlap -> applyHit; fallback to CCD)
+        boolean bottomHit = false;
         for (Block b : bottomBlocks) {
-            if (b.isHit(ball.getX(), ball.getY(), GameConfig.BALL_SIZE)) {
-                if (ball.getVelocity().getDy() > 0) ball.bounceY();
+            if (!b.isDestroyed() &&
+                ball.getX() + GameConfig.BALL_SIZE > b.getX() && ball.getX() < b.getX() + GameConfig.BLOCK_WIDTH &&
+                ball.getY() + GameConfig.BALL_SIZE > b.getY() && ball.getY() < b.getY() + GameConfig.BLOCK_HEIGHT) {
+                b.applyHit();
+                if (ball.getVelocity().getDy() > 0) {
+                    ball.bounceY();
+                    // push out just above the block
+                    ball.setPosition(ball.getPreciseX(), b.getY() - GameConfig.BALL_SIZE - 0.01);
+                }
+                bottomHit = true;
                 break;
+            }
+        }
+        if (!bottomHit && ball.getVelocity().getDy() > 0) {
+            Block hitBlock = null;
+            double bestT = Double.POSITIVE_INFINITY;
+            boolean hitVertical = false;
+            double radius = GameConfig.BALL_SIZE / 2.0;
+            double prevCenterX = ball.getPrevX() + GameConfig.BALL_SIZE / 2.0;
+            double prevCenterY = ball.getPrevY() + GameConfig.BALL_SIZE / 2.0;
+            double curCenterX = ball.getPreciseX() + GameConfig.BALL_SIZE / 2.0;
+            double curCenterY = ball.getPreciseY() + GameConfig.BALL_SIZE / 2.0;
+            double dx = curCenterX - prevCenterX;
+            double dy = curCenterY - prevCenterY;
+            if (dx != 0 || dy != 0) {
+                for (Block b : bottomBlocks) {
+                    if (b.isDestroyed()) continue;
+                    double rx1 = b.getX() - radius;
+                    double ry1 = b.getY() - radius;
+                    double rx2 = b.getX() + GameConfig.BLOCK_WIDTH + radius;
+                    double ry2 = b.getY() + GameConfig.BLOCK_HEIGHT + radius;
+                    SweepResult r = sweptSegmentAABB(prevCenterX, prevCenterY, dx, dy, rx1, ry1, rx2, ry2);
+                    if (r.hit && r.tEnter >= 0 && r.tEnter <= 1.0) {
+                        if (r.tEnter < bestT) {
+                            bestT = r.tEnter;
+                            hitBlock = b;
+                            hitVertical = r.hitVertical;
+                        }
+                    }
+                }
+            }
+            if (hitBlock != null) {
+                double t = Math.max(0.0, Math.min(1.0, bestT));
+                double hitCenterX = prevCenterX + dx * t;
+                double hitCenterY = prevCenterY + dy * t;
+                double newX = hitCenterX - radius;
+                double newY = hitCenterY - radius;
+                double eps = 0.01;
+                if (hitVertical) {
+                    ball.setPosition(newX, newY + (dy > 0 ? -eps : eps));
+                    ball.bounceY();
+                } else {
+                    ball.setPosition(newX + (dx > 0 ? -eps : eps), newY);
+                    ball.bounceX();
+                }
+                hitBlock.applyHit();
             }
         }
 
@@ -212,6 +321,49 @@ public class MultiplayerPanel extends JPanel implements ActionListener, KeyListe
         }
 
         repaint();
+    }
+
+    // Sweep structures for CCD
+    private static class SweepResult {
+        boolean hit;
+        double tEnter;
+        boolean hitVertical;
+    }
+
+    private static SweepResult sweptSegmentAABB(double px, double py, double dx, double dy,
+                                                double rx1, double ry1, double rx2, double ry2) {
+        SweepResult res = new SweepResult();
+        double t0 = 0.0, t1 = 1.0;
+        boolean xEnter = false, yEnter = false;
+
+        if (dx == 0) {
+            if (px < rx1 || px > rx2) return res;
+        } else {
+            double tx1 = (rx1 - px) / dx;
+            double tx2 = (rx2 - px) / dx;
+            double txEnter = Math.min(tx1, tx2);
+            double txExit = Math.max(tx1, tx2);
+            if (txEnter > t0) { t0 = txEnter; xEnter = true; }
+            if (txExit < t1) { t1 = txExit; }
+            if (t0 > t1) return res;
+        }
+
+        if (dy == 0) {
+            if (py < ry1 || py > ry2) return res;
+        } else {
+            double ty1 = (ry1 - py) / dy;
+            double ty2 = (ry2 - py) / dy;
+            double tyEnter = Math.min(ty1, ty2);
+            double tyExit = Math.max(ty1, ty2);
+            if (tyEnter > t0) { t0 = tyEnter; xEnter = false; yEnter = true; }
+            if (tyExit < t1) { t1 = tyExit; }
+            if (t0 > t1) return res;
+        }
+
+        res.hit = (t0 >= 0 && t0 <= 1.0);
+        res.tEnter = t0;
+        res.hitVertical = yEnter && !xEnter ? true : (!yEnter && xEnter ? false : Math.abs(dy) > Math.abs(dx));
+        return res;
     }
 
     @Override

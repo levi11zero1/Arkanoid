@@ -28,12 +28,17 @@ public class LevelManager {
     public int getMaxLevels() {
         return GameConfig.MAX_LEVELS;
     }
-
-    // Cho phép đặt level trực tiếp khi LOAD save.
-    // Dùng bởi GamePanel.applyGameState(...) để khớp màn hiện tại với dữ liệu đã lưu.
+    // Cho phép đặt hoặc thiết lập level trực tiếp khi LOAD save hoặc phím tắt.
+    // Dùng bởi GamePanel.applyGameState(...) để khớp màn hiện tại với dữ liệu đã lưu,
+    // và bởi các phím tắt để nhảy trực tiếp.
     public void setLevel(int level) {
         if (level < 1) level = 1;
         if (level > GameConfig.MAX_LEVELS) level = GameConfig.MAX_LEVELS;
         this.currentLevel = level;
+    }
+
+    // Backwards-compatible alias used by other code (setCurrentLevel)
+    public void setCurrentLevel(int level) {
+        setLevel(level);
     }
 }

@@ -10,6 +10,8 @@ public class Ball {
     private double x, y;
     private Velocity velocity;
     private javax.swing.Timer sizeTimer;
+    private double prevX, prevY;
+    private int prevSize;
 
     public Ball(int x, int y) {
         this.x = x;
@@ -24,16 +26,15 @@ public class Ball {
     }
 
     public void move() {
+        // Lưu vị trí trước khi di chuyển
+        prevX = x;
+        prevY = y;
+        prevSize = GameConfig.BALL_SIZE;
         x += velocity.getDx();
         y += velocity.getDy();
 
-        // Speed cap
-        double speed = velocity.getMagnitude();
-        if (speed < GameConfig.BALL_MIN_SPEED) {
-            velocity = velocity.scale(GameConfig.BALL_MIN_SPEED / speed);
-        } else if (speed > GameConfig.BALL_MAX_SPEED) {
-            velocity = velocity.scale(GameConfig.BALL_MAX_SPEED / speed);
-        }
+        // Speed cap ổn định
+        clampSpeed();
     }
 
 
@@ -53,6 +54,10 @@ public class Ball {
         return y;
     }
 
+    public double getPrevX() { return prevX; }
+    public double getPrevY() { return prevY; }
+    public int getPrevSize() { return prevSize; }
+
     public void setPosition(double x, double y) {
         this.x = x;
         this.y = y;
@@ -65,12 +70,12 @@ public class Ball {
 
     public void bounceX() {
         velocity.setDx(-velocity.getDx());
-        addRandomVariation();
+        clampSpeed();
     }
 
     public void bounceY() {
         velocity.setDy(-velocity.getDy());
-        addRandomVariation();
+        clampSpeed();
     }
 
     // Nảy bóng dựa trên điểm chạm
@@ -86,13 +91,16 @@ public class Ball {
 
         // Bắn thẳng
         velocity = Velocity.fromAngle(angle - 90, speed);
-        addRandomVariation();
+        clampSpeed();
     }
 
-    //Randomize cho nó chất
-    private void addRandomVariation() {
-        double randomFactor = 1 + (Math.random() - 0.5) * GameConfig.VELOCITY_VARIATION;
-        velocity = velocity.scale(randomFactor);
+    private void clampSpeed() {
+        double speed = velocity.getMagnitude();
+        if (speed > 0 && speed < GameConfig.BALL_MIN_SPEED) {
+            velocity = velocity.scale(GameConfig.BALL_MIN_SPEED / speed);
+        } else if (speed > GameConfig.BALL_MAX_SPEED) {
+            velocity = velocity.scale(GameConfig.BALL_MAX_SPEED / speed);
+        }
     }
 
     public Velocity getVelocity() {
@@ -114,7 +122,7 @@ public class Ball {
         if (type == PowerUp.Type.BALL_EXPAND) GameConfig.BALL_SIZE *= 1.5;
         else if (type == PowerUp.Type.BALL_SHRINK) GameConfig.BALL_SIZE /= 1.5;
 
-        sizeTimer = new javax.swing.Timer(10000, e -> { resetSize(); sizeTimer.stop(); });
+    sizeTimer = new javax.swing.Timer(10000, e -> { if (e != null) { resetSize(); sizeTimer.stop(); } });
         sizeTimer.setRepeats(false);
         sizeTimer.start();
     }
@@ -143,7 +151,7 @@ public class Ball {
         }
 
         if (bounced) {
-            addRandomVariation();
+            clampSpeed();
         }
     }
 }

@@ -8,6 +8,7 @@ public class Block {
     private int x, y;
     private boolean destroyed = false;
     private int hitsRemaining;
+    private Color customColor = null;
 
 
     /**
@@ -25,20 +26,26 @@ public class Block {
     // Overload for restore from save
     // Dùng khi khôi phục từ GameState: có thể block đã bị phá (destroyed=true) hoặc còn lại số lần đập cụ thể.
     public Block(int x, int y, int hitsRemaining, boolean destroyed) {
-        this.x = x;
-        this.y = y;
-        this.hitsRemaining = Math.max(1, hitsRemaining);
+        this(x, y, hitsRemaining);
         this.destroyed = destroyed;
+    }
+
+    // Overload để khởi tạo block với màu tuỳ chỉnh (ví dụ level editor)
+    public Block(int x, int y, int hitsRemaining, Color colorOverride) {
+        this(x, y, hitsRemaining);
+        this.customColor = colorOverride;
     }
 
     // Set màu các block khác nhàu 
     public void draw(Graphics g) {
         if (!destroyed) {
-            Color color = switch (hitsRemaining) {
-                case 3 -> Color.MAGENTA; 
-                case 2 -> Color.ORANGE; 
-                default -> Color.RED;
-            };
+            Color color = (customColor != null)
+                ? customColor
+                : switch (hitsRemaining) {
+                    case 3 -> Color.MAGENTA; 
+                    case 2 -> Color.ORANGE; 
+                    default -> Color.RED;
+                };
             
             g.setColor(color);
             g.fillRect(x, y, GameConfig.BLOCK_WIDTH, GameConfig.BLOCK_HEIGHT);
@@ -94,6 +101,16 @@ public class Block {
 
     public boolean isDestroyed() {
         return destroyed;
+    }
+
+    // Áp dụng 1 lần sát thương bất kể có overlap hình học hay không (dùng cho CCD)
+    public void applyHit() {
+        if (!destroyed) {
+            hitsRemaining--;
+            if (hitsRemaining <= 0) {
+                destroyed = true;
+            }
+        }
     }
     
     public int getX() {
