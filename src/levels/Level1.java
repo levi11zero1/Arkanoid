@@ -1,29 +1,23 @@
 package levels;
 
-import entities.Block;
-import java.util.ArrayList;
-import java.util.List;
-import utils.GameConfig;
-
 public class Level1 {
-    public static List<Block> create() {
-        List<Block> blocks = new ArrayList<>();
-        int cols = 12;
-        int rows = 8;
-        int totalWidth = cols * GameConfig.BLOCK_SPACING - (GameConfig.BLOCK_SPACING - GameConfig.BLOCK_WIDTH);
-        int startX = (GameConfig.SCREEN_WIDTH - totalWidth) / 2;
-        for (int row = 0; row < rows; row++) {
-            for (int col = 0; col < cols; col++) {
-                int x = startX + col * GameConfig.BLOCK_SPACING;
-                int y = GameConfig.BLOCKS_START_Y + row * GameConfig.BLOCK_ROW_SPACING;
-                int hits = switch (row) {
-                    case 0, 1 -> 3;
-                    case 2, 3 -> 2;
-                    default -> 1;
-                };
-                blocks.add(new Block(x, y, hits));
-            }
-        }
-        return blocks;
-    }
+    // Map-only: original complex shape mask used in previous Level6
+    public static final String[] MAP = new String[]{
+            "01111111111111111111111110001111",
+            "01111111111111111111111110001111",
+            "01111111111111111111111100111111",
+            "01111111111111111111111001111111",
+            "00000000000000000111100111100000",
+            "00000000000000000111100111111000",
+            "00111111111111100111000111100000",
+            "00111111111110011111001111110000",
+            "00000000000001111111001111000000",
+            "00000000000001111000111110000000",
+            "00001111001111000000111100000000",
+            "00001111001111000011111100000000",
+            "00000000001100000011111000000000",
+            "00000000111100001111110000000000",
+            "00000011110000001111000000000000",
+            "00000011110000001111000000000000",
+    };
 }
