@@ -1,6 +1,7 @@
 import game.GamePanel;
 import ui.MenuPanel;
 import ui.InstructionsPanel;
+import ui.SaveListPanel;
 import utils.GameConfig;
 import function.SaveManager;
 import function.GameState;
@@ -61,7 +62,10 @@ public class ArkanoidGame {
                 }
             });
 
-            // Nút Tiếp tục: hiển thị 3 bản save gần nhất để chọn, sau đó đếm ngược 3s và vào game đã lưu
+            // Nút Tiếp tục: mở màn chọn bản save trên một màn hình riêng
+            SaveListPanel saveListPanel = new SaveListPanel();
+            cards.add(saveListPanel, "savelist");
+
             menu.getContinueButton().addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
@@ -78,45 +82,55 @@ public class ArkanoidGame {
                         return;
                     }
 
-                    // Lấy tối đa 3 bản gần nhất
-                    java.util.List<java.nio.file.Path> top = saves.size() > 3 ? saves.subList(0, 3) : saves;
-                    String[] options = new String[top.size()];
-                    for (int i = 0; i < top.size(); i++) {
-                        java.nio.file.Path p = top.get(i);
-                        String name = p.getFileName().toString();
-                        // Hiển thị thêm thời gian chỉnh sửa
-                        try {
-                            long ts = java.nio.file.Files.getLastModifiedTime(p).toMillis();
-                            java.time.Instant instant = java.time.Instant.ofEpochMilli(ts);
-                            java.time.ZoneId zone = java.time.ZoneId.systemDefault();
-                            java.time.LocalDateTime dt = java.time.LocalDateTime.ofInstant(instant, zone);
-                            String when = dt.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-                            options[i] = name + "  (" + when + ")";
-                        } catch (Exception ex) {
-                            options[i] = name;
-                        }
+                    // Show up to 10 most recent saves in the list (practically limited)
+                    java.util.List<java.nio.file.Path> top = saves.size() > 10 ? saves.subList(0, 10) : saves;
+                    saveListPanel.setSaves(top);
+                    cardLayout.show(cards, "savelist");
+                    saveListPanel.requestFocusInWindow();
+                }
+            });
+
+            // Back from save list -> menu
+            saveListPanel.getBackButton().addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    cardLayout.show(cards, CARD_MENU);
+                    menu.requestFocusInWindow();
+                }
+            });
+
+            // Delete selected save
+            saveListPanel.getDeleteButton().addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    Path sel = saveListPanel.getSelectedPath();
+                    if (sel == null) return;
+                    int ok = JOptionPane.showConfirmDialog(frame, "Bạn có chắc muốn xóa bản lưu này?", "Xác nhận", JOptionPane.YES_NO_OPTION);
+                    if (ok != JOptionPane.YES_OPTION) return;
+                    try {
+                        java.nio.file.Files.deleteIfExists(sel);
+                    } catch (Exception ex) {
+                        JOptionPane.showMessageDialog(frame, "Không thể xóa: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
                     }
-
-                    String chosen = (String) JOptionPane.showInputDialog(
-                        frame,
-                        "Chọn bản lưu để tiếp tục:",
-                        "Tiếp tục",
-                        JOptionPane.QUESTION_MESSAGE,
-                        null,
-                        options,
-                        options[0]
-                    );
-
-                    if (chosen == null) return; // user cancelled
-
-                    // Map lại từ label đã chọn -> path
-                    java.nio.file.Path selected = null;
-                    for (int i = 0; i < options.length; i++) {
-                        if (options[i].equals(chosen)) { selected = top.get(i); break; }
+                    // refresh list
+                    try {
+                        java.util.List<java.nio.file.Path> saves2 = SaveManager.listSaves();
+                        java.util.List<java.nio.file.Path> top2 = saves2.size() > 10 ? saves2.subList(0, 10) : saves2;
+                        saveListPanel.setSaves(top2);
+                    } catch (Exception ex) {
+                        // ignore refresh error
                     }
-                    if (selected == null) return;
+                }
+            });
 
-                    // Đếm ngược 3s trước khi vào game
+            // Load selected save and resume after a 3s countdown
+            saveListPanel.getLoadButton().addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    Path sel = saveListPanel.getSelectedPath();
+                    if (sel == null) return;
+
+                    // 3s countdown modal
                     JDialog dialog = new JDialog(frame, "Tiếp tục trò chơi", true);
                     JLabel label = new JLabel("Vào lại game sau 3s...", SwingConstants.CENTER);
                     label.setFont(new Font("Arial", Font.BOLD, 18));
@@ -126,7 +140,7 @@ public class ArkanoidGame {
 
                     Timer countdown = new Timer(1000, null);
                     final int[] remaining = {3};
-                    java.nio.file.Path fileToLoad = selected;
+                    java.nio.file.Path fileToLoad = sel;
                     countdown.addActionListener(new ActionListener() {
                         @Override
                         public void actionPerformed(ActionEvent ev) {
