@@ -15,12 +15,13 @@ public class Block {
      * Khởi tạo block mới cho level đang chơi.
      * @param x vị trí X (pixel theo lưới)
      * @param y vị trí Y
-     * @param hitsRemaining số lần chịu đòn còn lại trước khi vỡ (>=1)
+     * @param hitsRemaining số lần chịu đòn còn lại trước khi vỡ (>=1), hoặc UNDESTRUCTABLE (-1)
      */
     public Block(int x, int y, int hitsRemaining) {
         this.x = x; 
         this.y = y;
-        this.hitsRemaining = Math.max(1, hitsRemaining);
+        // Allow UNDESTRUCTABLE (-1) or ensure at least 1 hit
+        this.hitsRemaining = (hitsRemaining == GameConfig.UNDESTRUCTABLE_BLOCK) ? GameConfig.UNDESTRUCTABLE_BLOCK : Math.max(1, hitsRemaining);
     }
 
     // Overload for restore from save
@@ -42,6 +43,7 @@ public class Block {
             Color color = (customColor != null)
                 ? customColor
                 : switch (hitsRemaining) {
+                    case GameConfig.UNDESTRUCTABLE_BLOCK -> Color.WHITE; // Undestructable blocks are white
                     case 3 -> Color.MAGENTA; 
                     case 2 -> Color.ORANGE; 
                     default -> Color.RED;
@@ -64,9 +66,12 @@ public class Block {
             ballX + ballSize > x && ballX < x + GameConfig.BLOCK_WIDTH && 
             ballY + ballSize > y && ballY < y + GameConfig.BLOCK_HEIGHT) {
             
-            hitsRemaining--;
-            if (hitsRemaining <= 0) {
-                destroyed = true;
+            // Don't reduce hits for undestructable blocks
+            if (hitsRemaining != GameConfig.UNDESTRUCTABLE_BLOCK) {
+                hitsRemaining--;
+                if (hitsRemaining <= 0) {
+                    destroyed = true;
+                }
             }
             return true;
         }
@@ -105,7 +110,7 @@ public class Block {
 
     // Áp dụng 1 lần sát thương bất kể có overlap hình học hay không (dùng cho CCD)
     public void applyHit() {
-        if (!destroyed) {
+        if (!destroyed && hitsRemaining != GameConfig.UNDESTRUCTABLE_BLOCK) {
             hitsRemaining--;
             if (hitsRemaining <= 0) {
                 destroyed = true;
