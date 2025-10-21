@@ -22,6 +22,7 @@ public class GameConfig {
     public static final int BLOCK_HEIGHT = 20;
     public static final int BLOCK_SPACING = 45;
     public static final int BLOCK_ROW_SPACING = 25;
+    public static final int UNDESTRUCTABLE_BLOCK = -1; // Special value for undestructable blocks
 
     // Layout
     public static final int BLOCKS_START_X = 50;
