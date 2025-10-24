@@ -4,13 +4,13 @@ import entities.Ball;
 import entities.Block;
 import entities.Paddle;
 import function.Pause;
-import utils.GameConfig;
-
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.*;
+import utils.GameConfig;
+import utils.MusicPlayer;
 
 
 public class MultiplayerPanel extends JPanel implements ActionListener, KeyListener {
@@ -152,6 +152,9 @@ public class MultiplayerPanel extends JPanel implements ActionListener, KeyListe
         // bounce off left/right walls
         if (ball.getX() <= 0 || ball.getX() + GameConfig.BALL_SIZE >= getWidth()) {
             ball.bounceX();
+            try {
+                MusicPlayer.playOnce("music/wall.wav", null);
+            } catch (Throwable ignored) {}
         }
 
         // collisions with top blocks first (overlap -> applyHit; fallback to CCD)
@@ -167,6 +170,8 @@ public class MultiplayerPanel extends JPanel implements ActionListener, KeyListe
                     ball.setPosition(ball.getPreciseX(), b.getY() + GameConfig.BLOCK_HEIGHT + 0.01);
                 }
                 topHit = true;
+                // play brick sound for overlap hit
+                try { MusicPlayer.playOnce("music/brick.wav", null); } catch (Throwable ignored) {}
                 break;
             }
         }
@@ -199,7 +204,7 @@ public class MultiplayerPanel extends JPanel implements ActionListener, KeyListe
                     }
                 }
             }
-            if (hitBlock != null) {
+                if (hitBlock != null) {
                 double t = Math.max(0.0, Math.min(1.0, bestT));
                 double hitCenterX = prevCenterX + dx * t;
                 double hitCenterY = prevCenterY + dy * t;
@@ -214,6 +219,7 @@ public class MultiplayerPanel extends JPanel implements ActionListener, KeyListe
                     ball.bounceX();
                 }
                 hitBlock.applyHit();
+                try { MusicPlayer.playOnce("music/brick.wav", null); } catch (Throwable ignored) {}
             }
         }
 
@@ -223,6 +229,7 @@ public class MultiplayerPanel extends JPanel implements ActionListener, KeyListe
                 ball.bounceY();
                 // place just below the top paddle to avoid sticky collisions
                 ball.setPosition(ball.getPreciseX(), paddleTop.getY() + GameConfig.PADDLE_HEIGHT + 1);
+                try { MusicPlayer.playOnce("music/padle.wav", null); } catch (Throwable ignored) {}
             }
         }
 
@@ -239,6 +246,8 @@ public class MultiplayerPanel extends JPanel implements ActionListener, KeyListe
                     ball.setPosition(ball.getPreciseX(), b.getY() - GameConfig.BALL_SIZE - 0.01);
                 }
                 bottomHit = true;
+                    // play brick sound for overlap hit
+                    try { MusicPlayer.playOnce("music/brick.wav", null); } catch (Throwable ignored) {}
                 break;
             }
         }
@@ -285,6 +294,7 @@ public class MultiplayerPanel extends JPanel implements ActionListener, KeyListe
                     ball.bounceX();
                 }
                 hitBlock.applyHit();
+                try { MusicPlayer.playOnce("music/brick.wav", null); } catch (Throwable ignored) {}
             }
         }
 
@@ -293,6 +303,7 @@ public class MultiplayerPanel extends JPanel implements ActionListener, KeyListe
             if (ball.getVelocity().getDy() > 0) {
                 ball.bounceY();
                 ball.setPosition(ball.getPreciseX(), paddleBottom.getY() - GameConfig.BALL_SIZE - 1);
+                try { MusicPlayer.playOnce("music/padle.wav", null); } catch (Throwable ignored) {}
             }
         }
 

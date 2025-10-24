@@ -2,9 +2,10 @@ package entities;
 
 import java.awt.Color;
 import java.awt.Graphics;
-import utils.GameConfig;
-import utils.Velocity;
 import powerup.PowerUp;
+import utils.GameConfig;
+import utils.MusicPlayer;
+import utils.Velocity;
 
 public class Ball {
     private double x, y;
@@ -152,6 +153,12 @@ public class Ball {
 
         if (bounced) {
             clampSpeed();
+            // Play wall hit sound once (WAV)
+            try {
+                MusicPlayer.playOnce("music/wall.wav", null);
+            } catch (Throwable ignored) {
+                // ignore
+            }
         }
     }
 }

@@ -5,6 +5,7 @@ import entities.Block;
 import entities.Paddle;
 import java.util.List;
 import utils.GameConfig;
+import utils.MusicPlayer;
 
 /**
  * Handles collision detection and response between the ball, paddle and blocks.
@@ -30,6 +31,12 @@ public class CollisionManager {
             // Prevent multiple hits in a row by nudging the ball above the paddle
             ball.setPosition(ball.getPreciseX(), paddle.getY() - GameConfig.BALL_SIZE - 1);
             collisionCooldown = 2;
+            // Play paddle hit sound once (WAV)
+            try {
+                MusicPlayer.playOnce("music/padle.wav", null);
+            } catch (Throwable ignored) {
+                // ignore sound errors
+            }
         }
 
         if (collisionCooldown == 0) {
@@ -83,6 +90,12 @@ public class CollisionManager {
                     }
 
                     collisionCooldown = 2; // handle 1 collision per frame
+                    // Play brick hit sound once
+                    try {
+                        utils.MusicPlayer.playOnce("music/brick.wav", null);
+                    } catch (Throwable ignored) {
+                        // ignore
+                    }
                     break;
                 }
             }
