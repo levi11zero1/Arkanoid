@@ -4,6 +4,7 @@ import ui.MenuPanel;
 import ui.InstructionsPanel;
 import ui.SaveListPanel;
 import utils.GameConfig;
+import utils.MusicPlayer;
 import function.SaveManager;
 import function.GameState;
 import java.nio.file.*;
@@ -58,6 +59,9 @@ public class ArkanoidGame {
 
                     if (choice == 0) {
                         // Solo: dùng GamePanel trong cùng Frame (card)
+                        // Stop menu music when entering gameplay
+                        MusicPlayer.stop();
+
                         GamePanel gamePanel = new GamePanel();
                         // Đăng ký listener để khi Game Over thì quay lại menu
                         gamePanel.setEventsListener(new GamePanel.GameEvents() {
@@ -67,6 +71,8 @@ public class ArkanoidGame {
                                 cards.remove(gamePanel);
                                 cardLayout.show(cards, CARD_MENU);
                                 menu.requestFocusInWindow();
+                                // Resume menu music (GamePanel already played lose.wav)
+                                try { MusicPlayer.playLoop("music/screen.wav"); } catch (Throwable t) {}
                             }
                         });
 
@@ -76,6 +82,9 @@ public class ArkanoidGame {
                     } else if (choice == 1) {
                         // Multiplayer: mở cửa sổ mới chứa MultiplayerPanel (giữ menu tồn tại)
                         SwingUtilities.invokeLater(() -> {
+                            // Stop menu music when opening multiplayer window
+                            MusicPlayer.stop();
+
                             JFrame mpFrame = new JFrame("Arkanoid - Multiplayer");
                             MultiplayerPanel mpPanel = new MultiplayerPanel();
                             mpFrame.add(mpPanel);
@@ -83,6 +92,13 @@ public class ArkanoidGame {
                             mpFrame.setResizable(false);
                             mpFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
                             mpFrame.setLocationRelativeTo(frame);
+                            // When multiplayer window closes, resume menu music
+                            mpFrame.addWindowListener(new java.awt.event.WindowAdapter() {
+                                @Override
+                                public void windowClosed(java.awt.event.WindowEvent e) {
+                                    try { MusicPlayer.playLoop("music/screen.wav"); } catch (Throwable t) {}
+                                }
+                            });
                             mpFrame.setVisible(true);
                             mpPanel.requestFocusInWindow();
                         });
@@ -178,6 +194,9 @@ public class ArkanoidGame {
                             } else {
                                 countdown.stop();
                                 dialog.dispose();
+                                // Stop menu music when resuming saved game
+                                MusicPlayer.stop();
+
                                 GamePanel gamePanel = new GamePanel();
                                 try {
                                     GameState state = SaveManager.load(fileToLoad);
@@ -191,6 +210,8 @@ public class ArkanoidGame {
                                         cards.remove(gamePanel);
                                         cardLayout.show(cards, CARD_MENU);
                                         menu.requestFocusInWindow();
+                                        // Resume menu music (GamePanel already played lose.wav)
+                                        try { MusicPlayer.playLoop("music/screen.wav"); } catch (Throwable t) {}
                                     }
                                 });
                                 cards.add(gamePanel, CARD_GAME);
@@ -229,6 +250,16 @@ public class ArkanoidGame {
             frame.setResizable(false);
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setLocationRelativeTo(null);
+            // Start background music (non-blocking). If JavaFX is not available,
+            // MusicPlayer will print an error but the game will continue to run.
+            try {
+                MusicPlayer.init();
+                // Use WAV (Java Sound) which works without JavaFX; user converted file to WAV
+                MusicPlayer.playLoop("music/screen.wav");
+            } catch (Throwable t) {
+                System.err.println("Could not start background music: " + t.getMessage());
+            }
+
             frame.setVisible(true);
 
             // Hiển thị màn menu đầu tiên

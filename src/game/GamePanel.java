@@ -215,26 +215,54 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private void handleGameOver() {
         gameTimer.stop();
 
-        // If event listener is set (menu integration), notify it
-        if (eventsListener != null) {
-            eventsListener.onGameOver();
-            return;
-        }
+        // Play the lose sound and wait until it finishes before proceeding.
+        // This keeps the player on the game screen until the sound completes.
+        try {
+            utils.MusicPlayer.playOnce("music/lose.wav", () -> {
+                // Ensure UI changes run on the Swing EDT
+                SwingUtilities.invokeLater(() -> {
+                    // If event listener is set (menu integration), notify it
+                    if (eventsListener != null) {
+                        eventsListener.onGameOver();
+                        return;
+                    }
 
-        // Otherwise, show default dialog
-        int choice = JOptionPane.showConfirmDialog(
-            this,
-            "Game Over! You reached Level " + levelManager.getCurrentLevel() +
-            "\n\nWould you like to play again?",
-            "Game Over",
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.QUESTION_MESSAGE
-        );
+                    // Otherwise, show default dialog
+                    int choice = JOptionPane.showConfirmDialog(
+                        this,
+                        "Game Over! You reached Level " + levelManager.getCurrentLevel() +
+                        "\n\nWould you like to play again?",
+                        "Game Over",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.QUESTION_MESSAGE
+                    );
 
-        if (choice == JOptionPane.YES_OPTION) {
-            restartGame();
-        } else {
-            System.exit(0);
+                    if (choice == JOptionPane.YES_OPTION) {
+                        restartGame();
+                    } else {
+                        System.exit(0);
+                    }
+                });
+            });
+        } catch (Throwable t) {
+            // If anything goes wrong with sound playback, fall back to immediate behavior
+            if (eventsListener != null) {
+                eventsListener.onGameOver();
+                return;
+            }
+            int choice = JOptionPane.showConfirmDialog(
+                this,
+                "Game Over! You reached Level " + levelManager.getCurrentLevel() +
+                "\n\nWould you like to play again?",
+                "Game Over",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+            );
+            if (choice == JOptionPane.YES_OPTION) {
+                restartGame();
+            } else {
+                System.exit(0);
+            }
         }
     }
 
