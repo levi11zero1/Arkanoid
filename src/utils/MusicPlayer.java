@@ -28,6 +28,8 @@ public class MusicPlayer {
 
     public static void playLoop(String filePath) {
         if (filePath == null) return;
+        // Ensure we don't leave previous players running when starting a new loop
+        try { stop(); } catch (Throwable _t) {}
         try {
             // If the file is a WAV/AIFF/ AU, use Java Sound (no external deps)
             String lower = filePath.toLowerCase();
