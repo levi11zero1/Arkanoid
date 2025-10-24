@@ -16,7 +16,11 @@ public class StyledButton extends JButton {
     private Color bgPress = new Color(0x2576C4);   // khi nhấn
     private Color border = new Color(0x282B88);    // viền
     private int cornerRadius = 18;
-    private boolean hovered = false;
+    // old boolean hovered kept for compatibility removed; animation uses hoverProgress
+    // animated hover progress 0..1 for smooth scale/shadow effect
+    private float hoverProgress = 0f;
+    private javax.swing.Timer hoverTimer;
+    private float hoverTarget = 0f;
 
     public StyledButton(String text) {
         super(text);
@@ -32,16 +36,33 @@ public class StyledButton extends JButton {
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                hovered = true;
-                repaint();
+                startHoverAnimation(1f);
             }
 
             @Override
             public void mouseExited(MouseEvent e) {
-                hovered = false;
-                repaint();
+                startHoverAnimation(0f);
             }
         });
+    }
+
+    private void startHoverAnimation(float target) {
+        hoverTarget = target;
+        if (hoverTimer != null && hoverTimer.isRunning()) hoverTimer.stop();
+        hoverTimer = new javax.swing.Timer(16, e -> {
+            float step = 0.12f; // animation speed
+            if (hoverProgress < hoverTarget) {
+                hoverProgress = Math.min(hoverTarget, hoverProgress + step);
+            } else if (hoverProgress > hoverTarget) {
+                hoverProgress = Math.max(hoverTarget, hoverProgress - step);
+            }
+            repaint();
+            if (hoverProgress == hoverTarget) {
+                hoverTimer.stop();
+            }
+        });
+        hoverTimer.setRepeats(true);
+        hoverTimer.start();
     }
 
     @Override
@@ -52,15 +73,31 @@ public class StyledButton extends JButton {
         int w = getWidth();
         int h = getHeight();
 
-        // Chọn màu nền dựa trên trạng thái
+        // animated scale (subtle)
+        float scale = 1f + 0.04f * hoverProgress;
+        int cx = w / 2;
+        int cy = h / 2;
+        g2.translate(cx, cy);
+        g2.scale(scale, scale);
+        g2.translate(-cx, -cy);
+
+        // Chọn màu nền dựa trên trạng thái (pressed overrides hover)
         Color currentBg;
-        ButtonModel model = getModel();
-        if (model.isPressed()) {
+        ButtonModel m = getModel();
+        if (m.isPressed()) {
             currentBg = bgPress;
-        } else if (hovered) {
-            currentBg = bgHover;
+        } else if (hoverProgress > 0.01f) {
+            // blend between bg and bgHover by hoverProgress
+            currentBg = blend(bg, bgHover, hoverProgress);
         } else {
             currentBg = bg;
+        }
+
+        // Drop shadow (subtle, scales with hover)
+        float shadowAlpha = 0.18f * hoverProgress;
+        if (shadowAlpha > 0f) {
+            g2.setColor(new Color(0f,0f,0f, shadowAlpha));
+            g2.fill(new RoundRectangle2D.Float(2, 4, w - 4, h - 4, cornerRadius, cornerRadius));
         }
 
         // Vẽ nền bo góc
@@ -72,10 +109,20 @@ public class StyledButton extends JButton {
         g2.setStroke(new BasicStroke(2f));
         g2.draw(new RoundRectangle2D.Float(1, 1, w - 2, h - 2, cornerRadius, cornerRadius));
 
+        // Draw the text using transformed graphics so it scales with the button
+        super.paintComponent(g2);
         g2.dispose();
+    }
 
-        // Vẽ text
-        super.paintComponent(g);
+    private Color blend(Color a, Color b, float t) {
+        t = Math.max(0f, Math.min(1f, t));
+        int ar = a.getRed(), ag = a.getGreen(), ab = a.getBlue(), aa = a.getAlpha();
+        int br = b.getRed(), bgc = b.getGreen(), bb = b.getBlue(), ba = b.getAlpha();
+        int r = (int) (ar + (br - ar) * t);
+        int g = (int) (ag + (bgc - ag) * t);
+        int bl = (int) (ab + (bb - ab) * t);
+        int al = (int) (aa + (ba - aa) * t);
+        return new Color(r, g, bl, al);
     }
 
     // === GETTERS / SETTERS ===

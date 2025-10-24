@@ -41,68 +41,54 @@ public class ArkanoidGame {
             InstructionsPanel instructionsPanel = new InstructionsPanel();
             cards.add(instructionsPanel, CARD_INSTRUCTIONS);
 
-            // Lắng nghe nút Chơi: mở lựa chọn chế độ (Solo hoặc Multiplayer)
-            menu.getPlayButton().addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    String[] options = new String[]{"Solo", "Multiplayer"};
-                    int choice = JOptionPane.showOptionDialog(
-                            frame,
-                            "Chọn chế độ chơi:",
-                            "Chơi",
-                            JOptionPane.DEFAULT_OPTION,
-                            JOptionPane.QUESTION_MESSAGE,
-                            null,
-                            options,
-                            options[0]
-                    );
+            // Lắng nghe nút Chơi: mở overlay chọn chế độ (split screen) từ MenuPanel
+            menu.getPlayButton().addActionListener(e -> menu.showModeSelection());
 
-                    if (choice == 0) {
-                        // Solo: dùng GamePanel trong cùng Frame (card)
-                        // Stop menu music when entering gameplay
+            // Xử lý lựa chọn chế độ từ overlay
+            menu.setModeSelectionListener(mode -> {
+                if ("solo".equals(mode)) {
+                    // Solo: dùng GamePanel trong cùng Frame (card)
+                    MusicPlayer.stop();
+
+                    GamePanel gamePanel = new GamePanel();
+                    // Đăng ký listener để khi Game Over thì quay lại menu
+                    gamePanel.setEventsListener(new GamePanel.GameEvents() {
+                        @Override
+                        public void onGameOver() {
+                            // Xóa thẻ game hiện tại (để tránh giữ timer cũ)
+                            cards.remove(gamePanel);
+                            cardLayout.show(cards, CARD_MENU);
+                            menu.requestFocusInWindow();
+                            // Resume menu music
+                            try { MusicPlayer.playLoop("music/screen.wav"); } catch (Throwable t) {}
+                        }
+                    });
+
+                    cards.add(gamePanel, CARD_GAME);
+                    cardLayout.show(cards, CARD_GAME);
+                    gamePanel.requestFocusInWindow();
+                } else if ("multiplayer".equals(mode)) {
+                    // Multiplayer: mở cửa sổ mới chứa MultiplayerPanel (giữ menu tồn tại)
+                    SwingUtilities.invokeLater(() -> {
                         MusicPlayer.stop();
 
-                        GamePanel gamePanel = new GamePanel();
-                        // Đăng ký listener để khi Game Over thì quay lại menu
-                        gamePanel.setEventsListener(new GamePanel.GameEvents() {
+                        JFrame mpFrame = new JFrame("Arkanoid - Multiplayer");
+                        MultiplayerPanel mpPanel = new MultiplayerPanel();
+                        mpFrame.add(mpPanel);
+                        mpFrame.setSize(utils.GameConfig.SCREEN_WIDTH, utils.GameConfig.SCREEN_HEIGHT);
+                        mpFrame.setResizable(false);
+                        mpFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                        mpFrame.setLocationRelativeTo(frame);
+                        // When multiplayer window closes, resume menu music
+                        mpFrame.addWindowListener(new java.awt.event.WindowAdapter() {
                             @Override
-                            public void onGameOver() {
-                                // Xóa thẻ game hiện tại (để tránh giữ timer cũ)
-                                cards.remove(gamePanel);
-                                cardLayout.show(cards, CARD_MENU);
-                                menu.requestFocusInWindow();
-                                // Resume menu music (GamePanel already played lose.wav)
+                            public void windowClosed(java.awt.event.WindowEvent e) {
                                 try { MusicPlayer.playLoop("music/screen.wav"); } catch (Throwable t) {}
                             }
                         });
-
-                        cards.add(gamePanel, CARD_GAME);
-                        cardLayout.show(cards, CARD_GAME);
-                        gamePanel.requestFocusInWindow();
-                    } else if (choice == 1) {
-                        // Multiplayer: mở cửa sổ mới chứa MultiplayerPanel (giữ menu tồn tại)
-                        SwingUtilities.invokeLater(() -> {
-                            // Stop menu music when opening multiplayer window
-                            MusicPlayer.stop();
-
-                            JFrame mpFrame = new JFrame("Arkanoid - Multiplayer");
-                            MultiplayerPanel mpPanel = new MultiplayerPanel();
-                            mpFrame.add(mpPanel);
-                            mpFrame.setSize(utils.GameConfig.SCREEN_WIDTH, utils.GameConfig.SCREEN_HEIGHT);
-                            mpFrame.setResizable(false);
-                            mpFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-                            mpFrame.setLocationRelativeTo(frame);
-                            // When multiplayer window closes, resume menu music
-                            mpFrame.addWindowListener(new java.awt.event.WindowAdapter() {
-                                @Override
-                                public void windowClosed(java.awt.event.WindowEvent e) {
-                                    try { MusicPlayer.playLoop("music/screen.wav"); } catch (Throwable t) {}
-                                }
-                            });
-                            mpFrame.setVisible(true);
-                            mpPanel.requestFocusInWindow();
-                        });
-                    } // else: user closed dialog or cancelled
+                        mpFrame.setVisible(true);
+                        mpPanel.requestFocusInWindow();
+                    });
                 }
             });
 
