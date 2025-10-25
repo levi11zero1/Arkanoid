@@ -3,6 +3,7 @@ package entities;
 import java.awt.Color;
 import java.awt.Graphics;
 import utils.GameConfig;
+import utils.Physics;
 
 public class Block {
     private int x, y;
@@ -60,10 +61,7 @@ public class Block {
      * Trả về true nếu có va chạm trong frame này.
      */
     public boolean isHit(int ballX, int ballY, int ballSize) {
-        if (!destroyed && 
-            ballX + ballSize > x && ballX < x + GameConfig.BLOCK_WIDTH && 
-            ballY + ballSize > y && ballY < y + GameConfig.BLOCK_HEIGHT) {
-            
+        if (!destroyed && Physics.isCollidingRect(ballX, ballY, ballSize, x, y, GameConfig.BLOCK_WIDTH, GameConfig.BLOCK_HEIGHT)) {
             hitsRemaining--;
             if (hitsRemaining <= 0) {
                 destroyed = true;
@@ -80,23 +78,7 @@ public class Block {
      */
     public String getCollisionSide(double ballX, double ballY, double ballSize, double ballVx, double ballVy) {
         if (destroyed) return null;
-        
-        double ballCenterX = ballX + ballSize / 2;
-        double ballCenterY = ballY + ballSize / 2;
-        
-        double leftDistance = Math.abs(ballCenterX - x);
-        double rightDistance = Math.abs(ballCenterX - (x + GameConfig.BLOCK_WIDTH));
-        double topDistance = Math.abs(ballCenterY - y);
-        double bottomDistance = Math.abs(ballCenterY - (y + GameConfig.BLOCK_HEIGHT));
-        
-        double minHorizontal = Math.min(leftDistance, rightDistance);
-        double minVertical = Math.min(topDistance, bottomDistance);
-        
-        if (minHorizontal < minVertical) {
-            return (ballVx > 0) ? "left" : "right";
-        } else {
-            return (ballVy > 0) ? "top" : "bottom";
-        }
+        return Physics.collisionSideForRect(ballX, ballY, (int)ballSize, x, y, GameConfig.BLOCK_WIDTH, GameConfig.BLOCK_HEIGHT, ballVx, ballVy);
     }
 
     public boolean isDestroyed() {

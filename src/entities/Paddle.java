@@ -3,6 +3,8 @@ package entities;
 import java.awt.Color;
 import java.awt.Graphics;
 import utils.GameConfig;
+import utils.Physics;
+import utils.Movement;
 import powerup.PowerUp;
 import java.awt.Rectangle;
 
@@ -18,24 +20,7 @@ public class Paddle {
     }
 
     public void update(boolean leftPressed, boolean rightPressed, int frameWidth, double dt) {
-        double velocity = 0;
-
-        if (leftPressed) {
-            velocity -= GameConfig.PADDLE_SPEED;
-        }
-        if (rightPressed) {
-            velocity += GameConfig.PADDLE_SPEED;
-        }
-
-        x += velocity * dt;
-
-        // Keep paddle within screen bounds
-        if (x < 0) {
-            x = 0;
-        }
-        if (x + GameConfig.PADDLE_WIDTH > frameWidth) {
-            x = frameWidth - GameConfig.PADDLE_WIDTH;
-        }
+        x = Movement.updatePaddle(x, leftPressed, rightPressed, frameWidth, dt);
     }
 
     public void draw(Graphics g) {
@@ -45,8 +30,7 @@ public class Paddle {
 
     // Check va chạm của paddle với ball
     public boolean isHit(int ballX, int ballY, int ballSize) {
-        return ballX + ballSize > x && ballX < x + GameConfig.PADDLE_WIDTH &&
-               ballY + ballSize > y && ballY < y + GameConfig.PADDLE_HEIGHT;
+        return Physics.isCollidingRect(ballX, ballY, ballSize, x, y, GameConfig.PADDLE_WIDTH, GameConfig.PADDLE_HEIGHT);
     }
 
     public double getX() {

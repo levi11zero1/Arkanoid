@@ -4,6 +4,8 @@ import java.awt.Color;
 import java.awt.Graphics;
 import utils.GameConfig;
 import utils.Velocity;
+import utils.Physics;
+import utils.Movement;
 import powerup.PowerUp;
 
 public class Ball {
@@ -26,15 +28,14 @@ public class Ball {
     }
 
     public void move() {
-        // Lưu vị trí trước khi di chuyển
-        prevX = x;
-        prevY = y;
-        prevSize = GameConfig.BALL_SIZE;
-        x += velocity.getDx();
-        y += velocity.getDy();
-
-        // Speed cap ổn định
-        clampSpeed();
+        // Delegate movement to Movement utility (records previous pos/size and clamps speed)
+        Movement.BallMoveResult r = Movement.moveBall(x, y, velocity, GameConfig.BALL_SIZE);
+        this.prevX = r.prevX;
+        this.prevY = r.prevY;
+        this.prevSize = r.prevSize;
+        this.x = r.x;
+        this.y = r.y;
+        this.velocity = r.velocity;
     }
 
 
@@ -69,39 +70,21 @@ public class Ball {
     }
 
     public void bounceX() {
-        velocity.setDx(-velocity.getDx());
-        clampSpeed();
+        velocity = Physics.reflectHorizontal(velocity);
+        velocity = Physics.clampSpeed(velocity);
     }
 
     public void bounceY() {
-        velocity.setDy(-velocity.getDy());
-        clampSpeed();
+        velocity = Physics.reflectVertical(velocity);
+        velocity = Physics.clampSpeed(velocity);
     }
 
     // Nảy bóng dựa trên điểm chạm
     public void bounceOffPaddle(double paddleX, double paddleWidth) {
-        double paddleCenter = paddleX + paddleWidth / 2;
-        double ballCenter = x + GameConfig.BALL_SIZE / 2;
-        double hitOffset = (ballCenter - paddleCenter) / (paddleWidth / 2); // -1 -> 1
-
-        hitOffset = Math.max(-1.0, Math.min(1.0, hitOffset));
-
-        double angle = hitOffset * GameConfig.MAX_PADDLE_ANGLE;
-        double speed = velocity.getMagnitude();
-
-        // Bắn thẳng
-        velocity = Velocity.fromAngle(angle - 90, speed);
-        clampSpeed();
+        velocity = Physics.bounceFromPaddle(x, GameConfig.BALL_SIZE, paddleX, (int)paddleWidth, velocity);
     }
 
-    private void clampSpeed() {
-        double speed = velocity.getMagnitude();
-        if (speed > 0 && speed < GameConfig.BALL_MIN_SPEED) {
-            velocity = velocity.scale(GameConfig.BALL_MIN_SPEED / speed);
-        } else if (speed > GameConfig.BALL_MAX_SPEED) {
-            velocity = velocity.scale(GameConfig.BALL_MAX_SPEED / speed);
-        }
-    }
+    
 
     public Velocity getVelocity() {
         return velocity;
@@ -129,29 +112,9 @@ public class Ball {
 
     // Check mép để ko lỗi
     public void checkBounds(int screenWidth, int screenHeight) {
-        boolean bounced = false;
-
-        if (x < 0) {
-            x = 0;
-            velocity.setDx(Math.abs(velocity.getDx()));
-            bounced = true;
-        }
-
-        if (x + GameConfig.BALL_SIZE > screenWidth) {
-            x = screenWidth - GameConfig.BALL_SIZE;
-            velocity.setDx(-Math.abs(velocity.getDx()));
-            bounced = true;
-        }
-
-
-        if (y < 0) {
-            y = 0;
-            velocity.setDy(Math.abs(velocity.getDy()));
-            bounced = true;
-        }
-
-        if (bounced) {
-            clampSpeed();
-        }
+        Physics.BoundsResult r = Physics.checkBounds(x, y, GameConfig.BALL_SIZE, velocity, screenWidth, screenHeight);
+        this.x = r.x;
+        this.y = r.y;
+        this.velocity = r.velocity;
     }
 }
