@@ -9,28 +9,27 @@ import utils.GameConfig;
  * LevelBuilder – Unified level construction from binary (0/1) maps.
  * 
  * Rules (originally from Level6, now shared by all levels):
- *   1. Each level defines a static String[] MAP of '0'/'1' characters:
- *      '1' => block exists; '0' => empty space.
+ *   1. Each level defines a static String[] MAP with characters:
+ *      '0' => empty space
+ *      '1' => 1-hit block (RED)
+ *      '2' => 2-hit block (ORANGE)
+ *      '3' => 3-hit block (MAGENTA)
+ *      'X' => undestructable block (WHITE) - not required to win
  *   2. Map is scaled to fit 15 columns across screen width with aspect ratio preserved (nearest-neighbor).
  *   3. Result is horizontally & vertically centered in available grid space.
- *   4. Hit tiers are assigned by row band:
- *      - Top 3 rows => 3 hits (MAGENTA blocks)
- *      - Next 3 rows => 2 hits (ORANGE blocks)
- *      - Remaining rows => 1 hit (RED blocks)
+ *   4. Undestructable blocks ('X') reflect the ball but cannot be destroyed.
+ *      They are excluded from the win condition.
  * 
  * To add a new level:
- *   - Create a LevelN class with a static MAP field (String[] of '0'/'1').
+ *   - Create a LevelN class with a static MAP field (String[] of '0'/'1'/'2'/'3'/'X').
  *   - Add a case to createLevel(int) referencing LevelN.MAP.
  *   - Update GameConfig.MAX_LEVELS if needed.
  */
 public class LevelBuilder {
     /**
      * Direct mapping: Each cell in mapLines is a block (no scaling).
-     * Blocks are centered horizontally. Hit tiers by row band.
-     */
-    /**
-     * Direct mapping: Each cell in mapLines is a block (no scaling).
-     * Supports '1', '2', '3' for hit count. Blocks are centered horizontally.
+     * Supports '1', '2', '3' for hit count, and 'X' for undestructable blocks.
+     * Blocks are centered horizontally.
      */
     public static List<Block> buildFromMapDirect(String[] mapLines) {
         List<Block> blocks = new ArrayList<>();
@@ -118,7 +117,8 @@ public class LevelBuilder {
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
                 int hits = grid[r][c];
-                if (hits > 0) {
+                // Add block if hits > 0 OR if it's an undestructable block (-1)
+                if (hits > 0 || hits == GameConfig.UNDESTRUCTABLE_BLOCK) {
                     int x = startX + (offsetCol + c) * GameConfig.BLOCK_SPACING;
                     int y = GameConfig.BLOCKS_START_Y + (offsetRow + r) * GameConfig.BLOCK_ROW_SPACING;
                     out.add(new Block(x, y, hits));
@@ -133,7 +133,8 @@ public class LevelBuilder {
         throw new UnsupportedOperationException("Use parseHitMask instead");
     }
 
-    // Parse lines of '0'/'1'/'2'/'3' into int grid (rows x cols)
+    // Parse lines of '0'/'1'/'2'/'3'/'X' into int grid (rows x cols)
+    // '0' = empty space, '1'-'3' = blocks with 1-3 hits, 'X' = undestructable block
     private static int[][] parseHitMask(List<String> lines) {
         int h = lines.size();
         int w = 0;
@@ -145,6 +146,8 @@ public class LevelBuilder {
                 char ch = s.charAt(c);
                 if (ch == '1' || ch == '2' || ch == '3') {
                     g[r][c] = ch - '0';
+                } else if (ch == 'X' || ch == 'x') {
+                    g[r][c] = GameConfig.UNDESTRUCTABLE_BLOCK; // -1 for undestructable
                 } else {
                     g[r][c] = 0;
                 }

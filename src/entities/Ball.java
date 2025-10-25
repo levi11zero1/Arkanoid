@@ -2,10 +2,10 @@ package entities;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import powerup.PowerUp;
 import utils.GameConfig;
+import utils.MusicPlayer;
 import utils.Velocity;
-import utils.Physics;
-import utils.Movement;
 import powerup.PowerUp;
 
 public class Ball {
@@ -112,9 +112,29 @@ public class Ball {
 
     // Check mép để ko lỗi
     public void checkBounds(int screenWidth, int screenHeight) {
-        Physics.BoundsResult r = Physics.checkBounds(x, y, GameConfig.BALL_SIZE, velocity, screenWidth, screenHeight);
-        this.x = r.x;
-        this.y = r.y;
-        this.velocity = r.velocity;
+        boolean bounced = false;
+
+        if (x < 0) {
+            x = 0;
+            velocity.setDx(Math.abs(velocity.getDx()));
+            bounced = true;
+        }
+
+        if (x + GameConfig.BALL_SIZE > screenWidth) {
+            x = screenWidth - GameConfig.BALL_SIZE;
+            velocity.setDx(-Math.abs(velocity.getDx()));
+            bounced = true;
+        }
+
+
+        if (y < 0) {
+            y = 0;
+            velocity.setDy(Math.abs(velocity.getDy()));
+            bounced = true;
+        }
+
+        if (bounced) {
+            clampSpeed();
+        }
     }
 }

@@ -1,0 +1,68 @@
+# Compiled class files
+*.class
+
+# Package directories
+/out/
+/bin/
+
+# Build artifacts
+/target/
+/build/
+
+# IDE directories
+/.idea/
+*.iml
+/.vscode/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Files created by editors
+*~
+# Swap files
+.swp
+
+# Maven
+/.mvn/
+/.settings/
+
+# Gradle
+/.gradle/
+gradle-app.setting
+
+# Java, jar files, native libs
+*.jar
+*.war
+*.ear
+*.nar
+*.so
+*.dll
+*.dylib
+
+# OS generated files
+Icon?
+
+# OneDrive temporary files
+~$*
+
+# Save files
+/saves/
+
+# Optional: ignore compiled notebook checkpoints
+/.ipynb_checkpoints/
+
+# JetBrains cache and run configs
+/.idea/
+/.idea_modules/

@@ -91,6 +91,136 @@ public class MenuPanel extends JPanel {
         gbc.anchor = computeAnchor();
         gbc.insets = new Insets(marginTop, marginLeft, marginBottom, marginRight);
         add(vbox, gbc);
+
+        // Mode selection overlay (hidden by default). Splits the panel into two big clickable halves.
+        initModeSelectionOverlay();
+    }
+
+    // -------- Mode selection UI --------
+    private JPanel modeOverlay;
+    private JPanel topModePanel;
+    private JPanel bottomModePanel;
+    private ModeSelectionListener modeListener;
+
+    public interface ModeSelectionListener {
+        void onModeSelected(String mode); // "solo" or "multiplayer"
+    }
+
+    private void initModeSelectionOverlay() {
+    modeOverlay = new JPanel(new GridLayout(2,1));
+    modeOverlay.setOpaque(true);
+    modeOverlay.setBackground(Color.BLACK);
+
+    // Set base backgrounds for each half as requested
+    topModePanel = createModeHalf("1 Player", "", new Color(0x53, 0x53, 0x53)); // #535353
+    bottomModePanel = createModeHalf("2 Player", "", new Color(0x76, 0x76, 0x76)); // #767676
+
+        modeOverlay.add(topModePanel);
+        modeOverlay.add(bottomModePanel);
+
+        modeOverlay.setVisible(false);
+        // add on top (same GridBag position as vbox)
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 1; gbc.weighty = 1;
+        gbc.fill = GridBagConstraints.BOTH;
+        add(modeOverlay, gbc);
+    }
+
+    private JPanel createModeHalf(String titleText, String subtitle, Color overlay) {
+        JPanel p = new JPanel(new GridBagLayout());
+    p.setOpaque(true);
+    p.setBackground(overlay);
+
+        JLabel title = new JLabel(titleText);
+        title.setForeground(Color.WHITE);
+        Font titleFont = getPixelFont(28f).deriveFont(Font.PLAIN, 28f);
+        Font titleHoverFont = titleFont.deriveFont(Font.BOLD, 32f);
+        title.setFont(titleFont);
+
+        JLabel sub = new JLabel(subtitle);
+        sub.setForeground(Color.LIGHT_GRAY);
+        sub.setFont(getPixelFont(12f).deriveFont(Font.PLAIN, 12f));
+
+        Box box = Box.createVerticalBox();
+        box.add(title);
+        box.add(Box.createVerticalStrut(8));
+        box.add(sub);
+
+        p.add(box);
+
+        p.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+    // Hover effect: compute a hover tint from the base overlay color so it matches each half
+    Color origBg = p.getBackground();
+    Color hoverBg = blendColor(origBg, Color.WHITE, 0.12f);
+        p.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (modeListener != null) {
+                    if (titleText.startsWith("1")) modeListener.onModeSelected("solo");
+                    else modeListener.onModeSelected("multiplayer");
+                }
+                hideModeSelection();
+            }
+
+            @Override public void mouseEntered(java.awt.event.MouseEvent e) {
+                p.setBackground(hoverBg);
+                title.setForeground(new Color(255, 235, 120));
+                title.setFont(titleHoverFont);
+                sub.setForeground(Color.WHITE);
+                p.repaint();
+            }
+
+            @Override public void mouseExited(java.awt.event.MouseEvent e) {
+                p.setBackground(origBg);
+                title.setForeground(Color.WHITE);
+                title.setFont(titleFont);
+                sub.setForeground(Color.LIGHT_GRAY);
+                p.repaint();
+            }
+        });
+
+        return p;
+    }
+
+    public void showModeSelection() {
+        modeOverlay.setVisible(true);
+        modeOverlay.requestFocusInWindow();
+        // hide the standard vbox controls while selecting
+        vbox.setVisible(false);
+        revalidate();
+        repaint();
+    }
+
+    public void hideModeSelection() {
+        modeOverlay.setVisible(false);
+        vbox.setVisible(true);
+        revalidate();
+        repaint();
+    }
+
+    public void setModeSelectionListener(ModeSelectionListener l) { this.modeListener = l; }
+
+    // Try to load a pixel font from project `fonts/` folder or fall back to common names/monospaced.
+    private Font getPixelFont(float size) {
+        // Try project fonts folder first
+        String[] candidates = new String[] { "fonts/PressStart2P-Regular.ttf", "fonts/pixel.ttf" };
+        for (String c : candidates) {
+            try {
+                java.io.File f = new java.io.File(c);
+                if (f.exists()) {
+                    Font fo = Font.createFont(Font.TRUETYPE_FONT, f);
+                    return fo.deriveFont(size);
+                }
+            } catch (Throwable ignored) {}
+        }
+
+        // Try known pixel font family name (might be installed)
+        try {
+            Font test = new Font("PressStart2P", Font.PLAIN, (int) size);
+            if (!"Dialog".equals(test.getFamily())) return test.deriveFont(size);
+        } catch (Throwable ignored) {}
+
+        // Fallback to monospaced
+        return new Font(Font.MONOSPACED, Font.PLAIN, (int) size);
     }
 
     @Override
@@ -110,6 +240,18 @@ public class MenuPanel extends JPanel {
             g2.fillRect(0, 0, getWidth(), getHeight());
         }
         g2.dispose();
+    }
+
+    // Small color utility: blend two colors by t (0..1)
+    private static Color blendColor(Color a, Color b, float t) {
+        t = Math.max(0f, Math.min(1f, t));
+        int ar = a.getRed(), ag = a.getGreen(), ab = a.getBlue(), aa = a.getAlpha();
+        int br = b.getRed(), bg = b.getGreen(), bb = b.getBlue(), ba = b.getAlpha();
+        int r = (int) (ar + (br - ar) * t);
+        int g = (int) (ag + (bg - ag) * t);
+        int bl = (int) (ab + (bb - ab) * t);
+        int al = (int) (aa + (ba - aa) * t);
+        return new Color(r, g, bl, al);
     }
 
     public JButton getPlayButton() { return playButton; }

@@ -1,11 +1,10 @@
 import entities.Block;
-import levels.LevelBuilder;
-import utils.GameConfig;
-
-import javax.swing.*;
 import java.awt.*;
 import java.util.List;
 import java.util.Scanner;
+import javax.swing.*;
+import levels.LevelBuilder;
+import utils.GameConfig;
 
 /**
  * Test class để xem map của level
@@ -36,17 +35,19 @@ public class Test {
             System.out.println("Total blocks: " + blocks.size());
             
             // Đếm số gạch theo loại
-            int count1Hit = 0, count2Hit = 0, count3Hit = 0;
+            int count1Hit = 0, count2Hit = 0, count3Hit = 0, countUndestructable = 0;
             for (Block block : blocks) {
                 int hits = block.getHitsRemaining();
                 if (hits == 1) count1Hit++;
                 else if (hits == 2) count2Hit++;
                 else if (hits == 3) count3Hit++;
+                else if (hits == GameConfig.UNDESTRUCTABLE_BLOCK) countUndestructable++;
             }
             
             System.out.println("  - 1 hit blocks (Red): " + count1Hit);
             System.out.println("  - 2 hit blocks (Orange): " + count2Hit);
             System.out.println("  - 3 hit blocks (Magenta): " + count3Hit);
+            System.out.println("  - Undestructable blocks (White): " + countUndestructable);
             System.out.println("\nDisplaying map...\n");
             
             // Hiển thị map trong GUI
@@ -112,6 +113,14 @@ public class Test {
                 g.fillRect(legendX, legendY + 60, 30, 15);
                 g.setColor(Color.WHITE);
                 g.drawString("= 3 hits", legendX + 40, legendY + 73);
+                
+                // Gạch trắng - Undestructable
+                g.setColor(Color.WHITE);
+                g.fillRect(legendX, legendY + 85, 30, 15);
+                g.setColor(Color.BLACK);
+                g.drawRect(legendX, legendY + 85, 30, 15);
+                g.setColor(Color.WHITE);
+                g.drawString("= Undestructable", legendX + 40, legendY + 98);
             }
         };
         

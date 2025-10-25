@@ -131,7 +131,10 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         g.setFont(new Font("Arial", Font.BOLD, 16));
         g.drawString("Level: " + levelManager.getCurrentLevel(), 10, 25);
 
-        long remainingBlocks = blocks.stream().filter(block -> !block.isDestroyed()).count();
+        // Only count destructable blocks (exclude undestructable blocks)
+        long remainingBlocks = blocks.stream()
+            .filter(block -> block.getHitsRemaining() != GameConfig.UNDESTRUCTABLE_BLOCK && !block.isDestroyed())
+            .count();
         g.drawString("Blocks: " + remainingBlocks, GameConfig.SCREEN_WIDTH - 100, 25);
 
         ball.draw(g);
@@ -187,7 +190,10 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     }
 
     private void checkGameState() {
-        boolean allBlocksDestroyed = blocks.stream().allMatch(Block::isDestroyed);
+        // Only count destructable blocks for win condition (exclude undestructable blocks)
+        boolean allBlocksDestroyed = blocks.stream()
+            .filter(block -> block.getHitsRemaining() != GameConfig.UNDESTRUCTABLE_BLOCK)
+            .allMatch(Block::isDestroyed);
         if (allBlocksDestroyed) {
             handleLevelComplete();
         }
@@ -210,26 +216,54 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private void handleGameOver() {
         gameTimer.stop();
 
-        // If event listener is set (menu integration), notify it
-        if (eventsListener != null) {
-            eventsListener.onGameOver();
-            return;
-        }
+        // Play the lose sound and wait until it finishes before proceeding.
+        // This keeps the player on the game screen until the sound completes.
+        try {
+            utils.MusicPlayer.playOnce("music/lose.wav", () -> {
+                // Ensure UI changes run on the Swing EDT
+                SwingUtilities.invokeLater(() -> {
+                    // If event listener is set (menu integration), notify it
+                    if (eventsListener != null) {
+                        eventsListener.onGameOver();
+                        return;
+                    }
 
-        // Otherwise, show default dialog
-        int choice = JOptionPane.showConfirmDialog(
-            this,
-            "Game Over! You reached Level " + levelManager.getCurrentLevel() +
-            "\n\nWould you like to play again?",
-            "Game Over",
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.QUESTION_MESSAGE
-        );
+                    // Otherwise, show default dialog
+                    int choice = JOptionPane.showConfirmDialog(
+                        this,
+                        "Game Over! You reached Level " + levelManager.getCurrentLevel() +
+                        "\n\nWould you like to play again?",
+                        "Game Over",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.QUESTION_MESSAGE
+                    );
 
-        if (choice == JOptionPane.YES_OPTION) {
-            restartGame();
-        } else {
-            System.exit(0);
+                    if (choice == JOptionPane.YES_OPTION) {
+                        restartGame();
+                    } else {
+                        System.exit(0);
+                    }
+                });
+            });
+        } catch (Throwable t) {
+            // If anything goes wrong with sound playback, fall back to immediate behavior
+            if (eventsListener != null) {
+                eventsListener.onGameOver();
+                return;
+            }
+            int choice = JOptionPane.showConfirmDialog(
+                this,
+                "Game Over! You reached Level " + levelManager.getCurrentLevel() +
+                "\n\nWould you like to play again?",
+                "Game Over",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+            );
+            if (choice == JOptionPane.YES_OPTION) {
+                restartGame();
+            } else {
+                System.exit(0);
+            }
         }
     }
 
