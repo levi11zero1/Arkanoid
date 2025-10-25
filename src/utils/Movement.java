@@ -1,7 +1,10 @@
 package utils;
 
 /**
- * Utilities for movement-related logic for Ball and Paddle.
+ * Lớp tiện ích chứa các hàm liên quan đến di chuyển của đối tượng trong game.
+ *
+ * Hiện chứa các hàm tĩnh để tính toán vị trí mới cho bóng và thanh đỡ (paddle).
+ * Mục tiêu: gom logic di chuyển vào một chỗ để dễ bảo trì và test.
  */
 public class Movement {
 
@@ -24,7 +27,11 @@ public class Movement {
     }
 
     /**
-     * Move ball by its velocity, record previous position/size and clamp speed.
+     * Di chuyển bóng theo velocity hiện tại.
+     *
+     * Input: vị trí hiện tại (x,y), vector vận tốc và kích thước bóng.
+     * Output: trả về một {@link BallMoveResult} chứa vị trí mới, vị trí trước đó và velocity
+     * đã được điều chỉnh (ví dụ được clamp theo giới hạn tốc độ).
      */
     public static BallMoveResult moveBall(double x, double y, Velocity velocity, int ballSize) {
         double prevX = x;
@@ -40,7 +47,10 @@ public class Movement {
     }
 
     /**
-     * Update paddle X position given input and dt. Keeps within frame bounds.
+     * Cập nhật vị trí ngang (x) của paddle dựa trên trạng thái phím trái/phải và delta-time (dt).
+     * Hàm sẽ giữ paddle nằm trong giới hạn chiều rộng màn hình (frameWidth).
+     *
+     * Trả về giá trị x mới.
      */
     public static double updatePaddle(double x, boolean leftPressed, boolean rightPressed, int frameWidth, double dt) {
         double v = 0;
