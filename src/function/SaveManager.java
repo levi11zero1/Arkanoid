@@ -26,7 +26,7 @@ public class SaveManager {
         }
         // luôn tạo file mới theo timestamp
         Path file = dir.resolve(makeTimestampedFileName());
-        writeStateToFile(state, file);
+        writeStateToFile(state, file, null);
 
         // Tự động dọn dẹp: chỉ giữ lại 3 bản save gần nhất (không tính file legacy)
         try {
@@ -34,8 +34,95 @@ public class SaveManager {
         } catch (Exception ignored) {}
     }
 
-    private static void writeStateToFile(GameState state, Path file) throws IOException {
+    /**
+     * Save with a custom user-provided name. The name will be sanitized to a safe filename and '.txt' appended.
+     * If a file with the same name already exists, a numeric suffix _1, _2, ... will be appended.
+     * This method DOES NOT prune old saves; only timestamped auto-saves are pruned elsewhere.
+     */
+    public static void save(GameState state, String customName) throws IOException {
+        Path dir = Path.of(SAVE_DIR);
+        if (!Files.exists(dir)) {
+            Files.createDirectories(dir);
+        }
+        String base = sanitizeName(customName);
+        if (base.isBlank()) base = "save";
+        String fileName = ensureTxtExtension(base);
+        Path target = dir.resolve(fileName);
+        int i = 1;
+        while (Files.exists(target)) {
+            String candidate = base + "_" + i;
+            target = dir.resolve(ensureTxtExtension(candidate));
+            i++;
+        }
+        writeStateToFile(state, target, null);
+    }
+
+    // Metadata ghi kèm để nối tiếp phiên chơi sau khi Load
+    public static class Metadata {
+        public String player;
+        public long elapsedMs;
+        public int levelsCompleted;
+        public int blocksDestroyed;
+        public Metadata() {}
+        public Metadata(String player, long elapsedMs, int levelsCompleted, int blocksDestroyed) {
+            this.player = player; this.elapsedMs = elapsedMs; this.levelsCompleted = levelsCompleted; this.blocksDestroyed = blocksDestroyed;
+        }
+    }
+
+    public static void save(GameState state, String customName, Metadata meta) throws IOException {
+        Path dir = Path.of(SAVE_DIR);
+        if (!Files.exists(dir)) {
+            Files.createDirectories(dir);
+        }
+        String base = sanitizeName(customName);
+        if (base.isBlank()) base = "save";
+        String fileName = ensureTxtExtension(base);
+        Path target = dir.resolve(fileName);
+        int i = 1;
+        while (Files.exists(target)) {
+            String candidate = base + "_" + i;
+            target = dir.resolve(ensureTxtExtension(candidate));
+            i++;
+        }
+        writeStateToFile(state, target, meta);
+    }
+
+    private static String ensureTxtExtension(String name) {
+        String lower = name.toLowerCase();
+        if (!lower.endsWith(".txt")) return name + ".txt";
+        return name;
+    }
+
+    private static String sanitizeName(String s) {
+        if (s == null) return "";
+        String trimmed = s.trim();
+        // Replace forbidden characters in filenames on common OS: \\/:*?"<>| and control chars
+        String cleaned = trimmed.replaceAll("[\\\\/:*?\"<>|]+", "_");
+        // Collapse whitespace to single space, then replace spaces with underscore for consistency
+        cleaned = cleaned.replaceAll("\\s+", " ").trim();
+        cleaned = cleaned.replace(' ', '_');
+        // Limit length to a reasonable size (e.g., 64)
+        if (cleaned.length() > 64) cleaned = cleaned.substring(0, 64);
+        // Avoid reserved names on Windows (CON, PRN, AUX, NUL, COM1, LPT1, ...)
+        String upper = cleaned.toUpperCase();
+        String[] reserved = {"CON","PRN","AUX","NUL","COM1","COM2","COM3","COM4","COM5","COM6","COM7","COM8","COM9","LPT1","LPT2","LPT3","LPT4","LPT5","LPT6","LPT7","LPT8","LPT9"};
+        for (String r : reserved) {
+            if (upper.equals(r)) {
+                cleaned = cleaned + "_";
+                break;
+            }
+        }
+        return cleaned;
+    }
+
+    private static void writeStateToFile(GameState state, Path file, Metadata meta) throws IOException {
         try (BufferedWriter w = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
+            if (meta != null) {
+                if (meta.player != null) { w.write("meta_player=" + meta.player); w.newLine(); }
+                w.write("meta_elapsed=" + meta.elapsedMs); w.newLine();
+                w.write("meta_levels=" + meta.levelsCompleted); w.newLine();
+                w.write("meta_blocks=" + meta.blocksDestroyed); w.newLine();
+            }
             w.write("level=" + state.level); w.newLine();
             w.write(String.format("ball=%.6f,%.6f,%.6f,%.6f", state.ballX, state.ballY, state.ballDx, state.ballDy)); w.newLine();
             w.write(String.format("paddle=%.6f,%d", state.paddleX, state.paddleY)); w.newLine();
@@ -66,6 +153,7 @@ public class SaveManager {
             while ((line = r.readLine()) != null) {
                 line = line.trim();
                 if (line.isEmpty()) continue;
+                if (line.startsWith("meta_")) continue; // bỏ qua metadata ở đây
                 if (step == 0 && line.startsWith("level=")) {
                     level = Integer.parseInt(line.substring(6));
                     step = 1; continue;
@@ -102,14 +190,38 @@ public class SaveManager {
         return new GameState(level, ballX, ballY, ballDx, ballDy, paddleX, paddleY, blocks);
     }
 
+    // Đọc metadata (nếu có) từ file save
+    public static Metadata readMetadata(Path file) throws IOException {
+        if (!Files.exists(file)) return null;
+        Metadata meta = new Metadata();
+        try (BufferedReader r = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
+            String line;
+            while ((line = r.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty()) continue;
+                if (line.startsWith("level=")) break; // sau phần header không còn metadata
+                if (line.startsWith("meta_player=")) meta.player = line.substring("meta_player=".length());
+                else if (line.startsWith("meta_elapsed=")) { try { meta.elapsedMs = Long.parseLong(line.substring("meta_elapsed=".length())); } catch (Exception ignored) {} }
+                else if (line.startsWith("meta_levels=")) { try { meta.levelsCompleted = Integer.parseInt(line.substring("meta_levels=".length())); } catch (Exception ignored) {} }
+                else if (line.startsWith("meta_blocks=")) { try { meta.blocksDestroyed = Integer.parseInt(line.substring("meta_blocks=".length())); } catch (Exception ignored) {} }
+            }
+        }
+        if ((meta.player == null || meta.player.isBlank()) && meta.elapsedMs == 0 && meta.levelsCompleted == 0 && meta.blocksDestroyed == 0) {
+            return null;
+        }
+        return meta;
+    }
+
     // Liệt kê các file save, trả về danh sách đã sắp xếp mới nhất trước
     public static List<Path> listSaves() throws IOException {
         Path dir = Path.of(SAVE_DIR);
         List<Path> list = new ArrayList<>();
         if (!Files.exists(dir)) return list;
         try (var stream = Files.list(dir)) {
-            stream.filter(p -> p.getFileName().toString().toLowerCase().startsWith("stage_") && p.getFileName().toString().toLowerCase().endsWith(".txt"))
-                  .forEach(list::add);
+            stream.filter(p -> {
+                String fn = p.getFileName().toString().toLowerCase();
+                return fn.endsWith(".txt");
+            }).forEach(list::add);
         }
         // sort by last modified desc
         list.sort((a, b) -> {

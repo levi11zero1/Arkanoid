@@ -11,6 +11,7 @@ public class MenuPanel extends JPanel {
 
     private final StyledButton playButton = new StyledButton("Chơi");
     private final StyledButton continueButton = new StyledButton("Tiếp tục");
+    private final StyledButton rankingButton = new StyledButton("Bảng xếp hạng");
     private final StyledButton instructionsButton = new StyledButton("Hướng dẫn");
     private Image backgroundImage;
     // Khối chứa tiêu đề + nút để dễ điều chỉnh vị trí
@@ -53,9 +54,11 @@ public class MenuPanel extends JPanel {
         playButton.setPreferredSize(btnSize);
     instructionsButton.setPreferredSize(btnSize);
     continueButton.setPreferredSize(btnSize);
+    rankingButton.setPreferredSize(btnSize);
         playButton.setCornerRadius(20);
         instructionsButton.setCornerRadius(20);
     continueButton.setCornerRadius(20);
+    rankingButton.setCornerRadius(20);
 
         // Container dọc cho các nút
         vbox = new JPanel();
@@ -70,6 +73,7 @@ public class MenuPanel extends JPanel {
         playButton.setAlignmentX(Component.CENTER_ALIGNMENT);
     instructionsButton.setAlignmentX(Component.CENTER_ALIGNMENT);
     continueButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+    rankingButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         // Spacer trên cùng để điều chỉnh vị trí khối theo trục dọc
         topSpacer = Box.createVerticalStrut(0);
@@ -82,6 +86,8 @@ public class MenuPanel extends JPanel {
     betweenButtons = Box.createVerticalStrut(16);
     vbox.add(betweenButtons);
     vbox.add(continueButton);
+    vbox.add(Box.createVerticalStrut(16));
+    vbox.add(rankingButton);
     vbox.add(Box.createVerticalStrut(16));
     vbox.add(instructionsButton);
 
@@ -261,6 +267,8 @@ public class MenuPanel extends JPanel {
     public StyledButton getPlayStyledButton() { return playButton; }
     public StyledButton getContinueStyledButton() { return continueButton; }
     public StyledButton getInstructionsStyledButton() { return instructionsButton; }
+    public JButton getRankingButton() { return rankingButton; }
+    public StyledButton getRankingStyledButton() { return rankingButton; }
 
     // ====== API điều chỉnh vị trí ======
     /**
