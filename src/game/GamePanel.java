@@ -56,80 +56,50 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
         gameTimer = new Timer(GameConfig.TIMER_DELAY, this);
         gameTimer.start();
-        lastNanos = System.nanoTime();
+            gameTimer.stop();
 
-        // Trong constructor GamePanel()
-    spawnTimer = new javax.swing.Timer(14000, e -> { if (e != null) { /* satisfy linter */ } spawnRandomPowerUp(); }); // mỗi 30s
-        spawnTimer.setRepeats(true);
-        spawnTimer.start();
-
-        // Đăng ký Pause: dừng timer khi pause, chạy lại khi resume
-        Pause.getInstance().setListener(new Pause.PauseListener() {
-            @Override public void onPause() {
-                if (gameTimer != null) gameTimer.stop();
-                if (spawnTimer != null) spawnTimer.stop();
+            // Try to play the lose sound and wait until it finishes before proceeding.
+            // After the sound (or on fallback), update ranking and either notify the
+            // registered `eventsListener` (menu integration) or show the default dialog.
+            try {
+                utils.MusicPlayer.playOnce("music/lose.wav", () -> {
+                    SwingUtilities.invokeLater(() -> {
+                        submitRankingOnce();
+                        if (eventsListener != null) {
+                            eventsListener.onGameOver();
+                            return;
+                        }
+                        showGameOverDialogAndHandleChoice();
+                    });
+                });
+            } catch (Throwable t) {
+                // Fallback: if playback fails, still update ranking and proceed.
+                submitRankingOnce();
+                if (eventsListener != null) {
+                    eventsListener.onGameOver();
+                    return;
+                }
+                showGameOverDialogAndHandleChoice();
             }
-            @Override public void onResume() {
-                if (gameTimer != null) gameTimer.start();
-                if (spawnTimer != null) spawnTimer.start();
-            }
-        });
-
-        setFocusable(true);
-        addKeyListener(this);
-        setBackground(Color.BLACK);
-
-        // Absolute layout to freely position overlay button
-        setLayout(null);
-        initSaveButton();
-    }
-
-
-    private void initializeLevel() {
-        ball = new Ball(GameConfig.SCREEN_WIDTH / 2, GameConfig.SCREEN_HEIGHT / 2);
-        paddle = new Paddle(
-            GameConfig.SCREEN_WIDTH / 2 - GameConfig.PADDLE_WIDTH / 2,
-            GameConfig.SCREEN_HEIGHT - 100
-        );
-
-        // Tạo block
-        blocks = LevelBuilder.createLevel(levelManager.getCurrentLevel());
-        // baseline destroyed count for this level
-        lastDestroyedCountThisLevel = countDestroyedDestructable();
-    }
-
-    private void initSaveButton() {
-        saveButton = new StyledButton("Save");
-        saveButton.setFont(saveButton.getFont().deriveFont(Font.BOLD, 16f));
-        saveButton.setToolTipText("Lưu game");
-        // Size and margins
-        final int btnW = 90, btnH = 34;
-        final int rightMargin = 100;    // giảm lề phải để sát mép hơn
-        final int topMargin = 10;
-        // Initial placement: prefer actual width if available, fallback to config
-        int baseW = getWidth() > 0 ? getWidth() : GameConfig.SCREEN_WIDTH;
-        int x = Math.max(0, baseW - btnW - rightMargin);
-        saveButton.setBounds(x, topMargin, btnW, btnH);
-
-        // Reposition on resize to keep at top-right
-        this.addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentResized(ComponentEvent e) {
-                int newX = getWidth() - btnW - rightMargin;
-                saveButton.setLocation(Math.max(0, newX), topMargin);
-            }
-        });
-
-        // Ensure correct position after first show
-        SwingUtilities.invokeLater(() -> {
-            int newX = getWidth() - btnW - rightMargin;
-            saveButton.setLocation(Math.max(0, newX), topMargin);
-        });
-
-        // Click handler: prompt for save name, save, then return to menu (cannot continue playing)
-        saveButton.addActionListener(ev -> {
-            if (ev != null) { /* satisfy linter */ }
             saveButton.setEnabled(false);
+
+        // Centralized dialog used when there's no external event listener to handle game-over
+        private void showGameOverDialogAndHandleChoice() {
+            int choice = JOptionPane.showConfirmDialog(
+                this,
+                "Game Over! You reached Level " + levelManager.getCurrentLevel() +
+                "\n\nWould you like to play again?",
+                "Game Over",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+            );
+
+            if (choice == JOptionPane.YES_OPTION) {
+                restartGame();
+            } else {
+                System.exit(0);
+            }
+        }
             try {
                 String name = JOptionPane.showInputDialog(
                     this,
@@ -224,10 +194,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         g.setFont(new Font("Arial", Font.BOLD, 16));
         g.drawString("Level: " + levelManager.getCurrentLevel(), 10, 25);
 
-        // Only count destructable blocks (exclude undestructable blocks)
-        long remainingBlocks = blocks.stream()
-            .filter(block -> block.getHitsRemaining() != GameConfig.UNDESTRUCTABLE_BLOCK && !block.isDestroyed())
-            .count();
+        long remainingBlocks = blocks.stream().filter(block -> !block.isDestroyed()).count();
         g.drawString("Blocks: " + remainingBlocks, GameConfig.SCREEN_WIDTH - 100, 25);
 
         ball.draw(g);
@@ -291,10 +258,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     }
 
     private void checkGameState() {
-        // Only count destructable blocks for win condition (exclude undestructable blocks)
-        boolean allBlocksDestroyed = blocks.stream()
-            .filter(block -> block.getHitsRemaining() != GameConfig.UNDESTRUCTABLE_BLOCK)
-            .allMatch(Block::isDestroyed);
+        boolean allBlocksDestroyed = blocks.stream().allMatch(Block::isDestroyed);
         if (allBlocksDestroyed) {
             handleLevelComplete();
         }
@@ -319,6 +283,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private void handleGameOver() {
         gameTimer.stop();
 
+<<<<<<< HEAD
         // Play the lose sound and wait until it finishes before proceeding.
         // This keeps the player on the game screen until the sound completes.
         try {
@@ -333,17 +298,25 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
                         eventsListener.onGameOver();
                         return;
                     }
+=======
+        // If event listener is set (menu integration), notify it
+        if (eventsListener != null) {
+            eventsListener.onGameOver();
+            return;
+        }
+>>>>>>> main
 
-                    // Otherwise, show default dialog
-                    int choice = JOptionPane.showConfirmDialog(
-                        this,
-                        "Game Over! You reached Level " + levelManager.getCurrentLevel() +
-                        "\n\nWould you like to play again?",
-                        "Game Over",
-                        JOptionPane.YES_NO_OPTION,
-                        JOptionPane.QUESTION_MESSAGE
-                    );
+        // Otherwise, show default dialog
+        int choice = JOptionPane.showConfirmDialog(
+            this,
+            "Game Over! You reached Level " + levelManager.getCurrentLevel() +
+            "\n\nWould you like to play again?",
+            "Game Over",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.QUESTION_MESSAGE
+        );
 
+<<<<<<< HEAD
                     if (choice == JOptionPane.YES_OPTION) {
                         restartGame();
                     } else {
@@ -373,6 +346,12 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             } else {
                 System.exit(0);
             }
+=======
+        if (choice == JOptionPane.YES_OPTION) {
+            restartGame();
+        } else {
+            System.exit(0);
+>>>>>>> main
         }
     }
 
@@ -443,69 +422,18 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     }
 
     private void showLevelMap() {
-        // Yêu cầu người dùng nhập số level
-        String input = JOptionPane.showInputDialog(
-            this,
-            "Nhập số level (1-" + GameConfig.MAX_LEVELS + "):",
-            "Xem Map Level",
-            JOptionPane.QUESTION_MESSAGE
-        );
-
-        if (input == null) return; // User cancelled
-
-        try {
+        // Delegate to LevelBuilder which now provides a reusable preview dialog
+        String input = JOptionPane.showInputDialog(this, "Nhập số level (1-" + GameConfig.MAX_LEVELS + "):", "Xem Map Level", JOptionPane.QUESTION_MESSAGE);
+        if (input == null) return;
+            try {
             int levelNum = Integer.parseInt(input.trim());
             if (levelNum < 1 || levelNum > GameConfig.MAX_LEVELS) {
-                JOptionPane.showMessageDialog(
-                    this,
-                    "Level phải từ 1 đến " + GameConfig.MAX_LEVELS,
-                    "Lỗi",
-                    JOptionPane.ERROR_MESSAGE
-                );
+                JOptionPane.showMessageDialog(this, "Level phải từ 1 đến " + GameConfig.MAX_LEVELS, "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-
-            // Tạo blocks cho level được chọn
-            List<Block> previewBlocks = LevelBuilder.createLevel(levelNum);
-
-            // Tạo dialog để hiển thị map
-            JDialog mapDialog = new JDialog((JFrame) SwingUtilities.getWindowAncestor(this), "Map Level " + levelNum, true);
-            
-            JPanel mapPanel = new JPanel() {
-                @Override
-                protected void paintComponent(Graphics g) {
-                    super.paintComponent(g);
-                    g.setColor(Color.BLACK);
-                    g.fillRect(0, 0, getWidth(), getHeight());
-                    
-                    // Vẽ các block
-                    for (Block block : previewBlocks) {
-                        block.draw(g);
-                    }
-                    
-                    // Vẽ thông tin level
-                    g.setColor(Color.WHITE);
-                    g.setFont(new Font("Arial", Font.BOLD, 16));
-                    g.drawString("Level " + levelNum + " Preview", 10, 25);
-                    g.drawString("Total Blocks: " + previewBlocks.size(), 10, 45);
-                }
-            };
-            
-            mapPanel.setPreferredSize(new Dimension(GameConfig.SCREEN_WIDTH, GameConfig.SCREEN_HEIGHT));
-            mapPanel.setBackground(Color.BLACK);
-            
-            mapDialog.add(mapPanel);
-            mapDialog.pack();
-            mapDialog.setLocationRelativeTo(this);
-            mapDialog.setVisible(true);
-
+            levels.LevelPreview.show(this, levelNum);
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(
-                this,
-                "Vui lòng nhập số hợp lệ!",
-                "Lỗi",
-                JOptionPane.ERROR_MESSAGE
-            );
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập số hợp lệ!", "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -535,19 +463,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
                     System.exit(0);
                 }
             }
-            case KeyEvent.VK_R -> {
-                // Skip to next level, hoặc về level đầu nếu đang ở cuối
-                if (!levelManager.isFinalLevel()) {
-                    levelManager.advanceLevel();
-                    initializeLevel();
-                    gameTimer.start();
-                } else {
-                    // Nếu đang ở level cuối, chuyển về level đầu tiên
-                    levelManager.reset();
-                    initializeLevel();
-                    gameTimer.start();
-                }
-            }
+
             case KeyEvent.VK_M -> {
                 // Hiển thị map của level khi nhập số level
                 showLevelMap();
