@@ -3,6 +3,8 @@ import game.MultiplayerPanel;
 import ui.MenuPanel;
 import ui.InstructionsPanel;
 import ui.SaveListPanel;
+import ui.RankingPanel;
+import function.SaveManager.Metadata;
 import utils.GameConfig;
 import utils.MusicPlayer;
 import function.SaveManager;
@@ -18,6 +20,7 @@ public class ArkanoidGame {
     private static final String CARD_MENU = "menu";
     private static final String CARD_GAME = "game";
     private static final String CARD_INSTRUCTIONS = "instructions";
+    private static final String CARD_RANKING = "ranking";
 
     public static void main(String[] args) {
         javax.swing.SwingUtilities.invokeLater(() -> {
@@ -36,21 +39,38 @@ public class ArkanoidGame {
             menu.setSideMargins(500, 12);
             menu.moveUp(230);
             cards.add(menu, CARD_MENU);
+            // refresh inline ranking on menu at startup
 
             // Tạo panel hướng dẫn (ban đầu tạo sẵn để điều hướng)
             InstructionsPanel instructionsPanel = new InstructionsPanel();
             cards.add(instructionsPanel, CARD_INSTRUCTIONS);
 
+            // Ranking panel
+            RankingPanel rankingPanel = new RankingPanel();
+            cards.add(rankingPanel, CARD_RANKING);
+
             // Lắng nghe nút Chơi: mở overlay chọn chế độ (split screen) từ MenuPanel
-            menu.getPlayButton().addActionListener(e -> menu.showModeSelection());
+            menu.getPlayButton().addActionListener(e -> { if (e != null) { /* satisfy linter */ } menu.showModeSelection(); });
 
             // Xử lý lựa chọn chế độ từ overlay
             menu.setModeSelectionListener(mode -> {
                 if ("solo".equals(mode)) {
                     // Solo: dùng GamePanel trong cùng Frame (card)
                     MusicPlayer.stop();
+                    // Prompt player name
+                    String playerName = null;
+                    while (playerName == null || playerName.trim().isEmpty()) {
+                        playerName = JOptionPane.showInputDialog(frame, "Nhập tên người chơi:", "1 Player", JOptionPane.PLAIN_MESSAGE);
+                        if (playerName == null) {
+                            // user cancelled -> back to menu, resume music
+                            try { MusicPlayer.playLoop("music/screen.wav"); } catch (Throwable t) {}
+                            return;
+                        }
+                        playerName = playerName.trim();
+                    }
 
                     GamePanel gamePanel = new GamePanel();
+                    gamePanel.setPlayerRunInfo(playerName, 0, 0, 0);
                     // Đăng ký listener để khi Game Over thì quay lại menu
                     gamePanel.setEventsListener(new GamePanel.GameEvents() {
                         @Override
@@ -187,6 +207,13 @@ public class ArkanoidGame {
                                 try {
                                     GameState state = SaveManager.load(fileToLoad);
                                     gamePanel.applyGameState(state);
+                                    // Apply metadata (if present) to continue the same run
+                                    try {
+                                        Metadata meta = SaveManager.readMetadata(fileToLoad);
+                                        if (meta != null) {
+                                            gamePanel.setPlayerRunInfo(meta.player, meta.elapsedMs, meta.levelsCompleted, meta.blocksDestroyed);
+                                        }
+                                    } catch (Exception ignore) {}
                                 } catch (Exception ex) {
                                     JOptionPane.showMessageDialog(frame, "Load save thất bại: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
                                 }
@@ -219,6 +246,22 @@ public class ArkanoidGame {
                 public void actionPerformed(ActionEvent e) {
                     cardLayout.show(cards, CARD_INSTRUCTIONS);
                     instructionsPanel.requestFocusInWindow();
+                }
+            });
+
+            // Nút Ranking
+            menu.getRankingButton().addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    rankingPanel.refreshList();
+                    cardLayout.show(cards, CARD_RANKING);
+                }
+            });
+            rankingPanel.getBackButton().addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    cardLayout.show(cards, CARD_MENU);
+                    menu.requestFocusInWindow();
                 }
             });
 
