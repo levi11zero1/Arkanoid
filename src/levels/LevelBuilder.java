@@ -4,6 +4,7 @@ import entities.Block;
 import java.util.ArrayList;
 import java.util.List;
 import utils.GameConfig;
+// UI moved to LevelPreview; LevelBuilder remains UI-free
 
 /**
  * LevelBuilder – Unified level construction from binary (0/1) maps.
@@ -178,4 +179,5 @@ public class LevelBuilder {
         }
         return dst;
     }
+
 }

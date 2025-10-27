@@ -130,10 +130,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         g.setFont(new Font("Arial", Font.BOLD, 16));
         g.drawString("Level: " + levelManager.getCurrentLevel(), 10, 25);
 
-        // Only count destructable blocks (exclude undestructable blocks)
-        long remainingBlocks = blocks.stream()
-            .filter(block -> block.getHitsRemaining() != GameConfig.UNDESTRUCTABLE_BLOCK && !block.isDestroyed())
-            .count();
+        long remainingBlocks = blocks.stream().filter(block -> !block.isDestroyed()).count();
         g.drawString("Blocks: " + remainingBlocks, GameConfig.SCREEN_WIDTH - 100, 25);
 
         ball.draw(g);
@@ -189,10 +186,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     }
 
     private void checkGameState() {
-        // Only count destructable blocks for win condition (exclude undestructable blocks)
-        boolean allBlocksDestroyed = blocks.stream()
-            .filter(block -> block.getHitsRemaining() != GameConfig.UNDESTRUCTABLE_BLOCK)
-            .allMatch(Block::isDestroyed);
+        boolean allBlocksDestroyed = blocks.stream().allMatch(Block::isDestroyed);
         if (allBlocksDestroyed) {
             handleLevelComplete();
         }
@@ -215,54 +209,26 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private void handleGameOver() {
         gameTimer.stop();
 
-        // Play the lose sound and wait until it finishes before proceeding.
-        // This keeps the player on the game screen until the sound completes.
-        try {
-            utils.MusicPlayer.playOnce("music/lose.wav", () -> {
-                // Ensure UI changes run on the Swing EDT
-                SwingUtilities.invokeLater(() -> {
-                    // If event listener is set (menu integration), notify it
-                    if (eventsListener != null) {
-                        eventsListener.onGameOver();
-                        return;
-                    }
+        // If event listener is set (menu integration), notify it
+        if (eventsListener != null) {
+            eventsListener.onGameOver();
+            return;
+        }
 
-                    // Otherwise, show default dialog
-                    int choice = JOptionPane.showConfirmDialog(
-                        this,
-                        "Game Over! You reached Level " + levelManager.getCurrentLevel() +
-                        "\n\nWould you like to play again?",
-                        "Game Over",
-                        JOptionPane.YES_NO_OPTION,
-                        JOptionPane.QUESTION_MESSAGE
-                    );
+        // Otherwise, show default dialog
+        int choice = JOptionPane.showConfirmDialog(
+            this,
+            "Game Over! You reached Level " + levelManager.getCurrentLevel() +
+            "\n\nWould you like to play again?",
+            "Game Over",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.QUESTION_MESSAGE
+        );
 
-                    if (choice == JOptionPane.YES_OPTION) {
-                        restartGame();
-                    } else {
-                        System.exit(0);
-                    }
-                });
-            });
-        } catch (Throwable t) {
-            // If anything goes wrong with sound playback, fall back to immediate behavior
-            if (eventsListener != null) {
-                eventsListener.onGameOver();
-                return;
-            }
-            int choice = JOptionPane.showConfirmDialog(
-                this,
-                "Game Over! You reached Level " + levelManager.getCurrentLevel() +
-                "\n\nWould you like to play again?",
-                "Game Over",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.QUESTION_MESSAGE
-            );
-            if (choice == JOptionPane.YES_OPTION) {
-                restartGame();
-            } else {
-                System.exit(0);
-            }
+        if (choice == JOptionPane.YES_OPTION) {
+            restartGame();
+        } else {
+            System.exit(0);
         }
     }
 
@@ -309,69 +275,18 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     }
 
     private void showLevelMap() {
-        // Yêu cầu người dùng nhập số level
-        String input = JOptionPane.showInputDialog(
-            this,
-            "Nhập số level (1-" + GameConfig.MAX_LEVELS + "):",
-            "Xem Map Level",
-            JOptionPane.QUESTION_MESSAGE
-        );
-
-        if (input == null) return; // User cancelled
-
-        try {
+        // Delegate to LevelBuilder which now provides a reusable preview dialog
+        String input = JOptionPane.showInputDialog(this, "Nhập số level (1-" + GameConfig.MAX_LEVELS + "):", "Xem Map Level", JOptionPane.QUESTION_MESSAGE);
+        if (input == null) return;
+            try {
             int levelNum = Integer.parseInt(input.trim());
             if (levelNum < 1 || levelNum > GameConfig.MAX_LEVELS) {
-                JOptionPane.showMessageDialog(
-                    this,
-                    "Level phải từ 1 đến " + GameConfig.MAX_LEVELS,
-                    "Lỗi",
-                    JOptionPane.ERROR_MESSAGE
-                );
+                JOptionPane.showMessageDialog(this, "Level phải từ 1 đến " + GameConfig.MAX_LEVELS, "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-
-            // Tạo blocks cho level được chọn
-            List<Block> previewBlocks = LevelBuilder.createLevel(levelNum);
-
-            // Tạo dialog để hiển thị map
-            JDialog mapDialog = new JDialog((JFrame) SwingUtilities.getWindowAncestor(this), "Map Level " + levelNum, true);
-            
-            JPanel mapPanel = new JPanel() {
-                @Override
-                protected void paintComponent(Graphics g) {
-                    super.paintComponent(g);
-                    g.setColor(Color.BLACK);
-                    g.fillRect(0, 0, getWidth(), getHeight());
-                    
-                    // Vẽ các block
-                    for (Block block : previewBlocks) {
-                        block.draw(g);
-                    }
-                    
-                    // Vẽ thông tin level
-                    g.setColor(Color.WHITE);
-                    g.setFont(new Font("Arial", Font.BOLD, 16));
-                    g.drawString("Level " + levelNum + " Preview", 10, 25);
-                    g.drawString("Total Blocks: " + previewBlocks.size(), 10, 45);
-                }
-            };
-            
-            mapPanel.setPreferredSize(new Dimension(GameConfig.SCREEN_WIDTH, GameConfig.SCREEN_HEIGHT));
-            mapPanel.setBackground(Color.BLACK);
-            
-            mapDialog.add(mapPanel);
-            mapDialog.pack();
-            mapDialog.setLocationRelativeTo(this);
-            mapDialog.setVisible(true);
-
+            levels.LevelPreview.show(this, levelNum);
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(
-                this,
-                "Vui lòng nhập số hợp lệ!",
-                "Lỗi",
-                JOptionPane.ERROR_MESSAGE
-            );
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập số hợp lệ!", "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -409,19 +324,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
                     System.exit(0);
                 }
             }
-            case KeyEvent.VK_R -> {
-                // Skip to next level, hoặc về level đầu nếu đang ở cuối
-                if (!levelManager.isFinalLevel()) {
-                    levelManager.advanceLevel();
-                    initializeLevel();
-                    gameTimer.start();
-                } else {
-                    // Nếu đang ở level cuối, chuyển về level đầu tiên
-                    levelManager.reset();
-                    initializeLevel();
-                    gameTimer.start();
-                }
-            }
+
             case KeyEvent.VK_M -> {
                 // Hiển thị map của level khi nhập số level
                 showLevelMap();
