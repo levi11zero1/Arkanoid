@@ -56,50 +56,80 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
         gameTimer = new Timer(GameConfig.TIMER_DELAY, this);
         gameTimer.start();
-            gameTimer.stop();
+        lastNanos = System.nanoTime();
 
-            // Try to play the lose sound and wait until it finishes before proceeding.
-            // After the sound (or on fallback), update ranking and either notify the
-            // registered `eventsListener` (menu integration) or show the default dialog.
-            try {
-                utils.MusicPlayer.playOnce("music/lose.wav", () -> {
-                    SwingUtilities.invokeLater(() -> {
-                        submitRankingOnce();
-                        if (eventsListener != null) {
-                            eventsListener.onGameOver();
-                            return;
-                        }
-                        showGameOverDialogAndHandleChoice();
-                    });
-                });
-            } catch (Throwable t) {
-                // Fallback: if playback fails, still update ranking and proceed.
-                submitRankingOnce();
-                if (eventsListener != null) {
-                    eventsListener.onGameOver();
-                    return;
-                }
-                showGameOverDialogAndHandleChoice();
+        // Trong constructor GamePanel()
+        spawnTimer = new javax.swing.Timer(14000, e -> { if (e != null) { /* satisfy linter */ } spawnRandomPowerUp(); }); // mỗi 30s
+        spawnTimer.setRepeats(true);
+        spawnTimer.start();
+
+        // Đăng ký Pause: dừng timer khi pause, chạy lại khi resume
+        Pause.getInstance().setListener(new Pause.PauseListener() {
+            @Override public void onPause() {
+                if (gameTimer != null) gameTimer.stop();
+                if (spawnTimer != null) spawnTimer.stop();
             }
+            @Override public void onResume() {
+                if (gameTimer != null) gameTimer.start();
+                if (spawnTimer != null) spawnTimer.start();
+            }
+        });
+
+        setFocusable(true);
+        addKeyListener(this);
+        setBackground(Color.BLACK);
+
+        // Absolute layout to freely position overlay button
+        setLayout(null);
+        initSaveButton();
+    }
+
+
+    private void initializeLevel() {
+        ball = new Ball(GameConfig.SCREEN_WIDTH / 2, GameConfig.SCREEN_HEIGHT / 2);
+        paddle = new Paddle(
+            GameConfig.SCREEN_WIDTH / 2 - GameConfig.PADDLE_WIDTH / 2,
+            GameConfig.SCREEN_HEIGHT - 100
+        );
+
+        // Tạo block
+        blocks = LevelBuilder.createLevel(levelManager.getCurrentLevel());
+        // baseline destroyed count for this level
+        lastDestroyedCountThisLevel = countDestroyedDestructable();
+    }
+
+    private void initSaveButton() {
+        saveButton = new StyledButton("Save");
+        saveButton.setFont(saveButton.getFont().deriveFont(Font.BOLD, 16f));
+        saveButton.setToolTipText("Lưu game");
+        // Size and margins
+        final int btnW = 90, btnH = 34;
+        final int rightMargin = 100;    // giảm lề phải để sát mép hơn
+        final int topMargin = 10;
+        // Initial placement: prefer actual width if available, fallback to config
+        int baseW = getWidth() > 0 ? getWidth() : GameConfig.SCREEN_WIDTH;
+        int x = Math.max(0, baseW - btnW - rightMargin);
+        saveButton.setBounds(x, topMargin, btnW, btnH);
+
+        // Reposition on resize to keep at top-right
+        this.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                int newX = getWidth() - btnW - rightMargin;
+                saveButton.setLocation(Math.max(0, newX), topMargin);
+            }
+        });
+
+        // Ensure correct position after first show
+        SwingUtilities.invokeLater(() -> {
+            int newX = getWidth() - btnW - rightMargin;
+            saveButton.setLocation(Math.max(0, newX), topMargin);
+        });
+
+        // Click handler: prompt for save name, save, then return to menu (cannot continue playing)
+        saveButton.addActionListener(ev -> {
+            if (ev != null) { /* satisfy linter */ }
             saveButton.setEnabled(false);
-
-        // Centralized dialog used when there's no external event listener to handle game-over
-        private void showGameOverDialogAndHandleChoice() {
-            int choice = JOptionPane.showConfirmDialog(
-                this,
-                "Game Over! You reached Level " + levelManager.getCurrentLevel() +
-                "\n\nWould you like to play again?",
-                "Game Over",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.QUESTION_MESSAGE
-            );
-
-            if (choice == JOptionPane.YES_OPTION) {
-                restartGame();
-            } else {
-                System.exit(0);
-            }
-        }
             try {
                 String name = JOptionPane.showInputDialog(
                     this,
@@ -283,82 +313,53 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private void handleGameOver() {
         gameTimer.stop();
 
-<<<<<<< HEAD
-        // Play the lose sound and wait until it finishes before proceeding.
-        // This keeps the player on the game screen until the sound completes.
+        // Try to play the lose sound and wait until it finishes before proceeding.
+        // After the sound (or on fallback), update ranking and either notify the
+        // registered `eventsListener` (menu integration) or show the default dialog.
         try {
             utils.MusicPlayer.playOnce("music/lose.wav", () -> {
-                // Ensure UI changes run on the Swing EDT
                 SwingUtilities.invokeLater(() -> {
-                    // Cập nhật Ranking (thua game)
                     submitRankingOnce();
-
-                    // If event listener is set (menu integration), notify it
                     if (eventsListener != null) {
                         eventsListener.onGameOver();
                         return;
                     }
-=======
-        // If event listener is set (menu integration), notify it
-        if (eventsListener != null) {
-            eventsListener.onGameOver();
-            return;
+                    showGameOverDialogAndHandleChoice();
+                });
+            });
+        } catch (Throwable t) {
+            // Fallback: if playback fails, still update ranking and proceed.
+            submitRankingOnce();
+            if (eventsListener != null) {
+                eventsListener.onGameOver();
+                return;
+            }
+            showGameOverDialogAndHandleChoice();
         }
->>>>>>> main
+    }
 
-        // Otherwise, show default dialog
+    // Centralized dialog used when there's no external event listener to handle game-over
+    private void showGameOverDialogAndHandleChoice() {
         int choice = JOptionPane.showConfirmDialog(
             this,
             "Game Over! You reached Level " + levelManager.getCurrentLevel() +
-            "\n\nWould you like to play again?",
+            "\\n\\nWould you like to play again?",
             "Game Over",
             JOptionPane.YES_NO_OPTION,
             JOptionPane.QUESTION_MESSAGE
         );
 
-<<<<<<< HEAD
-                    if (choice == JOptionPane.YES_OPTION) {
-                        restartGame();
-                    } else {
-                        System.exit(0);
-                    }
-                });
-            });
-        } catch (Throwable t) {
-            // If anything goes wrong with sound playback, fall back to immediate behavior
-            // Cập nhật Ranking (thua game - fallback path)
-            submitRankingOnce();
-
-            if (eventsListener != null) {
-                eventsListener.onGameOver();
-                return;
-            }
-            int choice = JOptionPane.showConfirmDialog(
-                this,
-                "Game Over! You reached Level " + levelManager.getCurrentLevel() +
-                "\n\nWould you like to play again?",
-                "Game Over",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.QUESTION_MESSAGE
-            );
-            if (choice == JOptionPane.YES_OPTION) {
-                restartGame();
-            } else {
-                System.exit(0);
-            }
-=======
         if (choice == JOptionPane.YES_OPTION) {
             restartGame();
         } else {
             System.exit(0);
->>>>>>> main
         }
     }
 
     private void showLevelComplete() {
         int choice = JOptionPane.showConfirmDialog(
             this,
-            "Level " + levelManager.getCurrentLevel() + " Complete!\n\n" +
+            "Level " + levelManager.getCurrentLevel() + " Complete!\\n\\n" +
             "Continue to Level " + (levelManager.getCurrentLevel() + 1) + "?",
             "Level Complete",
             JOptionPane.YES_NO_OPTION,
@@ -381,7 +382,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         int choice = JOptionPane.showConfirmDialog(
             this,
             "Congratulations! You completed all " + levelManager.getMaxLevels() +
-            " levels!\n\nWould you like to play again?",
+            " levels!\\n\\nWould you like to play again?",
             "Game Complete",
             JOptionPane.YES_NO_OPTION,
             JOptionPane.QUESTION_MESSAGE
