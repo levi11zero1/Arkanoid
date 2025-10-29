@@ -1,6 +1,7 @@
 import game.GamePanel;
 import game.MultiplayerPanel;
 import ui.MenuPanel;
+import ui.StyledButton;
 import ui.InstructionsPanel;
 import ui.SaveListPanel;
 import ui.RankingPanel;
@@ -57,16 +58,12 @@ public class ArkanoidGame {
                 if ("solo".equals(mode)) {
                     // Solo: dùng GamePanel trong cùng Frame (card)
                     MusicPlayer.stop();
-                    // Prompt player name
-                    String playerName = null;
-                    while (playerName == null || playerName.trim().isEmpty()) {
-                        playerName = JOptionPane.showInputDialog(frame, "Nhập tên người chơi:", "1 Player", JOptionPane.PLAIN_MESSAGE);
-                        if (playerName == null) {
-                            // user cancelled -> back to menu, resume music
-                            try { MusicPlayer.playLoop("music/screen.wav"); } catch (Throwable t) {}
-                            return;
-                        }
-                        playerName = playerName.trim();
+                    // Prompt player name using a custom styled dialog
+                    String playerName = showPlayerNameDialog(frame);
+                    if (playerName == null) {
+                        // user cancelled -> back to menu, resume music
+                        try { MusicPlayer.playLoop("music/screen.wav"); } catch (Throwable t) {}
+                        return;
                     }
 
                     GamePanel gamePanel = new GamePanel();
@@ -294,5 +291,70 @@ public class ArkanoidGame {
             // Hiển thị màn menu đầu tiên
             cardLayout.show(cards, CARD_MENU);
         });
+    }
+
+    // Custom modal dialog for entering player name with nicer styling
+    private static String showPlayerNameDialog(JFrame parent) {
+        final String[] result = { null };
+        JDialog dialog = new JDialog(parent, "1 Player - Nhập tên", true);
+
+        JPanel content = new JPanel(new BorderLayout(10,10));
+        content.setBorder(new javax.swing.border.EmptyBorder(12,12,12,12));
+        content.setBackground(new Color(18, 18, 20));
+
+        JLabel lbl = new JLabel("Nhập tên người chơi:");
+        lbl.setForeground(Color.WHITE);
+        lbl.setFont(new Font("Arial", Font.BOLD, 14));
+
+        JTextField tf = new JTextField();
+        tf.setColumns(18);
+        tf.setFont(new Font("Arial", Font.PLAIN, 10));
+
+        JPanel center = new JPanel(new BorderLayout(6,6));
+        center.setOpaque(false);
+        center.add(lbl, BorderLayout.NORTH);
+        center.add(tf, BorderLayout.CENTER);
+
+        StyledButton ok = new StyledButton("Chơi");
+        StyledButton cancel = new StyledButton("Hủy");
+        ok.setPreferredSize(new Dimension(100, 36));
+        cancel.setPreferredSize(new Dimension(100, 36));
+        // Reduce button label font size to better fit the dialog
+        ok.setFont(ok.getFont().deriveFont(Font.PLAIN, 14f));
+        cancel.setFont(cancel.getFont().deriveFont(Font.PLAIN, 14f));
+
+        JPanel btns = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        btns.setOpaque(false);
+        btns.add(cancel);
+        btns.add(ok);
+
+        content.add(center, BorderLayout.CENTER);
+        content.add(btns, BorderLayout.SOUTH);
+
+        // Actions
+        ok.addActionListener(e -> {
+            String text = tf.getText();
+            if (text != null) text = text.trim();
+            if (text == null || text.isEmpty()) {
+                tf.requestFocusInWindow();
+                return;
+            }
+            result[0] = text;
+            dialog.dispose();
+        });
+        cancel.addActionListener(e -> {
+            result[0] = null;
+            dialog.dispose();
+        });
+
+        tf.addActionListener(e -> ok.doClick()); // Enter triggers OK
+
+        dialog.setContentPane(content);
+        dialog.pack();
+        dialog.setResizable(false);
+        dialog.setLocationRelativeTo(parent);
+        tf.requestFocusInWindow();
+        dialog.setVisible(true);
+        return result[0];
     }
 }
