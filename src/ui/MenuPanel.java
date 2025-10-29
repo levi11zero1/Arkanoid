@@ -108,6 +108,35 @@ public class MenuPanel extends JPanel {
     private JPanel bottomModePanel;
     private ModeSelectionListener modeListener;
 
+    // Small helper panel that draws a background image and a translucent hover overlay
+    private class ModePanel extends JPanel {
+        private final Image bg;
+        private boolean hovered = false;
+        ModePanel(Image bg) {
+            super(new GridBagLayout());
+            this.bg = bg;
+            setOpaque(false);
+        }
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            if (bg != null) {
+                g2.drawImage(bg, 0, 0, getWidth(), getHeight(), this);
+            } else {
+                g2.setColor(getBackground());
+                g2.fillRect(0, 0, getWidth(), getHeight());
+            }
+            if (hovered) {
+                Color hoverTint = new Color(255, 255, 255, (int) (0.12f * 255));
+                g2.setColor(hoverTint);
+                g2.fillRect(0, 0, getWidth(), getHeight());
+            }
+            g2.dispose();
+            super.paintComponent(g);
+        }
+        void setHovered(boolean h) { if (this.hovered != h) { this.hovered = h; repaint(); } }
+    }
+
     public interface ModeSelectionListener {
         void onModeSelected(String mode); // "solo" or "multiplayer"
     }
@@ -117,9 +146,9 @@ public class MenuPanel extends JPanel {
     modeOverlay.setOpaque(true);
     modeOverlay.setBackground(Color.BLACK);
 
-    // Set base backgrounds for each half as requested
-    topModePanel = createModeHalf("1 Player", "", new Color(0x53, 0x53, 0x53)); // #535353
-    bottomModePanel = createModeHalf("2 Player", "", new Color(0x76, 0x76, 0x76)); // #767676
+    // Set base backgrounds for each half as requested (use image files)
+    topModePanel = createModeHalf("1 Player", "", "images/bg_1player.png");
+    bottomModePanel = createModeHalf("2 Player", "", "images/bg_2player.png");
 
         modeOverlay.add(topModePanel);
         modeOverlay.add(bottomModePanel);
@@ -132,10 +161,22 @@ public class MenuPanel extends JPanel {
         add(modeOverlay, gbc);
     }
 
-    private JPanel createModeHalf(String titleText, String subtitle, Color overlay) {
-        JPanel p = new JPanel(new GridBagLayout());
-    p.setOpaque(true);
-    p.setBackground(overlay);
+    private JPanel createModeHalf(String titleText, String subtitle, String bgImagePath) {
+            // Load background image if available (make final for inner usage)
+            Image tmpImg = null;
+            if (bgImagePath != null) {
+                File f = new File(bgImagePath);
+                if (f.exists() && f.isFile()) tmpImg = new ImageIcon(bgImagePath).getImage();
+                else {
+                    try {
+                        java.net.URL url = getClass().getResource("/" + bgImagePath);
+                        if (url != null) tmpImg = new ImageIcon(url).getImage();
+                    } catch (Throwable ignored) {}
+                }
+            }
+            final Image img = tmpImg;
+
+            ModePanel p = new ModePanel(img);
 
         JLabel title = new JLabel(titleText);
         title.setForeground(Color.WHITE);
@@ -155,9 +196,6 @@ public class MenuPanel extends JPanel {
         p.add(box);
 
         p.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-    // Hover effect: compute a hover tint from the base overlay color so it matches each half
-    Color origBg = p.getBackground();
-    Color hoverBg = blendColor(origBg, Color.WHITE, 0.12f);
         p.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override public void mouseClicked(java.awt.event.MouseEvent e) {
                 if (modeListener != null) {
@@ -168,19 +206,17 @@ public class MenuPanel extends JPanel {
             }
 
             @Override public void mouseEntered(java.awt.event.MouseEvent e) {
-                p.setBackground(hoverBg);
+                p.setHovered(true);
                 title.setForeground(new Color(255, 235, 120));
                 title.setFont(titleHoverFont);
                 sub.setForeground(Color.WHITE);
-                p.repaint();
             }
 
             @Override public void mouseExited(java.awt.event.MouseEvent e) {
-                p.setBackground(origBg);
+                p.setHovered(false);
                 title.setForeground(Color.WHITE);
                 title.setFont(titleFont);
                 sub.setForeground(Color.LIGHT_GRAY);
-                p.repaint();
             }
         });
 
@@ -248,17 +284,7 @@ public class MenuPanel extends JPanel {
         g2.dispose();
     }
 
-    // Small color utility: blend two colors by t (0..1)
-    private static Color blendColor(Color a, Color b, float t) {
-        t = Math.max(0f, Math.min(1f, t));
-        int ar = a.getRed(), ag = a.getGreen(), ab = a.getBlue(), aa = a.getAlpha();
-        int br = b.getRed(), bg = b.getGreen(), bb = b.getBlue(), ba = b.getAlpha();
-        int r = (int) (ar + (br - ar) * t);
-        int g = (int) (ag + (bg - ag) * t);
-        int bl = (int) (ab + (bb - ab) * t);
-        int al = (int) (aa + (ba - aa) * t);
-        return new Color(r, g, bl, al);
-    }
+    
 
     public JButton getPlayButton() { return playButton; }
     public JButton getContinueButton() { return continueButton; }
