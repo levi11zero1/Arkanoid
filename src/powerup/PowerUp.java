@@ -8,7 +8,8 @@ public class PowerUp {
         PADDLE_SHRINK,   // Giảm kích thước paddle
         BALL_EXPAND,     // Tăng kích thước bóng
         BALL_SHRINK,     // Giảm kích thước bóng
-        BALL_SLOW// Giảm tốc độ bóng
+        BALL_SLOW,       // Giảm tốc độ bóng
+        PADDLE_SPEED_UP  // ⚡ Tăng tốc độ thanh paddle
     }
 
     private Type type;
@@ -28,6 +29,7 @@ public class PowerUp {
             case BALL_EXPAND: color = Color.CYAN; break;
             case BALL_SHRINK: color = Color.YELLOW; break;
             case BALL_SLOW:  color = new Color(200, 255, 200); break;
+            case PADDLE_SPEED_UP: color = new Color(255, 200, 100); break;
         }
     }
 

@@ -491,9 +491,11 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
         activePowerUps.add(p);
     }
+
     private void applyPowerUpEffect(PowerUp p) {
         PowerUp.Type type = p.getType();
-        if (type == PowerUp.Type.PADDLE_EXPAND || type == PowerUp.Type.PADDLE_SHRINK) {
+
+        if (type == PowerUp.Type.PADDLE_EXPAND || type == PowerUp.Type.PADDLE_SHRINK || type == PowerUp.Type.PADDLE_SPEED_UP) {
             paddle.applyPowerUp(type);
         } else if (type == PowerUp.Type.BALL_EXPAND || type == PowerUp.Type.BALL_SHRINK || type == PowerUp.Type.BALL_SLOW) {
             ball.applyPowerUp(type);

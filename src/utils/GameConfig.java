@@ -15,7 +15,7 @@ public class GameConfig {
     // Paddle
     public static int PADDLE_WIDTH = 100;
     public static final int PADDLE_HEIGHT = 15;
-    public static final double PADDLE_SPEED = 320.0;
+    public static double PADDLE_SPEED = 320.0;
 
     // Block
     public static final int BLOCK_WIDTH = 40;

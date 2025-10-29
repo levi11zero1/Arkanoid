@@ -10,7 +10,9 @@ public class Paddle {
     private double x;
     private int y;
     private javax.swing.Timer sizeTimer;
+    private javax.swing.Timer speedTimer;
     public int normalWidth = GameConfig.PADDLE_WIDTH;
+    public double normalSpeed = 320.0;
 
     public Paddle(double x, int y) {
         this.x = x;
@@ -72,19 +74,46 @@ public class Paddle {
         }
     }
 
+    public void resetSpeed() {
+        GameConfig.PADDLE_SPEED = normalSpeed;
+        if (speedTimer != null) speedTimer.stop();
+    }
 
     public void applyPowerUp(PowerUp.Type type) {
-        if (sizeTimer != null && sizeTimer.isRunning()) {
-            sizeTimer.stop();
-            resetSize();
-        }
-        if (type == PowerUp.Type.PADDLE_EXPAND) GameConfig.PADDLE_WIDTH *= 1.4;
-        else if (type == PowerUp.Type.PADDLE_SHRINK) GameConfig.PADDLE_WIDTH /= 1.2;
+        if (type == PowerUp.Type.PADDLE_EXPAND || type == PowerUp.Type.PADDLE_SHRINK) {
+            if (sizeTimer != null && sizeTimer.isRunning()) {
+                sizeTimer.stop();
+                resetSize();
+            }
 
-        sizeTimer = new javax.swing.Timer(10000, e -> { if (e != null) { /* use event to avoid unused warning */ } resetSize(); sizeTimer.stop(); });
-        sizeTimer.setRepeats(false);
-        sizeTimer.start();
+            if (type == PowerUp.Type.PADDLE_EXPAND) GameConfig.PADDLE_WIDTH *= 1.35;
+            else if (type == PowerUp.Type.PADDLE_SHRINK) GameConfig.PADDLE_WIDTH /= 1.3;
+
+            sizeTimer = new javax.swing.Timer(10000, e -> {
+                resetSize();
+                sizeTimer.stop();
+            });
+            sizeTimer.setRepeats(false);
+            sizeTimer.start();
+        }
+
+        // ✅ Xử lý power-up tăng tốc độ paddle
+        else if (type == PowerUp.Type.PADDLE_SPEED_UP) {
+            if (speedTimer != null && speedTimer.isRunning()) {
+                speedTimer.stop();
+                resetSpeed();
+            }
+
+            GameConfig.PADDLE_SPEED *= 1.5; // tăng 50% tốc độ
+            speedTimer = new javax.swing.Timer(20000, e -> {
+                resetSpeed();
+                speedTimer.stop();
+            });
+            speedTimer.setRepeats(false);
+            speedTimer.start();
+        }
     }
+
     public Rectangle getBounds() {
         return new Rectangle((int)x, y, GameConfig.PADDLE_WIDTH, GameConfig.PADDLE_HEIGHT);
     }
