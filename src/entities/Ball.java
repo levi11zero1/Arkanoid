@@ -123,12 +123,31 @@ public class Ball {
             sizeTimer.stop();
             resetSize();
         }
-        if (type == PowerUp.Type.BALL_EXPAND) GameConfig.BALL_SIZE *= 1.5;
-        else if (type == PowerUp.Type.BALL_SHRINK) GameConfig.BALL_SIZE /= 1.5;
+        if (type == PowerUp.Type.BALL_EXPAND) {
+            GameConfig.BALL_SIZE *= 1.75;
+        } else if (type == PowerUp.Type.BALL_SHRINK) {
+            GameConfig.BALL_SIZE /= 1.5;
+        } else if (type == PowerUp.Type.BALL_SLOW) {
+            slowDown(); // ✅ Gọi hàm mới để giảm tốc độ bóng
+            return;
+        }
 
     sizeTimer = new javax.swing.Timer(9000, e -> { if (e != null) { resetSize(); sizeTimer.stop(); } });
         sizeTimer.setRepeats(false);
         sizeTimer.start();
+    }
+
+    private void slowDown() {
+        velocity.setDx(velocity.getDx() * 0.7);
+        velocity.setDy(velocity.getDy() * 0.7);
+
+        javax.swing.Timer slowTimer = new javax.swing.Timer(20000, e -> {
+            // Sau 20s, trả lại tốc độ bình thường
+            velocity.setDx(velocity.getDx() / 0.7);
+            velocity.setDy(velocity.getDy() / 0.7);
+        });
+        slowTimer.setRepeats(false);
+        slowTimer.start();
     }
 
     // Check mép để ko lỗi

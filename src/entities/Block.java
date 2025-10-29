@@ -59,15 +59,25 @@ public class Block {
 
     /**
      * Xử lý va chạm bóng - block. Giảm hitsRemaining; nếu về 0 thì đánh dấu destroyed.
-     * Trả về true nếu có va chạm trong frame này.
+     * Trả về true nếu có va chạm trong frame này
+     * Xử lí khi nhận được power up bóng to, block c1 c2 bị phá, c3 giảm độ cứng.
      */
     public boolean isHit(int ballX, int ballY, int ballSize) {
         if (!destroyed &&
-            ballX + ballSize > x && ballX < x + GameConfig.BLOCK_WIDTH &&
-            ballY + ballSize > y && ballY < y + GameConfig.BLOCK_HEIGHT) {
+                ballX + ballSize > x && ballX < x + GameConfig.BLOCK_WIDTH &&
+                ballY + ballSize > y && ballY < y + GameConfig.BLOCK_HEIGHT) {
 
-            // Don't reduce hits for undestructable blocks
-            if (hitsRemaining != GameConfig.UNDESTRUCTABLE_BLOCK) {
+            // ✅ Nếu bóng đang to hơn kích thước mặc định (20 là size gốc)
+            if (GameConfig.BALL_SIZE > 20) {
+                if (hitsRemaining == 3) {
+                    // Gạch cấp 3 → giảm xuống cấp 1
+                    hitsRemaining = 1;
+                } else {
+                    // Gạch cấp 1 hoặc 2 → vỡ ngay lập tức
+                    destroyed = true;
+                }
+            } else {
+                // ✅ Bóng bình thường: giảm độ bền như thường lệ
                 hitsRemaining--;
                 if (hitsRemaining <= 0) {
                     destroyed = true;
@@ -77,6 +87,9 @@ public class Block {
         }
         return false;
     }
+
+
+
 
     // Check va chạm như paddle
     /**
