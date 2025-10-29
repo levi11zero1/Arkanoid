@@ -67,6 +67,9 @@ public class Paddle {
 
     public void resetSize() {
         GameConfig.PADDLE_WIDTH = normalWidth; // quay về kích thước ban đầu
+        if (sizeTimer != null) {
+            sizeTimer.stop();
+        }
     }
 
 

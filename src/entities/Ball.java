@@ -110,6 +110,9 @@ public class Ball {
 
     public void resetSize() {
         GameConfig.BALL_SIZE = 20;
+        if (sizeTimer != null) {
+            sizeTimer.stop();
+        }
     }
 
     public void setVelocity(Velocity velocity) {
@@ -123,7 +126,7 @@ public class Ball {
         if (type == PowerUp.Type.BALL_EXPAND) GameConfig.BALL_SIZE *= 1.5;
         else if (type == PowerUp.Type.BALL_SHRINK) GameConfig.BALL_SIZE /= 1.5;
 
-    sizeTimer = new javax.swing.Timer(10000, e -> { if (e != null) { resetSize(); sizeTimer.stop(); } });
+    sizeTimer = new javax.swing.Timer(9000, e -> { if (e != null) { resetSize(); sizeTimer.stop(); } });
         sizeTimer.setRepeats(false);
         sizeTimer.start();
     }
