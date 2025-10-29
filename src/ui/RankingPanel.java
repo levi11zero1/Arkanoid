@@ -1,15 +1,14 @@
 package ui;
 
 import function.RankingManager;
-
-import javax.swing.*;
 import java.awt.*;
 import java.util.List;
+import javax.swing.*;
 
 public class RankingPanel extends JPanel {
     private final StyledButton backButton = new StyledButton("Quay lại");
-    private final DefaultListModel<String> model = new DefaultListModel<>();
-    private final JList<String> list = new JList<>(model);
+    private final DefaultListModel<function.RankingManager.Entry> model = new DefaultListModel<>();
+    private final JList<function.RankingManager.Entry> list = new JList<>(model);
 
     public RankingPanel() {
         setLayout(new BorderLayout());
@@ -20,29 +19,64 @@ public class RankingPanel extends JPanel {
         title.setFont(title.getFont().deriveFont(Font.BOLD, 26f));
         title.setBorder(BorderFactory.createEmptyBorder(12,12,6,12));
 
-        list.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 16));
+        list.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 16));
         list.setOpaque(false);
         list.setForeground(Color.WHITE);
         list.setSelectionBackground(new Color(255,255,255,80));
         list.setSelectionForeground(Color.BLACK);
-        list.setFixedCellHeight(28);
-        list.setCellRenderer(new DefaultListCellRenderer() {
+        list.setFixedCellHeight(-1); // variable height
+        list.setCellRenderer(new ListCellRenderer<function.RankingManager.Entry>() {
             @Override
-            public Component getListCellRendererComponent(JList<?> listComp, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                JLabel lbl = (JLabel) super.getListCellRendererComponent(listComp, value, index, isSelected, cellHasFocus);
-                lbl.setOpaque(true);
-                if (isSelected) {
-                    lbl.setBackground(new Color(255,255,255,110));
-                    lbl.setForeground(Color.BLACK);
+            public Component getListCellRendererComponent(JList<? extends function.RankingManager.Entry> listComp, function.RankingManager.Entry value, int index, boolean isSelected, boolean cellHasFocus) {
+                JPanel row = new JPanel(new BorderLayout());
+                row.setOpaque(true);
+                row.setBackground(isSelected ? new Color(255,255,255,110) : new Color(0,0,0,40));
+                row.setBorder(BorderFactory.createEmptyBorder(8,12,8,12));
+
+                // Left: rank / medal
+                JLabel rankLabel = new JLabel(String.valueOf(index+1));
+                rankLabel.setPreferredSize(new Dimension(36,36));
+                rankLabel.setHorizontalAlignment(SwingConstants.CENTER);
+                rankLabel.setOpaque(true);
+                if (index == 0) {
+                    rankLabel.setBackground(new Color(212,175,55)); // gold
+                } else if (index == 1) {
+                    rankLabel.setBackground(new Color(192,192,192)); // silver
+                } else if (index == 2) {
+                    rankLabel.setBackground(new Color(205,127,50)); // bronze
                 } else {
-                    lbl.setBackground(new Color(0,0,0,0));
-                    lbl.setForeground(Color.WHITE);
+                    rankLabel.setBackground(new Color(60,100,100));
                 }
-                lbl.setBorder(BorderFactory.createEmptyBorder(4,8,4,8));
-                return lbl;
+                rankLabel.setForeground(Color.BLACK);
+                rankLabel.setFont(rankLabel.getFont().deriveFont(Font.BOLD, 14f));
+
+                // Center: player name and small subtitle
+                JPanel center = new JPanel();
+                center.setOpaque(false);
+                center.setLayout(new BoxLayout(center, BoxLayout.Y_AXIS));
+                // add spacing between rank box and player name
+                center.setBorder(BorderFactory.createEmptyBorder(0,12,0,0));
+                JLabel name = new JLabel(value.player);
+                name.setForeground(Color.WHITE);
+                name.setFont(name.getFont().deriveFont(Font.BOLD, 16f));
+                JLabel subtitle = new JLabel(String.format("Levels: %d   Blocks: %d", value.levels, value.blocks));
+                subtitle.setForeground(new Color(200,200,200));
+                subtitle.setFont(subtitle.getFont().deriveFont(Font.PLAIN, 12f));
+                center.add(name);
+                center.add(subtitle);
+
+                // Right: time
+                JLabel time = new JLabel(formatDuration(value.elapsedMs));
+                time.setForeground(Color.WHITE);
+                time.setFont(time.getFont().deriveFont(Font.PLAIN, 14f));
+
+                row.add(rankLabel, BorderLayout.WEST);
+                row.add(center, BorderLayout.CENTER);
+                row.add(time, BorderLayout.EAST);
+                return row;
             }
         });
-        JScrollPane scroll = new JScrollPane(list);
+    JScrollPane scroll = new JScrollPane(list);
         scroll.setOpaque(false);
         scroll.getViewport().setOpaque(false);
         scroll.setBorder(BorderFactory.createEmptyBorder(8,24,8,24));
@@ -68,16 +102,14 @@ public class RankingPanel extends JPanel {
 
     public void refreshList() {
         model.clear();
-        List<RankingManager.Entry> entries = RankingManager.getSorted(10);
-        int idx = 1;
+        List<RankingManager.Entry> entries = RankingManager.getSorted(20);
         for (RankingManager.Entry e : entries) {
-            String timeStr = formatDuration(e.elapsedMs);
-            String line = String.format("%2d. %-16s  Levels:%2d  Blocks:%4d  Time:%s",
-                    idx++, truncate(e.player,16), e.levels, e.blocks, timeStr);
-            model.addElement(line);
+            model.addElement(e);
         }
         if (model.isEmpty()) {
-            model.addElement("Chưa có dữ liệu xếp hạng.");
+            // add a placeholder entry
+            RankingManager.Entry placeholder = new RankingManager.Entry("Chưa có dữ liệu", 0, 0, 0L, 0L);
+            model.addElement(placeholder);
         }
     }
 
@@ -85,9 +117,9 @@ public class RankingPanel extends JPanel {
     public void addNotify() {
         super.addNotify();
         // Make the list area tall enough to show ~10 rows without scrolling
-        int cellH = list.getFixedCellHeight() > 0 ? list.getFixedCellHeight() : 28;
-        int h = cellH * 10 + 16; // a bit padding
-        Dimension pref = new Dimension(680, h);
+        int approxRow = 68; // approximate row height with padding
+        int h = approxRow * 8 + 16; // show ~8 rows
+        Dimension pref = new Dimension(760, h);
         if (getLayout() instanceof BorderLayout) {
             // Try to adjust center scroll if present
             for (Component c : getComponents()) {
@@ -105,6 +137,7 @@ public class RankingPanel extends JPanel {
         if (s.length() <= n) return s;
         return s.substring(0, n-1) + "…";
     }
+
 
     private static String formatDuration(long ms) {
         long totalSec = ms / 1000;
