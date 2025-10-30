@@ -8,6 +8,7 @@ import function.GameSession;
 import levels.LevelManager;
 import powerup.PowerUpManager;
 import ui.UIManager;
+import utils.AudioManager;
 
 /**
  * GameController: xử lý logic điều khiển luồng trò chơi (level complete, game over, restart).
@@ -56,7 +57,7 @@ public class GameController {
         if (gameLoop != null) gameLoop.stop();
 
         try {
-            utils.MusicPlayer.playOnce("music/lose.wav", () -> {
+            AudioManager.playOnce("music/lose.wav", () -> {
                 SwingUtilities.invokeLater(() -> {
                     if (scoreManager != null && gameSession != null)
                         scoreManager.submitIfNotSubmitted(gameSession);

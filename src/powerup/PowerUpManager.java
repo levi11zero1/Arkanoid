@@ -15,7 +15,6 @@ import entities.Ball;
 
 /**
  * PowerUpManager: quản lý danh sách powerup, spawn timer, update vị trí, và apply effect.
- * This is an incremental refactor: GamePanel will delegate spawn/update/reset to this manager.
  */
 public class PowerUpManager {
     private final List<PowerUp> active = new ArrayList<>();

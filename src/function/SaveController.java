@@ -5,6 +5,8 @@ import java.awt.Component;
 import java.io.IOException;
 import java.nio.file.Path;
 import javax.swing.JOptionPane;
+import java.util.List;
+import java.nio.file.Files;
 
 /**
  * UI and orchestration helpers for saving and loading games.
@@ -34,6 +36,21 @@ public final class SaveController {
             JOptionPane.showMessageDialog(parent, "Lưu game thất bại: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
             return false;
         }
+    }
+
+    /**
+     * List available save files. Delegates to SaveManager.
+     */
+    public static List<Path> listSaves() throws IOException {
+        return SaveManager.listSaves();
+    }
+
+    /**
+     * Delete the given save file. Returns true if deleted or false otherwise.
+     */
+    public static boolean deleteSave(Path file) throws IOException {
+        if (file == null) return false;
+        return Files.deleteIfExists(file);
     }
 
     /**

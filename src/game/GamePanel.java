@@ -19,18 +19,16 @@ import java.util.List; // Ảnh chụp trạng thái game để lưu/khôi phụ
 import javax.swing.*; // Điều khiển tạm dừng/tiếp tục
 import levels.LevelBuilder;
 import levels.LevelManager;
-// powerup.PowerUp and ui.StyledButton imports removed (not used here)
 import utils.GameConfig;
 
 public class GamePanel extends JPanel implements KeyListener {
     private Ball ball;
     private Paddle paddle;
     private List<Block> blocks;
-    // Game timing is delegated to IGameLoop
     private LevelManager levelManager;
     private GameEvents eventsListener;
 
-    // Managers (skeleton wiring for incremental refactor)
+    // Managers
     private IGameLoop gameLoop;
     private IRenderer renderer;
     private EntityManager entityManager;
@@ -67,8 +65,8 @@ public class GamePanel extends JPanel implements KeyListener {
         this.renderer = new Renderer();
         this.entityManager = new EntityManager();
         this.inputHandler = new InputHandler();
-    this.powerUpManager = new PowerUpManager();
-    this.uiManager = new UIManager();
+        this.powerUpManager = new PowerUpManager();
+        this.uiManager = new UIManager();
         this.scoreManager = new ScoreManager();
         this.gameSession = new GameSession(playerName, elapsedMsAccum, levelsCompleted, totalBlocksDestroyed);
 
@@ -76,8 +74,9 @@ public class GamePanel extends JPanel implements KeyListener {
         this.gameLoop.setTickListener(delta -> onTick(delta));
         this.gameLoop.start();
 
-    // create controller to coordinate high-level game flow
-    this.gameController = new GameController(this, this.gameLoop, this.levelManager, this.powerUpManager, this.scoreManager, this.gameSession, this.uiManager);
+        // tạo game controller
+        this.gameController = new GameController(this, this.gameLoop, this.levelManager, this.powerUpManager,
+                this.scoreManager, this.gameSession, this.uiManager);
 
         // cung cấp thực thể cho EntityManager
         this.entityManager.setEntities(ball, paddle, blocks);
@@ -109,7 +108,8 @@ public class GamePanel extends JPanel implements KeyListener {
         // Absolute layout to freely position overlay button
         setLayout(null);
         uiManager.createSaveButton(this, saved -> {
-            if (!saved) return; // cancelled or failed
+            if (!saved)
+                return; // cancelled or failed
             Toolkit.getDefaultToolkit().beep();
             // Stop timers to prevent further gameplay
             if (gameLoop != null)
@@ -140,8 +140,6 @@ public class GamePanel extends JPanel implements KeyListener {
         if (entityManager != null)
             entityManager.setEntities(ball, paddle, blocks);
     }
-
-    
 
     // ================== LƯU/LOAD (PHỤC VỤ NÚT "TIẾP TỤC" Ở MENU)
     // ==================
@@ -256,11 +254,17 @@ public class GamePanel extends JPanel implements KeyListener {
     private void checkGameState() {
         boolean allBlocksDestroyed = blocks.stream().allMatch(Block::isDestroyed);
         if (allBlocksDestroyed) {
-            if (gameController != null) gameController.handleLevelComplete(); else handleLevelComplete();
+            if (gameController != null)
+                gameController.handleLevelComplete();
+            else
+                handleLevelComplete();
         }
 
         if (ball.getY() > getHeight()) {
-            if (gameController != null) gameController.handleGameOver(); else handleGameOver();
+            if (gameController != null)
+                gameController.handleGameOver();
+            else
+                handleGameOver();
         }
     }
 
@@ -296,27 +300,13 @@ public class GamePanel extends JPanel implements KeyListener {
         if (gameLoop != null)
             gameLoop.stop();
 
-        try {
-            utils.MusicPlayer.playOnce("music/lose.wav", () -> {
-                SwingUtilities.invokeLater(() -> {
-                    if (scoreManager != null && gameSession != null)
-                        scoreManager.submitIfNotSubmitted(gameSession);
-                    if (eventsListener != null) {
-                        eventsListener.onGameOver();
-                        return;
-                    }
-                    showGameOverDialogAndHandleChoice();
-                });
-            });
-        } catch (Throwable t) {
-            if (scoreManager != null && gameSession != null)
-                scoreManager.submitIfNotSubmitted(gameSession);
-            if (eventsListener != null) {
-                eventsListener.onGameOver();
-                return;
-            }
-            showGameOverDialogAndHandleChoice();
+        if (scoreManager != null && gameSession != null)
+            scoreManager.submitIfNotSubmitted(gameSession);
+        if (eventsListener != null) {
+            eventsListener.onGameOver();
+            return;
         }
+        showGameOverDialogAndHandleChoice();
     }
 
     // Centralized dialog used when there's no external event listener to handle
@@ -405,7 +395,8 @@ public class GamePanel extends JPanel implements KeyListener {
         try {
             int levelNum = Integer.parseInt(input.trim());
             if (levelNum < 1 || levelNum > GameConfig.MAX_LEVELS) {
-                uiManager.showMessage(this, "Lỗi", "Level phải từ 1 đến " + GameConfig.MAX_LEVELS, JOptionPane.ERROR_MESSAGE);
+                uiManager.showMessage(this, "Lỗi", "Level phải từ 1 đến " + GameConfig.MAX_LEVELS,
+                        JOptionPane.ERROR_MESSAGE);
                 return;
             }
             levels.LevelPreview.show(this, levelNum);
@@ -445,12 +436,30 @@ public class GamePanel extends JPanel implements KeyListener {
     }
 
     // Các phương thức hỗ trợ InputHandler
-    public void setLeftPressed(boolean v) { this.leftPressed = v; }
-    public void setRightPressed(boolean v) { this.rightPressed = v; }
-    public void togglePauseAction() { Pause.getInstance().toggle(); }
-    public void startIfNotRunning() { if (gameLoop != null && !gameLoop.isRunning()) gameLoop.start(); }
-    public int confirm(String title, String message, int optionType) { return uiManager.showConfirm(this, title, message, optionType); }
-    public void showLevelMapDialog() { showLevelMap(); }
+    public void setLeftPressed(boolean v) {
+        this.leftPressed = v;
+    }
+
+    public void setRightPressed(boolean v) {
+        this.rightPressed = v;
+    }
+
+    public void togglePauseAction() {
+        Pause.getInstance().toggle();
+    }
+
+    public void startIfNotRunning() {
+        if (gameLoop != null && !gameLoop.isRunning())
+            gameLoop.start();
+    }
+
+    public int confirm(String title, String message, int optionType) {
+        return uiManager.showConfirm(this, title, message, optionType);
+    }
+
+    public void showLevelMapDialog() {
+        showLevelMap();
+    }
 
     public void incrementLevelsCompleted() {
         this.levelsCompleted++;

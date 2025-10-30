@@ -1,8 +1,7 @@
 package game;
 
 /**
- * Minimal GameLoop skeleton implementing IGameLoop. Implementation intentionally empty
- * — this file is a placeholder/skeleton to be filled during refactor.
+ * Tạon một vòng lặp game đơn giản sử dụng javax.swing.Timer.
  */
 public class GameLoop implements IGameLoop {
     private int targetFps = 60;
