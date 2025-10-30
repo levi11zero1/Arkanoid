@@ -28,11 +28,11 @@ import powerup.PowerUp;
 import ui.StyledButton;
 import utils.GameConfig;
 
-public class GamePanel extends JPanel implements ActionListener, KeyListener {
+public class GamePanel extends JPanel implements KeyListener {
     private Ball ball;
     private Paddle paddle;
     private List<Block> blocks;
-    private Timer gameTimer;
+    // Game timing is delegated to IGameLoop
     private LevelManager levelManager;
     private GameEvents eventsListener;
 
@@ -50,7 +50,6 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
     private boolean leftPressed = false;
     private boolean rightPressed = false;
-    private long lastNanos;
     // Quản lý va chạm tách riêng
     private final CollisionManager collisionManager = new CollisionManager();
 
@@ -79,9 +78,9 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     this.uiManager = new UIManager();
     this.audioManager = new AudioManager();
 
-        gameTimer = new Timer(GameConfig.TIMER_DELAY, this);
-        gameTimer.start();
-        lastNanos = System.nanoTime();
+    // wire game loop tick listener and start loop
+    this.gameLoop.setTickListener(delta -> onTick(delta));
+    this.gameLoop.start();
 
         // Trong constructor GamePanel()
     // start power-up spawning via manager
@@ -90,11 +89,11 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         // Đăng ký Pause: dừng timer khi pause, chạy lại khi resume
         Pause.getInstance().setListener(new Pause.PauseListener() {
             @Override public void onPause() {
-                if (gameTimer != null) gameTimer.stop();
+                if (gameLoop != null) gameLoop.stop();
                 powerUpManager.stopSpawning();
             }
             @Override public void onResume() {
-                if (gameTimer != null) gameTimer.start();
+                if (gameLoop != null) gameLoop.start();
                 powerUpManager.startSpawning(GamePanel.this);
             }
         });
@@ -173,7 +172,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
                 SaveManager.save(toGameState(), name, meta);
                 Toolkit.getDefaultToolkit().beep();
                 // Stop timers to prevent further gameplay
-                if (gameTimer != null) gameTimer.stop();
+                if (gameLoop != null) gameLoop.stop();
                 powerUpManager.stopSpawning();
                 // Inform container to go back to menu
                 if (eventsListener != null) {
@@ -258,13 +257,8 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         }
     }
 
-    // Game loop
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        long now = System.nanoTime();
-        double deltaTime = (now - lastNanos) / 1_000_000_000.0;
-        lastNanos = now;
-
+    // Called by GameLoop every tick
+    private void onTick(double deltaTime) {
         updateGame(deltaTime);
         handleCollisions();
         checkGameState();
@@ -312,17 +306,17 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         // hoàn thành 1 màn
         levelsCompleted++;
         if (levelManager.isFinalLevel()) {
-            gameTimer.stop();
+                    gameLoop.stop();
             showGameComplete();
         } else {
-            gameTimer.stop();
+            gameLoop.stop();
             showLevelComplete();
         }
     }
 
     private void handleGameOver() {
         resetAllPowerUps();
-        gameTimer.stop();
+        if (gameLoop != null) gameLoop.stop();
 
         // Try to play the lose sound and wait until it finishes before proceeding.
         // After the sound (or on fallback), update ranking and either notify the
@@ -382,7 +376,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         if (choice == JOptionPane.YES_OPTION) {
             levelManager.advanceLevel();
             initializeLevel();
-            gameTimer.start();
+            gameLoop.start();
         } else {
             System.exit(0);
         }
@@ -411,7 +405,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private void restartGame() {
         levelManager.reset();
         initializeLevel();
-        gameTimer.start();
+        if (gameLoop != null) gameLoop.start();
         // reset run stats for a new session (used in local replay flow)
         elapsedMsAccum = 0;
         levelsCompleted = 0;
@@ -465,8 +459,8 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             }
             // Bỏ phím tắt lưu 'S' để chuyển sang dùng nút Save trên màn hình
             case KeyEvent.VK_SPACE -> {
-                if (!gameTimer.isRunning()) {
-                    gameTimer.start();
+                if (gameLoop != null && !gameLoop.isRunning()) {
+                    gameLoop.start();
                 }
             }
             case KeyEvent.VK_ESCAPE -> {
