@@ -523,6 +523,7 @@ public class GamePanel extends JPanel implements KeyListener {
         // 1️⃣ Reset kích thước bóng
         if (ball != null) {
             ball.resetSize();
+            ball.resetSpeed();
         }
 
         // 2️⃣ Reset kích thước thanh đỡ

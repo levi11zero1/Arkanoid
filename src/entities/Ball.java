@@ -115,6 +115,13 @@ public class Ball {
         }
     }
 
+    public void resetSpeed() {
+        double angle = Math.atan2(velocity.getDy(), velocity.getDx());
+        velocity.setDx(Math.cos(angle) * GameConfig.BALL_DEFAULT_SPEED);
+        velocity.setDy(Math.sin(angle) * GameConfig.BALL_DEFAULT_SPEED);
+    }
+
+
     public void setVelocity(Velocity velocity) {
         this.velocity = velocity;
     }
@@ -124,27 +131,29 @@ public class Ball {
             resetSize();
         }
         if (type == PowerUp.Type.BALL_EXPAND) {
-            GameConfig.BALL_SIZE *= 1.75;
+            GameConfig.BALL_SIZE *= 1.5;
         } else if (type == PowerUp.Type.BALL_SHRINK) {
             GameConfig.BALL_SIZE /= 1.5;
+            velocity.setDx(velocity.getDx() * 1.5);
+            velocity.setDy(velocity.getDy() * 1.5);
         } else if (type == PowerUp.Type.BALL_SLOW) {
             slowDown(); // ✅ Gọi hàm mới để giảm tốc độ bóng
             return;
         }
 
-    sizeTimer = new javax.swing.Timer(9000, e -> { if (e != null) { resetSize(); sizeTimer.stop(); } });
+    sizeTimer = new javax.swing.Timer(9000, e -> { if (e != null) { resetSize(); resetSpeed(); sizeTimer.stop(); } });
         sizeTimer.setRepeats(false);
         sizeTimer.start();
     }
 
     private void slowDown() {
-        velocity.setDx(velocity.getDx() * 0.7);
-        velocity.setDy(velocity.getDy() * 0.7);
+        velocity.setDx(velocity.getDx() * 0.6);
+        velocity.setDy(velocity.getDy() * 0.6);
 
-        javax.swing.Timer slowTimer = new javax.swing.Timer(20000, e -> {
+        javax.swing.Timer slowTimer = new javax.swing.Timer(15000, e -> {
             // Sau 20s, trả lại tốc độ bình thường
-            velocity.setDx(velocity.getDx() / 0.7);
-            velocity.setDy(velocity.getDy() / 0.7);
+            velocity.setDx(velocity.getDx() / 0.6);
+            velocity.setDy(velocity.getDy() / 0.6);
         });
         slowTimer.setRepeats(false);
         slowTimer.start();
