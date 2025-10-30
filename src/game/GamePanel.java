@@ -299,6 +299,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     }
 
     private void handleLevelComplete() {
+        resetAllPowerUps();
         // hoàn thành 1 màn
         levelsCompleted++;
         if (levelManager.isFinalLevel()) {
@@ -311,6 +312,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     }
 
     private void handleGameOver() {
+        resetAllPowerUps();
         gameTimer.stop();
 
         // Try to play the lose sound and wait until it finishes before proceeding.
@@ -357,6 +359,8 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     }
 
     private void showLevelComplete() {
+
+
         int choice = JOptionPane.showConfirmDialog(
             this,
             "Level " + levelManager.getCurrentLevel() + " Complete!\\n\\n" +
@@ -487,11 +491,13 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
         activePowerUps.add(p);
     }
+
     private void applyPowerUpEffect(PowerUp p) {
         PowerUp.Type type = p.getType();
-        if (type == PowerUp.Type.PADDLE_EXPAND || type == PowerUp.Type.PADDLE_SHRINK) {
+
+        if (type == PowerUp.Type.PADDLE_EXPAND || type == PowerUp.Type.PADDLE_SHRINK || type == PowerUp.Type.PADDLE_SPEED_UP) {
             paddle.applyPowerUp(type);
-        } else if (type == PowerUp.Type.BALL_EXPAND || type == PowerUp.Type.BALL_SHRINK) {
+        } else if (type == PowerUp.Type.BALL_EXPAND || type == PowerUp.Type.BALL_SHRINK || type == PowerUp.Type.BALL_SLOW) {
             ball.applyPowerUp(type);
         }
     }
@@ -513,6 +519,8 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         this.totalBlocksDestroyed = Math.max(0, totalBlocksDestroyed);
     }
 
+
+
     public static class RunStats {
         public final String player; public final long elapsedMs; public final int levels; public final int blocks;
         public RunStats(String p, long e, int l, int b) { this.player=p; this.elapsedMs=e; this.levels=l; this.blocks=b; }
@@ -522,4 +530,27 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     public interface GameEvents {
         void onGameOver();
     }
+
+    private void resetAllPowerUps() {
+        // 1️⃣ Reset kích thước bóng
+        if (ball != null) {
+            ball.resetSize();
+        }
+
+        // 2️⃣ Reset kích thước thanh đỡ
+        if (paddle != null) {
+            paddle.resetSize();
+        }
+
+        // 3️⃣ Xóa mọi power-up đang rơi
+        if (activePowerUps != null) {
+            activePowerUps.clear();
+        }
+
+        // 4️⃣ Dừng timer spawn power-up (nếu cần)
+        if (spawnTimer != null) {
+            spawnTimer.stop();
+        }
+    }
+
 }
