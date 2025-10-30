@@ -9,6 +9,15 @@ import function.SaveManager;
 import function.RankingManager;
 import java.awt.*;
 import java.awt.event.*;
+import game.IGameLoop;
+import game.GameLoop;
+import game.IRenderer;
+import game.Renderer;
+import input.InputHandler;
+import entities.EntityManager;
+import powerup.PowerUpManager;
+import ui.UIManager;
+import utils.AudioManager;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;           // Ảnh chụp trạng thái game để lưu/khôi phục
@@ -27,6 +36,15 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private Timer gameTimer;
     private LevelManager levelManager;
     private GameEvents eventsListener;
+
+    // Managers (skeleton wiring for incremental refactor)
+    private IGameLoop gameLoop;
+    private IRenderer renderer;
+    private EntityManager entityManager;
+    private InputHandler inputHandler;
+    private PowerUpManager powerUpManager;
+    private UIManager uiManager;
+    private AudioManager audioManager;
 
     private java.util.List<PowerUp> activePowerUps = new ArrayList<>();
     private javax.swing.Timer spawnTimer;
@@ -53,6 +71,15 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     public GamePanel() {
         levelManager = new LevelManager();
         initializeLevel();
+
+    // instantiate lightweight managers (non-invasive wiring)
+    this.gameLoop = new GameLoop();
+    this.renderer = new Renderer();
+    this.entityManager = new EntityManager();
+    this.inputHandler = new InputHandler();
+    this.powerUpManager = new PowerUpManager();
+    this.uiManager = new UIManager();
+    this.audioManager = new AudioManager();
 
         gameTimer = new Timer(GameConfig.TIMER_DELAY, this);
         gameTimer.start();
@@ -235,6 +262,14 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         for (PowerUp p : activePowerUps) {
             g.setColor(p.getColor());
             g.fillRect(p.getX(), p.getY(), p.getWidth(), p.getHeight());
+        }
+        // Render UI overlay using UIManager (non-invasive call)
+        if (g instanceof Graphics2D) {
+            try {
+                uiManager.renderOverlay((Graphics2D) g);
+            } catch (Throwable t) {
+                // keep rendering resilient during incremental refactor
+            }
         }
     }
 
@@ -444,6 +479,9 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
     @Override
     public void keyPressed(KeyEvent e) {
+        // forward to InputHandler for future refactor (non-invasive)
+        try { inputHandler.keyPressed(e); } catch (Throwable ignore) {}
+
         switch (e.getKeyCode()) {
             case KeyEvent.VK_LEFT, KeyEvent.VK_A -> leftPressed = true;
             case KeyEvent.VK_RIGHT, KeyEvent.VK_D -> rightPressed = true;
@@ -478,6 +516,9 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
     @Override
     public void keyReleased(KeyEvent e) {
+        // forward to InputHandler for future refactor (non-invasive)
+        try { inputHandler.keyReleased(e); } catch (Throwable ignore) {}
+
         switch (e.getKeyCode()) {
             case KeyEvent.VK_LEFT, KeyEvent.VK_A -> leftPressed = false;
             case KeyEvent.VK_RIGHT, KeyEvent.VK_D -> rightPressed = false;
