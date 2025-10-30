@@ -5,28 +5,21 @@ import entities.Block;
 import entities.Paddle;
 import function.GameState;
 import function.Pause;
-import function.SaveManager;
+// import function.SaveManager; // removed: save orchestration moved to SaveController
 import function.ScoreManager;
 import function.GameSession;
 import java.awt.*;
 import java.awt.event.*;
-import game.IGameLoop;
-import game.GameLoop;
-import game.IRenderer;
-import game.Renderer;
 import input.InputHandler;
 import entities.EntityManager;
 import powerup.PowerUpManager;
 import ui.UIManager;
-import utils.AudioManager;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List; // Ảnh chụp trạng thái game để lưu/khôi phục
 import javax.swing.*; // Điều khiển tạm dừng/tiếp tục
 import levels.LevelBuilder;
 import levels.LevelManager;
-import powerup.PowerUp;
-import ui.StyledButton;
+// powerup.PowerUp and ui.StyledButton imports removed (not used here)
 import utils.GameConfig;
 
 public class GamePanel extends JPanel implements KeyListener {
@@ -44,7 +37,7 @@ public class GamePanel extends JPanel implements KeyListener {
     private InputHandler inputHandler;
     private PowerUpManager powerUpManager;
     private UIManager uiManager;
-    private AudioManager audioManager;
+    private GameController gameController;
 
     // Ranking/session
     private ScoreManager scoreManager;
@@ -74,15 +67,17 @@ public class GamePanel extends JPanel implements KeyListener {
         this.renderer = new Renderer();
         this.entityManager = new EntityManager();
         this.inputHandler = new InputHandler();
-        this.powerUpManager = new PowerUpManager();
-        this.uiManager = new UIManager();
-        this.audioManager = new AudioManager();
+    this.powerUpManager = new PowerUpManager();
+    this.uiManager = new UIManager();
         this.scoreManager = new ScoreManager();
         this.gameSession = new GameSession(playerName, elapsedMsAccum, levelsCompleted, totalBlocksDestroyed);
 
         // wire game loop để tick
         this.gameLoop.setTickListener(delta -> onTick(delta));
         this.gameLoop.start();
+
+    // create controller to coordinate high-level game flow
+    this.gameController = new GameController(this, this.gameLoop, this.levelManager, this.powerUpManager, this.scoreManager, this.gameSession, this.uiManager);
 
         // cung cấp thực thể cho EntityManager
         this.entityManager.setEntities(ball, paddle, blocks);
@@ -130,7 +125,7 @@ public class GamePanel extends JPanel implements KeyListener {
         });
     }
 
-    private void initializeLevel() {
+    public void initializeLevel() {
         ball = new Ball(GameConfig.SCREEN_WIDTH / 2, GameConfig.SCREEN_HEIGHT / 2);
         paddle = new Paddle(
                 GameConfig.SCREEN_WIDTH / 2 - GameConfig.PADDLE_WIDTH / 2,
@@ -261,15 +256,22 @@ public class GamePanel extends JPanel implements KeyListener {
     private void checkGameState() {
         boolean allBlocksDestroyed = blocks.stream().allMatch(Block::isDestroyed);
         if (allBlocksDestroyed) {
-            handleLevelComplete();
+            if (gameController != null) gameController.handleLevelComplete(); else handleLevelComplete();
         }
 
         if (ball.getY() > getHeight()) {
-            handleGameOver();
+            if (gameController != null) gameController.handleGameOver(); else handleGameOver();
         }
     }
 
     private void handleLevelComplete() {
+        // Delegate to GameController if present
+        if (gameController != null) {
+            gameController.handleLevelComplete();
+            return;
+        }
+
+        // Fallback behaviour (legacy)
         resetAllPowerUps();
         // hoàn thành 1 màn
         levelsCompleted++;
@@ -283,13 +285,17 @@ public class GamePanel extends JPanel implements KeyListener {
     }
 
     private void handleGameOver() {
+        // Cho delegate lên GameController nếu có
+        if (gameController != null) {
+            gameController.handleGameOver();
+            return;
+        }
+
+        // Fallback legacy behaviour
         resetAllPowerUps();
         if (gameLoop != null)
             gameLoop.stop();
 
-        // Try to play the lose sound and wait until it finishes before proceeding.
-        // After the sound (or on fallback), update ranking and either notify the
-        // registered `eventsListener` (menu integration) or show the default dialog.
         try {
             utils.MusicPlayer.playOnce("music/lose.wav", () -> {
                 SwingUtilities.invokeLater(() -> {
@@ -303,7 +309,6 @@ public class GamePanel extends JPanel implements KeyListener {
                 });
             });
         } catch (Throwable t) {
-            // Fallback: if playback fails, still update ranking and proceed.
             if (scoreManager != null && gameSession != null)
                 scoreManager.submitIfNotSubmitted(gameSession);
             if (eventsListener != null) {
@@ -361,6 +366,12 @@ public class GamePanel extends JPanel implements KeyListener {
     }
 
     private void restartGame() {
+        // Cho delegate lên GameController nếu có
+        if (gameController != null) {
+            gameController.restartGame();
+            return;
+        }
+
         levelManager.reset();
         initializeLevel();
         if (gameLoop != null)
@@ -405,50 +416,17 @@ public class GamePanel extends JPanel implements KeyListener {
 
     @Override
     public void keyPressed(KeyEvent e) {
-        // forward to InputHandler for future refactor (non-invasive)
         try {
-            inputHandler.keyPressed(e);
+            inputHandler.keyPressed(e, this);
         } catch (Throwable ignore) {
-        }
-
-        switch (e.getKeyCode()) {
-            case KeyEvent.VK_LEFT, KeyEvent.VK_A -> leftPressed = true;
-            case KeyEvent.VK_RIGHT, KeyEvent.VK_D -> rightPressed = true;
-            case KeyEvent.VK_P -> {
-                // Bật/tắt tạm dừng
-                Pause.getInstance().toggle();
-            }
-            // Bỏ phím tắt lưu 'S' để chuyển sang dùng nút Save trên màn hình
-            case KeyEvent.VK_SPACE -> {
-                if (gameLoop != null && !gameLoop.isRunning()) {
-                    gameLoop.start();
-                }
-            }
-            case KeyEvent.VK_ESCAPE -> {
-                int choice = uiManager.showConfirm(this, "Quit Game", "Are you sure you want to quit?", JOptionPane.YES_NO_OPTION);
-                if (choice == JOptionPane.YES_OPTION) {
-                    System.exit(0);
-                }
-            }
-
-            case KeyEvent.VK_M -> {
-                // Hiển thị map của level khi nhập số level
-                showLevelMap();
-            }
         }
     }
 
     @Override
     public void keyReleased(KeyEvent e) {
-        // forward to InputHandler for future refactor (non-invasive)
         try {
-            inputHandler.keyReleased(e);
+            inputHandler.keyReleased(e, this);
         } catch (Throwable ignore) {
-        }
-
-        switch (e.getKeyCode()) {
-            case KeyEvent.VK_LEFT, KeyEvent.VK_A -> leftPressed = false;
-            case KeyEvent.VK_RIGHT, KeyEvent.VK_D -> rightPressed = false;
         }
     }
     // PowerUp spawn/update logic moved to PowerUpManager
@@ -460,6 +438,37 @@ public class GamePanel extends JPanel implements KeyListener {
     // Cho phép ArkanoidGame đăng ký lắng nghe sự kiện trong game
     public void setEventsListener(GameEvents listener) {
         this.eventsListener = listener;
+    }
+
+    public GameEvents getEventsListener() {
+        return this.eventsListener;
+    }
+
+    // Các phương thức hỗ trợ InputHandler
+    public void setLeftPressed(boolean v) { this.leftPressed = v; }
+    public void setRightPressed(boolean v) { this.rightPressed = v; }
+    public void togglePauseAction() { Pause.getInstance().toggle(); }
+    public void startIfNotRunning() { if (gameLoop != null && !gameLoop.isRunning()) gameLoop.start(); }
+    public int confirm(String title, String message, int optionType) { return uiManager.showConfirm(this, title, message, optionType); }
+    public void showLevelMapDialog() { showLevelMap(); }
+
+    public void incrementLevelsCompleted() {
+        this.levelsCompleted++;
+        if (this.gameSession != null) {
+            this.gameSession.setLevelsCompleted(this.levelsCompleted);
+        }
+    }
+
+    public void resetRunStatsForNewSession() {
+        this.elapsedMsAccum = 0;
+        this.levelsCompleted = 0;
+        this.totalBlocksDestroyed = 0;
+        if (this.gameSession != null) {
+            this.gameSession.setElapsedMs(0);
+            this.gameSession.setLevelsCompleted(0);
+            this.gameSession.setTotalBlocksDestroyed(0);
+            this.gameSession.resetSubmitted();
+        }
     }
 
     // Khởi tạo hoặc khôi phục thông tin người chơi và thống kê phiên chơi (khi solo
@@ -501,7 +510,7 @@ public class GamePanel extends JPanel implements KeyListener {
         void onGameOver();
     }
 
-    private void resetAllPowerUps() {
+    public void resetAllPowerUps() {
         // 1️⃣ Reset kích thước bóng
         if (ball != null) {
             ball.resetSize();
