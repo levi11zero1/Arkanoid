@@ -16,8 +16,8 @@ public class MenuPanel extends JPanel {
     private Image backgroundImage;
     // Khối chứa tiêu đề + nút để dễ điều chỉnh vị trí
     private final JPanel vbox;
-    private Component topSpacer;       // đệm phía trên để dịch chuyển theo trục dọc
-    private Component betweenButtons;  // đệm giữa 2 nút
+    private Component topSpacer; // đệm phía trên để dịch chuyển theo trục dọc
+    private Component betweenButtons; // đệm giữa 2 nút
 
     // Lưu cấu hình căn lề và neo để re-apply khi thay đổi
     private int marginLeft = 0;
@@ -27,8 +27,13 @@ public class MenuPanel extends JPanel {
     private Alignment hAlignState = Alignment.CENTER;
     private Vertical vAlignState = Vertical.CENTER;
 
-    public enum Alignment { LEFT, CENTER, RIGHT }
-    public enum Vertical { TOP, CENTER, BOTTOM }
+    public enum Alignment {
+        LEFT, CENTER, RIGHT
+    }
+
+    public enum Vertical {
+        TOP, CENTER, BOTTOM
+    }
 
     public MenuPanel(String backgroundPath) {
         setLayout(new GridBagLayout());
@@ -45,20 +50,21 @@ public class MenuPanel extends JPanel {
                     if (url != null) {
                         backgroundImage = new ImageIcon(url).getImage();
                     }
-                } catch (Throwable ignored) {}
+                } catch (Throwable ignored) {
+                }
             }
         }
 
         // Tùy chỉnh nút
         Dimension btnSize = new Dimension(200, 44);
         playButton.setPreferredSize(btnSize);
-    instructionsButton.setPreferredSize(btnSize);
-    continueButton.setPreferredSize(btnSize);
-    rankingButton.setPreferredSize(btnSize);
+        instructionsButton.setPreferredSize(btnSize);
+        continueButton.setPreferredSize(btnSize);
+        rankingButton.setPreferredSize(btnSize);
         playButton.setCornerRadius(20);
         instructionsButton.setCornerRadius(20);
-    continueButton.setCornerRadius(20);
-    rankingButton.setCornerRadius(20);
+        continueButton.setCornerRadius(20);
+        rankingButton.setCornerRadius(20);
 
         // Container dọc cho các nút
         vbox = new JPanel();
@@ -71,9 +77,9 @@ public class MenuPanel extends JPanel {
         title.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         playButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-    instructionsButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-    continueButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-    rankingButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        instructionsButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        continueButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        rankingButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         // Spacer trên cùng để điều chỉnh vị trí khối theo trục dọc
         topSpacer = Box.createVerticalStrut(0);
@@ -81,24 +87,27 @@ public class MenuPanel extends JPanel {
 
         vbox.add(title);
         vbox.add(Box.createVerticalStrut(24));
-    vbox.add(playButton);
-    // Spacer giữa các nút
-    betweenButtons = Box.createVerticalStrut(16);
-    vbox.add(betweenButtons);
-    vbox.add(continueButton);
-    vbox.add(Box.createVerticalStrut(16));
-    vbox.add(rankingButton);
-    vbox.add(Box.createVerticalStrut(16));
-    vbox.add(instructionsButton);
+        vbox.add(playButton);
+        // Spacer giữa các nút
+        betweenButtons = Box.createVerticalStrut(16);
+        vbox.add(betweenButtons);
+        vbox.add(continueButton);
+        vbox.add(Box.createVerticalStrut(16));
+        vbox.add(rankingButton);
+        vbox.add(Box.createVerticalStrut(16));
+        vbox.add(instructionsButton);
 
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0; gbc.gridy = 0;
-        gbc.weightx = 1.0; gbc.weighty = 1.0; // cho phép neo theo anchor
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0; // cho phép neo theo anchor
         gbc.anchor = computeAnchor();
         gbc.insets = new Insets(marginTop, marginLeft, marginBottom, marginRight);
         add(vbox, gbc);
 
-        // Mode selection overlay (hidden by default). Splits the panel into two big clickable halves.
+        // Mode selection overlay (hidden by default). Splits the panel into two big
+        // clickable halves.
         initModeSelectionOverlay();
     }
 
@@ -108,15 +117,18 @@ public class MenuPanel extends JPanel {
     private JPanel bottomModePanel;
     private ModeSelectionListener modeListener;
 
-    // Small helper panel that draws a background image and a translucent hover overlay
+    // Small helper panel that draws a background image and a translucent hover
+    // overlay
     private class ModePanel extends JPanel {
         private final Image bg;
         private boolean hovered = false;
+
         ModePanel(Image bg) {
             super(new GridBagLayout());
             this.bg = bg;
             setOpaque(false);
         }
+
         @Override
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
@@ -134,7 +146,13 @@ public class MenuPanel extends JPanel {
             g2.dispose();
             super.paintComponent(g);
         }
-        void setHovered(boolean h) { if (this.hovered != h) { this.hovered = h; repaint(); } }
+
+        void setHovered(boolean h) {
+            if (this.hovered != h) {
+                this.hovered = h;
+                repaint();
+            }
+        }
     }
 
     public interface ModeSelectionListener {
@@ -142,13 +160,13 @@ public class MenuPanel extends JPanel {
     }
 
     private void initModeSelectionOverlay() {
-    modeOverlay = new JPanel(new GridLayout(2,1));
-    modeOverlay.setOpaque(true);
-    modeOverlay.setBackground(Color.BLACK);
+        modeOverlay = new JPanel(new GridLayout(2, 1));
+        modeOverlay.setOpaque(true);
+        modeOverlay.setBackground(Color.BLACK);
 
-    // Set base backgrounds for each half as requested (use image files)
-    topModePanel = createModeHalf("1 Player", "", "images/bg_1player.png");
-    bottomModePanel = createModeHalf("2 Player", "", "images/bg_2player.png");
+        // Set base backgrounds for each half as requested (use image files)
+        topModePanel = createModeHalf("1 Player", "", "images/bg_1player.png");
+        bottomModePanel = createModeHalf("2 Player", "", "images/bg_2player.png");
 
         modeOverlay.add(topModePanel);
         modeOverlay.add(bottomModePanel);
@@ -156,27 +174,33 @@ public class MenuPanel extends JPanel {
         modeOverlay.setVisible(false);
         // add on top (same GridBag position as vbox)
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 1; gbc.weighty = 1;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1;
+        gbc.weighty = 1;
         gbc.fill = GridBagConstraints.BOTH;
         add(modeOverlay, gbc);
     }
 
     private JPanel createModeHalf(String titleText, String subtitle, String bgImagePath) {
-            // Load background image if available (make final for inner usage)
-            Image tmpImg = null;
-            if (bgImagePath != null) {
-                File f = new File(bgImagePath);
-                if (f.exists() && f.isFile()) tmpImg = new ImageIcon(bgImagePath).getImage();
-                else {
-                    try {
-                        java.net.URL url = getClass().getResource("/" + bgImagePath);
-                        if (url != null) tmpImg = new ImageIcon(url).getImage();
-                    } catch (Throwable ignored) {}
+        // Load background image if available (make final for inner usage)
+        Image tmpImg = null;
+        if (bgImagePath != null) {
+            File f = new File(bgImagePath);
+            if (f.exists() && f.isFile())
+                tmpImg = new ImageIcon(bgImagePath).getImage();
+            else {
+                try {
+                    java.net.URL url = getClass().getResource("/" + bgImagePath);
+                    if (url != null)
+                        tmpImg = new ImageIcon(url).getImage();
+                } catch (Throwable ignored) {
                 }
             }
-            final Image img = tmpImg;
+        }
+        final Image img = tmpImg;
 
-            ModePanel p = new ModePanel(img);
+        ModePanel p = new ModePanel(img);
 
         JLabel title = new JLabel(titleText);
         title.setForeground(Color.WHITE);
@@ -197,22 +221,27 @@ public class MenuPanel extends JPanel {
 
         p.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         p.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override public void mouseClicked(java.awt.event.MouseEvent e) {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
                 if (modeListener != null) {
-                    if (titleText.startsWith("1")) modeListener.onModeSelected("solo");
-                    else modeListener.onModeSelected("multiplayer");
+                    if (titleText.startsWith("1"))
+                        modeListener.onModeSelected("solo");
+                    else
+                        modeListener.onModeSelected("multiplayer");
                 }
                 hideModeSelection();
             }
 
-            @Override public void mouseEntered(java.awt.event.MouseEvent e) {
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent e) {
                 p.setHovered(true);
                 title.setForeground(new Color(255, 235, 120));
                 title.setFont(titleHoverFont);
                 sub.setForeground(Color.WHITE);
             }
 
-            @Override public void mouseExited(java.awt.event.MouseEvent e) {
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent e) {
                 p.setHovered(false);
                 title.setForeground(Color.WHITE);
                 title.setFont(titleFont);
@@ -239,9 +268,12 @@ public class MenuPanel extends JPanel {
         repaint();
     }
 
-    public void setModeSelectionListener(ModeSelectionListener l) { this.modeListener = l; }
+    public void setModeSelectionListener(ModeSelectionListener l) {
+        this.modeListener = l;
+    }
 
-    // Try to load a pixel font from project `fonts/` folder or fall back to common names/monospaced.
+    // Try to load a pixel font from project `fonts/` folder or fall back to common
+    // names/monospaced.
     private Font getPixelFont(float size) {
         // Try project fonts folder first
         String[] candidates = new String[] { "fonts/PressStart2P-Regular.ttf", "fonts/pixel.ttf" };
@@ -252,14 +284,17 @@ public class MenuPanel extends JPanel {
                     Font fo = Font.createFont(Font.TRUETYPE_FONT, f);
                     return fo.deriveFont(size);
                 }
-            } catch (Throwable ignored) {}
+            } catch (Throwable ignored) {
+            }
         }
 
         // Try known pixel font family name (might be installed)
         try {
             Font test = new Font("PressStart2P", Font.PLAIN, (int) size);
-            if (!"Dialog".equals(test.getFamily())) return test.deriveFont(size);
-        } catch (Throwable ignored) {}
+            if (!"Dialog".equals(test.getFamily()))
+                return test.deriveFont(size);
+        } catch (Throwable ignored) {
+        }
 
         // Fallback to monospaced
         return new Font(Font.MONOSPACED, Font.PLAIN, (int) size);
@@ -284,30 +319,56 @@ public class MenuPanel extends JPanel {
         g2.dispose();
     }
 
-    
+    public JButton getPlayButton() {
+        return playButton;
+    }
 
-    public JButton getPlayButton() { return playButton; }
-    public JButton getContinueButton() { return continueButton; }
-    public JButton getInstructionsButton() { return instructionsButton; }
+    public JButton getContinueButton() {
+        return continueButton;
+    }
+
+    public JButton getInstructionsButton() {
+        return instructionsButton;
+    }
+
     // getters kiểu StyledButton để tiện tùy biến màu sắc/hình dạng
-    public StyledButton getPlayStyledButton() { return playButton; }
-    public StyledButton getContinueStyledButton() { return continueButton; }
-    public StyledButton getInstructionsStyledButton() { return instructionsButton; }
-    public JButton getRankingButton() { return rankingButton; }
-    public StyledButton getRankingStyledButton() { return rankingButton; }
+    public StyledButton getPlayStyledButton() {
+        return playButton;
+    }
+
+    public StyledButton getContinueStyledButton() {
+        return continueButton;
+    }
+
+    public StyledButton getInstructionsStyledButton() {
+        return instructionsButton;
+    }
+
+    public JButton getRankingButton() {
+        return rankingButton;
+    }
+
+    public StyledButton getRankingStyledButton() {
+        return rankingButton;
+    }
 
     // ====== API điều chỉnh vị trí ======
     /**
      * Dịch chuyển khối tiêu đề + nút xuống dưới (px). Giá trị âm để đẩy lên.
      */
     public void setTopOffset(int pixels) {
-        if (pixels < 0) pixels = 0; // Box.createVerticalStrut không nhận giá trị âm
+        if (pixels < 0)
+            pixels = 0; // Box.createVerticalStrut không nhận giá trị âm
         // thay thế spacer cũ bằng spacer mới và cập nhật tham chiếu
         int index = -1;
         for (int i = 0; i < vbox.getComponentCount(); i++) {
-            if (vbox.getComponent(i) == topSpacer) { index = i; break; }
+            if (vbox.getComponent(i) == topSpacer) {
+                index = i;
+                break;
+            }
         }
-        if (index == -1) index = 0; // dự phòng nếu không tìm thấy
+        if (index == -1)
+            index = 0; // dự phòng nếu không tìm thấy
         vbox.remove(index);
         topSpacer = Box.createVerticalStrut(pixels);
         vbox.add(topSpacer, index);
@@ -319,7 +380,8 @@ public class MenuPanel extends JPanel {
      * Điều chỉnh khoảng cách dọc giữa nút Chơi và Hướng dẫn.
      */
     public void setButtonsSpacing(int pixels) {
-        if (pixels < 0) pixels = 0;
+        if (pixels < 0)
+            pixels = 0;
         // tìm vị trí betweenButtons trong vbox
         int count = vbox.getComponentCount();
         for (int i = 0; i < count; i++) {
@@ -338,7 +400,8 @@ public class MenuPanel extends JPanel {
      * Căn trái/giữa/phải cho khối nút + tiêu đề.
      */
     public void setHorizontalAlignment(Alignment alignment) {
-        if (alignment == null) return;
+        if (alignment == null)
+            return;
         hAlignState = alignment;
         reapplyConstraints();
     }
@@ -347,7 +410,8 @@ public class MenuPanel extends JPanel {
      * Căn theo trục dọc: TOP/CENTER/BOTTOM.
      */
     public void setVerticalAlignment(Vertical vertical) {
-        if (vertical == null) return;
+        if (vertical == null)
+            return;
         vAlignState = vertical;
         reapplyConstraints();
     }
@@ -356,8 +420,10 @@ public class MenuPanel extends JPanel {
      * Điều chỉnh khoảng cách với mép trái/phải (đơn vị px).
      */
     public void setSideMargins(int left, int right) {
-        if (left < 0) left = 0;
-        if (right < 0) right = 0;
+        if (left < 0)
+            left = 0;
+        if (right < 0)
+            right = 0;
         this.marginLeft = left;
         this.marginRight = right;
         reapplyConstraints();
@@ -367,8 +433,10 @@ public class MenuPanel extends JPanel {
      * Đặt lề trên/dưới (px) để tinh chỉnh vị trí theo trục dọc.
      */
     public void setTopBottomMargins(int top, int bottom) {
-        if (top < 0) top = 0;
-        if (bottom < 0) bottom = 0;
+        if (top < 0)
+            top = 0;
+        if (bottom < 0)
+            bottom = 0;
         this.marginTop = top;
         this.marginBottom = bottom;
         reapplyConstraints();
@@ -378,7 +446,8 @@ public class MenuPanel extends JPanel {
      * Đẩy khối nút lên trên: neo TOP và đặt lề trên.
      */
     public void moveUp(int topMarginPixels) {
-        if (topMarginPixels < 0) topMarginPixels = 0;
+        if (topMarginPixels < 0)
+            topMarginPixels = 0;
         setVerticalAlignment(Vertical.TOP);
         setTopBottomMargins(topMarginPixels, 0);
     }
@@ -387,8 +456,10 @@ public class MenuPanel extends JPanel {
         // Gỡ và add lại vbox với anchor + insets hiện tại
         remove(vbox);
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0; gbc.gridy = 0;
-        gbc.weightx = 1.0; gbc.weighty = 1.0;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
         gbc.anchor = computeAnchor();
         gbc.insets = new Insets(marginTop, marginLeft, marginBottom, marginRight);
         add(vbox, gbc);
@@ -400,23 +471,32 @@ public class MenuPanel extends JPanel {
         switch (vAlignState) {
             case TOP:
                 switch (hAlignState) {
-                    case LEFT: return GridBagConstraints.NORTHWEST;
-                    case CENTER: return GridBagConstraints.NORTH;
-                    case RIGHT: return GridBagConstraints.NORTHEAST;
+                    case LEFT:
+                        return GridBagConstraints.NORTHWEST;
+                    case CENTER:
+                        return GridBagConstraints.NORTH;
+                    case RIGHT:
+                        return GridBagConstraints.NORTHEAST;
                 }
                 break;
             case CENTER:
                 switch (hAlignState) {
-                    case LEFT: return GridBagConstraints.WEST;
-                    case CENTER: return GridBagConstraints.CENTER;
-                    case RIGHT: return GridBagConstraints.EAST;
+                    case LEFT:
+                        return GridBagConstraints.WEST;
+                    case CENTER:
+                        return GridBagConstraints.CENTER;
+                    case RIGHT:
+                        return GridBagConstraints.EAST;
                 }
                 break;
             case BOTTOM:
                 switch (hAlignState) {
-                    case LEFT: return GridBagConstraints.SOUTHWEST;
-                    case CENTER: return GridBagConstraints.SOUTH;
-                    case RIGHT: return GridBagConstraints.SOUTHEAST;
+                    case LEFT:
+                        return GridBagConstraints.SOUTHWEST;
+                    case CENTER:
+                        return GridBagConstraints.SOUTH;
+                    case RIGHT:
+                        return GridBagConstraints.SOUTHEAST;
                 }
                 break;
         }

@@ -5,11 +5,8 @@ import ui.StyledButton;
 import ui.InstructionsPanel;
 import ui.SaveListPanel;
 import ui.RankingPanel;
-import function.SaveManager.Metadata;
 import utils.GameConfig;
-import utils.MusicPlayer;
-import function.SaveManager;
-import function.GameState;
+import utils.AudioManager;
 import java.nio.file.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -57,12 +54,12 @@ public class ArkanoidGame {
             menu.setModeSelectionListener(mode -> {
                 if ("solo".equals(mode)) {
                     // Solo: dùng GamePanel trong cùng Frame (card)
-                    MusicPlayer.stop();
+                    AudioManager.stop();
                     // Prompt player name using a custom styled dialog
                     String playerName = showPlayerNameDialog(frame);
                     if (playerName == null) {
                         // user cancelled -> back to menu, resume music
-                        try { MusicPlayer.playLoop("music/screen.wav"); } catch (Throwable t) {}
+                        try { AudioManager.playLoop("music/screen.wav"); } catch (Throwable t) {}
                         return;
                     }
 
@@ -77,7 +74,7 @@ public class ArkanoidGame {
                             cardLayout.show(cards, CARD_MENU);
                             menu.requestFocusInWindow();
                             // Resume menu music
-                            try { MusicPlayer.playLoop("music/screen.wav"); } catch (Throwable t) {}
+                            try { AudioManager.playLoop("music/screen.wav"); } catch (Throwable t) {}
                         }
                     });
 
@@ -87,7 +84,7 @@ public class ArkanoidGame {
                 } else if ("multiplayer".equals(mode)) {
                     // Multiplayer: mở cửa sổ mới chứa MultiplayerPanel (giữ menu tồn tại)
                     SwingUtilities.invokeLater(() -> {
-                        MusicPlayer.stop();
+                        AudioManager.stop();
 
                         JFrame mpFrame = new JFrame("Arkanoid - Multiplayer");
                         MultiplayerPanel mpPanel = new MultiplayerPanel();
@@ -100,7 +97,7 @@ public class ArkanoidGame {
                         mpFrame.addWindowListener(new java.awt.event.WindowAdapter() {
                             @Override
                             public void windowClosed(java.awt.event.WindowEvent e) {
-                                try { MusicPlayer.playLoop("music/screen.wav"); } catch (Throwable t) {}
+                                try { AudioManager.playLoop("music/screen.wav"); } catch (Throwable t) {}
                             }
                         });
                         mpFrame.setVisible(true);
@@ -118,7 +115,7 @@ public class ArkanoidGame {
                 public void actionPerformed(ActionEvent e) {
                     java.util.List<java.nio.file.Path> saves;
                     try {
-                        saves = SaveManager.listSaves();
+                        saves = function.SaveController.listSaves();
                     } catch (Exception ex) {
                         JOptionPane.showMessageDialog(frame, "Không thể liệt kê save: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
                         return;
@@ -155,13 +152,13 @@ public class ArkanoidGame {
                     int ok = JOptionPane.showConfirmDialog(frame, "Bạn có chắc muốn xóa bản lưu này?", "Xác nhận", JOptionPane.YES_NO_OPTION);
                     if (ok != JOptionPane.YES_OPTION) return;
                     try {
-                        java.nio.file.Files.deleteIfExists(sel);
+                        function.SaveController.deleteSave(sel);
                     } catch (Exception ex) {
                         JOptionPane.showMessageDialog(frame, "Không thể xóa: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
                     }
                     // refresh list
                     try {
-                        java.util.List<java.nio.file.Path> saves2 = SaveManager.listSaves();
+                        java.util.List<java.nio.file.Path> saves2 = function.SaveController.listSaves();
                         java.util.List<java.nio.file.Path> top2 = saves2.size() > 10 ? saves2.subList(0, 10) : saves2;
                         saveListPanel.setSaves(top2);
                     } catch (Exception ex) {
@@ -198,19 +195,11 @@ public class ArkanoidGame {
                                 countdown.stop();
                                 dialog.dispose();
                                 // Stop menu music when resuming saved game
-                                MusicPlayer.stop();
+                                AudioManager.stop();
 
                                 GamePanel gamePanel = new GamePanel();
                                 try {
-                                    GameState state = SaveManager.load(fileToLoad);
-                                    gamePanel.applyGameState(state);
-                                    // Apply metadata (if present) to continue the same run
-                                    try {
-                                        Metadata meta = SaveManager.readMetadata(fileToLoad);
-                                        if (meta != null) {
-                                            gamePanel.setPlayerRunInfo(meta.player, meta.elapsedMs, meta.levelsCompleted, meta.blocksDestroyed);
-                                        }
-                                    } catch (Exception ignore) {}
+                                    function.SaveController.loadAndApply(frame, gamePanel, fileToLoad);
                                 } catch (Exception ex) {
                                     JOptionPane.showMessageDialog(frame, "Load save thất bại: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
                                 }
@@ -221,7 +210,7 @@ public class ArkanoidGame {
                                         cardLayout.show(cards, CARD_MENU);
                                         menu.requestFocusInWindow();
                                         // Resume menu music (GamePanel already played lose.wav)
-                                        try { MusicPlayer.playLoop("music/screen.wav"); } catch (Throwable t) {}
+                                        try { AudioManager.playLoop("music/screen.wav"); } catch (Throwable t) {}
                                     }
                                 });
                                 cards.add(gamePanel, CARD_GAME);
@@ -279,9 +268,9 @@ public class ArkanoidGame {
             // Start background music (non-blocking). If JavaFX is not available,
             // MusicPlayer will print an error but the game will continue to run.
             try {
-                MusicPlayer.init();
+                AudioManager.init();
                 // Use WAV (Java Sound) which works without JavaFX; user converted file to WAV
-                MusicPlayer.playLoop("music/screen.wav");
+                AudioManager.playLoop("music/screen.wav");
             } catch (Throwable t) {
                 System.err.println("Could not start background music: " + t.getMessage());
             }

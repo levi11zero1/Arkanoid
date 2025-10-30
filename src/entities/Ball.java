@@ -4,7 +4,7 @@ import java.awt.Color;
 import java.awt.Graphics;
 import powerup.PowerUp;
 import utils.GameConfig;
-import utils.MusicPlayer;
+import utils.AudioManager;
 import utils.Velocity;
 
 public class Ball {
@@ -177,7 +177,7 @@ public class Ball {
             clampSpeed();
             // Play wall hit sound once (WAV)
             try {
-                MusicPlayer.playOnce("music/wall.wav", null);
+                AudioManager.playOnce("music/wall.wav", null);
             } catch (Throwable ignored) {
                 // ignore
             }

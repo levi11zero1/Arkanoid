@@ -3,7 +3,7 @@ package function;
 import java.util.ArrayList;
 import java.util.List;
 
-// Ảnh chụp trạng thái game (snapshot)
+// Trạng thái game (snapshot)
 //
 // Vai trò:
 // - Đóng gói toàn bộ dữ liệu cần thiết để khôi phục lại màn chơi đúng tại thời điểm lưu.

@@ -5,7 +5,7 @@ import entities.Block;
 import entities.Paddle;
 import java.util.List;
 import utils.GameConfig;
-import utils.MusicPlayer;
+import utils.AudioManager;
 
 /**
  * Handles collision detection and response between the ball, paddle and blocks.
@@ -33,7 +33,7 @@ public class CollisionManager {
             collisionCooldown = 2;
             // Play paddle hit sound once (WAV)
             try {
-                MusicPlayer.playOnce("music/padle.wav", null);
+                AudioManager.playOnce("music/padle.wav", null);
             } catch (Throwable ignored) {
                 // ignore sound errors
             }
@@ -92,7 +92,7 @@ public class CollisionManager {
                     collisionCooldown = 2; // handle 1 collision per frame
                     // Play brick hit sound once
                     try {
-                        utils.MusicPlayer.playOnce("music/brick.wav", null);
+                        AudioManager.playOnce("music/brick.wav", null);
                     } catch (Throwable ignored) {
                         // ignore
                     }
