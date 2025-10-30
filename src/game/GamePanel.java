@@ -242,23 +242,11 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
         if (g instanceof Graphics2D g2d) {
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        }
-
-        g.setColor(Color.WHITE);
-        g.setFont(new Font("Arial", Font.BOLD, 16));
-        g.drawString("Level: " + levelManager.getCurrentLevel(), 10, 25);
-
-        long remainingBlocks = blocks.stream().filter(block -> !block.isDestroyed()).count();
-        g.drawString("Blocks: " + remainingBlocks, GameConfig.SCREEN_WIDTH - 100, 25);
-
-        ball.draw(g);
-        paddle.draw(g);
-        for (Block block : blocks) {
-            block.draw(g);
-        }
-        for (PowerUp p : powerUpManager.snapshot()) {
-            g.setColor(p.getColor());
-            g.fillRect(p.getX(), p.getY(), p.getWidth(), p.getHeight());
+            try {
+                renderer.render(g2d, ball, paddle, blocks, powerUpManager.snapshot(), levelManager);
+            } catch (Throwable t) {
+                // keep paint resilient during refactor
+            }
         }
         // Render UI overlay using UIManager (non-invasive call)
         if (g instanceof Graphics2D) {
