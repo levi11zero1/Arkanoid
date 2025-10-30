@@ -201,16 +201,9 @@ public class ArkanoidGame {
                                 MusicPlayer.stop();
 
                                 GamePanel gamePanel = new GamePanel();
+
                                 try {
-                                    GameState state = SaveManager.load(fileToLoad);
-                                    gamePanel.applyGameState(state);
-                                    // Apply metadata (if present) to continue the same run
-                                    try {
-                                        Metadata meta = SaveManager.readMetadata(fileToLoad);
-                                        if (meta != null) {
-                                            gamePanel.setPlayerRunInfo(meta.player, meta.elapsedMs, meta.levelsCompleted, meta.blocksDestroyed);
-                                        }
-                                    } catch (Exception ignore) {}
+                                    function.SaveController.loadAndApply(frame, gamePanel, fileToLoad);
                                 } catch (Exception ex) {
                                     JOptionPane.showMessageDialog(frame, "Load save thất bại: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
                                 }

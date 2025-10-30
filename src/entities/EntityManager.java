@@ -2,7 +2,7 @@ package entities;
 
 import java.util.List;
 import java.util.ArrayList;
-
+import game.CollisionManager;
 
 /**
  * Kiểm soát các thực thể trong trò chơi: bóng, thanh trượt, và các khối.
@@ -12,6 +12,7 @@ public class EntityManager {
     private Ball ball;
     private Paddle paddle;
     private List<Block> blocks = new ArrayList<>();
+    private final CollisionManager collisionManager = new CollisionManager();
 
     public EntityManager() { }
 
@@ -30,6 +31,9 @@ public class EntityManager {
         if (paddle != null) {
             paddle.update(leftPressed, rightPressed, panelWidth, deltaSeconds);
         }
+        // Xử lý va chạm
+        collisionManager.tickCooldown();
+        collisionManager.handleCollisions(ball, paddle, blocks);
     }
 
     public Ball getBall() { return ball; }

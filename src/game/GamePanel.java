@@ -6,7 +6,9 @@ import entities.Paddle;
 import function.GameState;
 import function.Pause;
 import function.SaveManager;
-import function.RankingManager;
+import function.SaveController;
+import function.ScoreManager;
+import function.GameSession;
 import java.awt.*;
 import java.awt.event.*;
 import game.IGameLoop;
@@ -45,13 +47,16 @@ public class GamePanel extends JPanel implements KeyListener {
     private UIManager uiManager;
     private AudioManager audioManager;
 
+    // Ranking/session
+    private ScoreManager scoreManager;
+    private GameSession gameSession;
+
     // Power-up management delegated
     // active list, timer and random are now owned by PowerUpManager
 
     private boolean leftPressed = false;
     private boolean rightPressed = false;
-    // Quản lý va chạm tách riêng
-    private final CollisionManager collisionManager = new CollisionManager();
+
 
     // Save button placed at top-right
     private StyledButton saveButton;
@@ -62,32 +67,32 @@ public class GamePanel extends JPanel implements KeyListener {
     private int levelsCompleted = 0; // số màn đã hoàn thành
     private int totalBlocksDestroyed = 0; // tổng số block phá được qua các màn
     private int lastDestroyedCountThisLevel = 0; // baseline để tính delta mỗi tick
-    private boolean rankingSubmitted = false; // tránh ghi 2 lần
 
 
     public GamePanel() {
         levelManager = new LevelManager();
         initializeLevel();
 
-    // instantiate lightweight managers (non-invasive wiring)
-    this.gameLoop = new GameLoop();
-    this.renderer = new Renderer();
-    this.entityManager = new EntityManager();
-    this.inputHandler = new InputHandler();
-    this.powerUpManager = new PowerUpManager();
-    this.uiManager = new UIManager();
-    this.audioManager = new AudioManager();
+        // Khởi tạo các manager
+        this.gameLoop = new GameLoop();
+        this.renderer = new Renderer();
+        this.entityManager = new EntityManager();
+        this.inputHandler = new InputHandler();
+        this.powerUpManager = new PowerUpManager();
+        this.uiManager = new UIManager();
+        this.audioManager = new AudioManager();
+        this.scoreManager = new ScoreManager();
+        this.gameSession = new GameSession(playerName, elapsedMsAccum, levelsCompleted, totalBlocksDestroyed);
 
-    // wire game loop để tick
-    this.gameLoop.setTickListener(delta -> onTick(delta));
-    this.gameLoop.start();
+        // wire game loop để tick
+        this.gameLoop.setTickListener(delta -> onTick(delta));
+        this.gameLoop.start();
 
-    // cung cấp thực thể cho EntityManager
-    this.entityManager.setEntities(ball, paddle, blocks);
+        // cung cấp thực thể cho EntityManager
+        this.entityManager.setEntities(ball, paddle, blocks);
 
-        // Trong constructor GamePanel()
-    // start power-up spawning via manager
-    powerUpManager.startSpawning(this);
+        // start power-up spawning via manager
+        powerUpManager.startSpawning(this);
 
         // Đăng ký Pause: dừng timer khi pause, chạy lại khi resume
         Pause.getInstance().setListener(new Pause.PauseListener() {
@@ -155,27 +160,13 @@ public class GamePanel extends JPanel implements KeyListener {
             saveButton.setLocation(Math.max(0, newX), topMargin);
         });
 
-        // Click handler: prompt for save name, save, then return to menu (cannot continue playing)
+        // Click handler now delegated to SaveController (moves dialog + IO out of GamePanel)
         saveButton.addActionListener(ev -> {
             if (ev != null) { /* satisfy linter */ }
             saveButton.setEnabled(false);
             try {
-                String name = JOptionPane.showInputDialog(
-                    this,
-                    "Nhập tên bản lưu:",
-                    "Lưu game",
-                    JOptionPane.PLAIN_MESSAGE
-                );
-                if (name == null) {
-                    // user cancelled
-                    return;
-                }
-                if (name.trim().isEmpty()) {
-                    JOptionPane.showMessageDialog(this, "Tên bản lưu không được để trống.", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-                SaveManager.Metadata meta = new SaveManager.Metadata(playerName, elapsedMsAccum, levelsCompleted, totalBlocksDestroyed);
-                SaveManager.save(toGameState(), name, meta);
+                boolean saved = SaveController.promptAndSave(this, this);
+                if (!saved) return; // user cancelled or save failed
                 Toolkit.getDefaultToolkit().beep();
                 // Stop timers to prevent further gameplay
                 if (gameLoop != null) gameLoop.stop();
@@ -187,8 +178,6 @@ public class GamePanel extends JPanel implements KeyListener {
                     // Fallback: close application if no listener
                     System.exit(0);
                 }
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Lưu game thất bại: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
             } finally {
                 // In case we didn't leave the screen (cancel/invalid), re-enable and refocus
                 saveButton.setEnabled(true);
@@ -202,7 +191,7 @@ public class GamePanel extends JPanel implements KeyListener {
     // ================== LƯU/LOAD (PHỤC VỤ NÚT "TIẾP TỤC" Ở MENU) ==================
     // Tạo ảnh chụp trạng thái hiện tại để ghi xuống file save.
     // Bao gồm: level đang chơi, vị trí/tốc độ bóng, vị trí thanh đỡ, và danh sách block còn lại.
-    private GameState toGameState() {
+    public GameState toGameState() {
         ArrayList<GameState.BlockState> bs = new ArrayList<>();
         for (Block b : blocks) {
             bs.add(new GameState.BlockState(b.getX(), b.getY(), b.getHitsRemaining(), b.isDestroyed()));
@@ -267,7 +256,6 @@ public class GamePanel extends JPanel implements KeyListener {
     // Called by GameLoop every tick
     private void onTick(double deltaTime) {
         updateGame(deltaTime);
-        handleCollisions();
         checkGameState();
         // tích lũy thời gian chơi
         elapsedMsAccum += (long) (deltaTime * 1000);
@@ -276,6 +264,13 @@ public class GamePanel extends JPanel implements KeyListener {
         if (curDestroyed > lastDestroyedCountThisLevel) {
             totalBlocksDestroyed += (curDestroyed - lastDestroyedCountThisLevel);
             lastDestroyedCountThisLevel = curDestroyed;
+        }
+
+        // keep session in sync
+        if (gameSession != null) {
+            gameSession.setElapsedMs(elapsedMsAccum);
+            gameSession.setLevelsCompleted(levelsCompleted);
+            gameSession.setTotalBlocksDestroyed(totalBlocksDestroyed);
         }
 
         // delegate power-up updates to manager
@@ -298,13 +293,8 @@ public class GamePanel extends JPanel implements KeyListener {
             }
         }
 
-        // Tick cooldown trong bộ xử lý va chạm
-        collisionManager.tickCooldown();
     }
 
-    private void handleCollisions() {
-        collisionManager.handleCollisions(ball, paddle, blocks);
-    }
 
     private void checkGameState() {
         boolean allBlocksDestroyed = blocks.stream().allMatch(Block::isDestroyed);
@@ -340,7 +330,7 @@ public class GamePanel extends JPanel implements KeyListener {
         try {
             utils.MusicPlayer.playOnce("music/lose.wav", () -> {
                 SwingUtilities.invokeLater(() -> {
-                    submitRankingOnce();
+                    if (scoreManager != null && gameSession != null) scoreManager.submitIfNotSubmitted(gameSession);
                     if (eventsListener != null) {
                         eventsListener.onGameOver();
                         return;
@@ -350,7 +340,7 @@ public class GamePanel extends JPanel implements KeyListener {
             });
         } catch (Throwable t) {
             // Fallback: if playback fails, still update ranking and proceed.
-            submitRankingOnce();
+            if (scoreManager != null && gameSession != null) scoreManager.submitIfNotSubmitted(gameSession);
             if (eventsListener != null) {
                 eventsListener.onGameOver();
                 return;
@@ -400,7 +390,7 @@ public class GamePanel extends JPanel implements KeyListener {
 
     private void showGameComplete() {
         // Cập nhật Ranking (thắng toàn bộ)
-        submitRankingOnce();
+        if (scoreManager != null && gameSession != null) scoreManager.submitIfNotSubmitted(gameSession);
 
         int choice = JOptionPane.showConfirmDialog(
             this,
@@ -426,7 +416,12 @@ public class GamePanel extends JPanel implements KeyListener {
         elapsedMsAccum = 0;
         levelsCompleted = 0;
         totalBlocksDestroyed = 0;
-        rankingSubmitted = false;
+        if (gameSession != null) {
+            gameSession.setElapsedMs(0);
+            gameSession.setLevelsCompleted(0);
+            gameSession.setTotalBlocksDestroyed(0);
+            gameSession.resetSubmitted();
+        }
     }
 
     private int countDestroyedDestructable() {
@@ -437,13 +432,7 @@ public class GamePanel extends JPanel implements KeyListener {
         return c;
     }
 
-    private void submitRankingOnce() {
-        if (rankingSubmitted) return;
-        rankingSubmitted = true;
-        try {
-            RankingManager.addEntry(playerName != null ? playerName : "Player", levelsCompleted, totalBlocksDestroyed, elapsedMsAccum);
-        } catch (Exception ignored) {}
-    }
+
 
     private void showLevelMap() {
         // Delegate to LevelBuilder which now provides a reusable preview dialog
@@ -525,6 +514,13 @@ public class GamePanel extends JPanel implements KeyListener {
         this.elapsedMsAccum = Math.max(0, elapsedMs);
         this.levelsCompleted = Math.max(0, levelsCompleted);
         this.totalBlocksDestroyed = Math.max(0, totalBlocksDestroyed);
+        if (this.gameSession != null) {
+            this.gameSession.setPlayerName(this.playerName);
+            this.gameSession.setElapsedMs(this.elapsedMsAccum);
+            this.gameSession.setLevelsCompleted(this.levelsCompleted);
+            this.gameSession.setTotalBlocksDestroyed(this.totalBlocksDestroyed);
+            this.gameSession.resetSubmitted();
+        }
     }
 
 
@@ -556,3 +552,4 @@ public class GamePanel extends JPanel implements KeyListener {
     }
 
 }
+
