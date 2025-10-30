@@ -6,7 +6,6 @@ import entities.Paddle;
 import function.GameState;
 import function.Pause;
 import function.SaveManager;
-import function.SaveController;
 import function.ScoreManager;
 import function.GameSession;
 import java.awt.*;
@@ -22,8 +21,8 @@ import ui.UIManager;
 import utils.AudioManager;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;           // Ảnh chụp trạng thái game để lưu/khôi phục
-import javax.swing.*;               // Điều khiển tạm dừng/tiếp tục
+import java.util.List; // Ảnh chụp trạng thái game để lưu/khôi phục
+import javax.swing.*; // Điều khiển tạm dừng/tiếp tục
 import levels.LevelBuilder;
 import levels.LevelManager;
 import powerup.PowerUp;
@@ -57,9 +56,7 @@ public class GamePanel extends JPanel implements KeyListener {
     private boolean leftPressed = false;
     private boolean rightPressed = false;
 
-
-    // Save button placed at top-right
-    private StyledButton saveButton;
+    // Save button is created by UIManager; GamePanel does not keep a reference
 
     // ==== RUN STATS ====
     private String playerName = "Player";
@@ -67,7 +64,6 @@ public class GamePanel extends JPanel implements KeyListener {
     private int levelsCompleted = 0; // số màn đã hoàn thành
     private int totalBlocksDestroyed = 0; // tổng số block phá được qua các màn
     private int lastDestroyedCountThisLevel = 0; // baseline để tính delta mỗi tick
-
 
     public GamePanel() {
         levelManager = new LevelManager();
@@ -96,12 +92,17 @@ public class GamePanel extends JPanel implements KeyListener {
 
         // Đăng ký Pause: dừng timer khi pause, chạy lại khi resume
         Pause.getInstance().setListener(new Pause.PauseListener() {
-            @Override public void onPause() {
-                if (gameLoop != null) gameLoop.stop();
+            @Override
+            public void onPause() {
+                if (gameLoop != null)
+                    gameLoop.stop();
                 powerUpManager.stopSpawning();
             }
-            @Override public void onResume() {
-                if (gameLoop != null) gameLoop.start();
+
+            @Override
+            public void onResume() {
+                if (gameLoop != null)
+                    gameLoop.start();
                 powerUpManager.startSpawning(GamePanel.this);
             }
         });
@@ -112,16 +113,28 @@ public class GamePanel extends JPanel implements KeyListener {
 
         // Absolute layout to freely position overlay button
         setLayout(null);
-        initSaveButton();
+        uiManager.createSaveButton(this, saved -> {
+            if (!saved) return; // cancelled or failed
+            Toolkit.getDefaultToolkit().beep();
+            // Stop timers to prevent further gameplay
+            if (gameLoop != null)
+                gameLoop.stop();
+            powerUpManager.stopSpawning();
+            // Inform container to go back to menu
+            if (eventsListener != null) {
+                eventsListener.onGameOver();
+            } else {
+                // Fallback: close application if no listener
+                System.exit(0);
+            }
+        });
     }
-
 
     private void initializeLevel() {
         ball = new Ball(GameConfig.SCREEN_WIDTH / 2, GameConfig.SCREEN_HEIGHT / 2);
         paddle = new Paddle(
-            GameConfig.SCREEN_WIDTH / 2 - GameConfig.PADDLE_WIDTH / 2,
-            GameConfig.SCREEN_HEIGHT - 100
-        );
+                GameConfig.SCREEN_WIDTH / 2 - GameConfig.PADDLE_WIDTH / 2,
+                GameConfig.SCREEN_HEIGHT - 100);
 
         // Tạo block
         blocks = LevelBuilder.createLevel(levelManager.getCurrentLevel());
@@ -129,80 +142,28 @@ public class GamePanel extends JPanel implements KeyListener {
         lastDestroyedCountThisLevel = countDestroyedDestructable();
 
         // Cho biết EntityManager về các thực thể mới
-        if (entityManager != null) entityManager.setEntities(ball, paddle, blocks);
+        if (entityManager != null)
+            entityManager.setEntities(ball, paddle, blocks);
     }
 
-    private void initSaveButton() {
-        saveButton = new StyledButton("Save");
-        saveButton.setFont(saveButton.getFont().deriveFont(Font.BOLD, 16f));
-        saveButton.setToolTipText("Lưu game");
-        // Size and margins
-        final int btnW = 90, btnH = 34;
-        final int rightMargin = 100;    // giảm lề phải để sát mép hơn
-        final int topMargin = 10;
-        // Initial placement: prefer actual width if available, fallback to config
-        int baseW = getWidth() > 0 ? getWidth() : GameConfig.SCREEN_WIDTH;
-        int x = Math.max(0, baseW - btnW - rightMargin);
-        saveButton.setBounds(x, topMargin, btnW, btnH);
+    
 
-        // Reposition on resize to keep at top-right
-        this.addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentResized(ComponentEvent e) {
-                int newX = getWidth() - btnW - rightMargin;
-                saveButton.setLocation(Math.max(0, newX), topMargin);
-            }
-        });
-
-        // Ensure correct position after first show
-        SwingUtilities.invokeLater(() -> {
-            int newX = getWidth() - btnW - rightMargin;
-            saveButton.setLocation(Math.max(0, newX), topMargin);
-        });
-
-        // Click handler now delegated to SaveController (moves dialog + IO out of GamePanel)
-        saveButton.addActionListener(ev -> {
-            if (ev != null) { /* satisfy linter */ }
-            saveButton.setEnabled(false);
-            try {
-                boolean saved = SaveController.promptAndSave(this, this);
-                if (!saved) return; // user cancelled or save failed
-                Toolkit.getDefaultToolkit().beep();
-                // Stop timers to prevent further gameplay
-                if (gameLoop != null) gameLoop.stop();
-                powerUpManager.stopSpawning();
-                // Inform container to go back to menu
-                if (eventsListener != null) {
-                    eventsListener.onGameOver();
-                } else {
-                    // Fallback: close application if no listener
-                    System.exit(0);
-                }
-            } finally {
-                // In case we didn't leave the screen (cancel/invalid), re-enable and refocus
-                saveButton.setEnabled(true);
-                SwingUtilities.invokeLater(this::requestFocusInWindow);
-            }
-        });
-
-        add(saveButton);
-    }
-
-    // ================== LƯU/LOAD (PHỤC VỤ NÚT "TIẾP TỤC" Ở MENU) ==================
+    // ================== LƯU/LOAD (PHỤC VỤ NÚT "TIẾP TỤC" Ở MENU)
+    // ==================
     // Tạo ảnh chụp trạng thái hiện tại để ghi xuống file save.
-    // Bao gồm: level đang chơi, vị trí/tốc độ bóng, vị trí thanh đỡ, và danh sách block còn lại.
+    // Bao gồm: level đang chơi, vị trí/tốc độ bóng, vị trí thanh đỡ, và danh sách
+    // block còn lại.
     public GameState toGameState() {
         ArrayList<GameState.BlockState> bs = new ArrayList<>();
         for (Block b : blocks) {
             bs.add(new GameState.BlockState(b.getX(), b.getY(), b.getHitsRemaining(), b.isDestroyed()));
         }
         return new GameState(
-            levelManager.getCurrentLevel(),
-            ball.getPreciseX(), ball.getPreciseY(),
-            ball.getVelocity().getDx(), ball.getVelocity().getDy(),
-            paddle.getX(), paddle.getY(),
-            bs
-        );
+                levelManager.getCurrentLevel(),
+                ball.getPreciseX(), ball.getPreciseY(),
+                ball.getVelocity().getDx(), ball.getVelocity().getDy(),
+                paddle.getX(), paddle.getY(),
+                bs);
     }
 
     // Áp dụng trạng thái đã lưu vào game panel này.
@@ -223,11 +184,13 @@ public class GamePanel extends JPanel implements KeyListener {
         ball.setVelocity(new utils.Velocity(state.ballDx, state.ballDy));
         this.paddle = new Paddle((int) Math.round(state.paddleX), state.paddleY);
 
-        // 4) baseline destroyed count for this level (avoid recounting already-destroyed blocks)
+        // 4) baseline destroyed count for this level (avoid recounting
+        // already-destroyed blocks)
         lastDestroyedCountThisLevel = countDestroyedDestructable();
 
         // 5) Vẽ lại
-        if (entityManager != null) entityManager.setEntities(ball, paddle, blocks);
+        if (entityManager != null)
+            entityManager.setEntities(ball, paddle, blocks);
         repaint();
     }
 
@@ -295,7 +258,6 @@ public class GamePanel extends JPanel implements KeyListener {
 
     }
 
-
     private void checkGameState() {
         boolean allBlocksDestroyed = blocks.stream().allMatch(Block::isDestroyed);
         if (allBlocksDestroyed) {
@@ -312,7 +274,7 @@ public class GamePanel extends JPanel implements KeyListener {
         // hoàn thành 1 màn
         levelsCompleted++;
         if (levelManager.isFinalLevel()) {
-                    gameLoop.stop();
+            gameLoop.stop();
             showGameComplete();
         } else {
             gameLoop.stop();
@@ -322,7 +284,8 @@ public class GamePanel extends JPanel implements KeyListener {
 
     private void handleGameOver() {
         resetAllPowerUps();
-        if (gameLoop != null) gameLoop.stop();
+        if (gameLoop != null)
+            gameLoop.stop();
 
         // Try to play the lose sound and wait until it finishes before proceeding.
         // After the sound (or on fallback), update ranking and either notify the
@@ -330,7 +293,8 @@ public class GamePanel extends JPanel implements KeyListener {
         try {
             utils.MusicPlayer.playOnce("music/lose.wav", () -> {
                 SwingUtilities.invokeLater(() -> {
-                    if (scoreManager != null && gameSession != null) scoreManager.submitIfNotSubmitted(gameSession);
+                    if (scoreManager != null && gameSession != null)
+                        scoreManager.submitIfNotSubmitted(gameSession);
                     if (eventsListener != null) {
                         eventsListener.onGameOver();
                         return;
@@ -340,7 +304,8 @@ public class GamePanel extends JPanel implements KeyListener {
             });
         } catch (Throwable t) {
             // Fallback: if playback fails, still update ranking and proceed.
-            if (scoreManager != null && gameSession != null) scoreManager.submitIfNotSubmitted(gameSession);
+            if (scoreManager != null && gameSession != null)
+                scoreManager.submitIfNotSubmitted(gameSession);
             if (eventsListener != null) {
                 eventsListener.onGameOver();
                 return;
@@ -349,16 +314,13 @@ public class GamePanel extends JPanel implements KeyListener {
         }
     }
 
-    // Centralized dialog used when there's no external event listener to handle game-over
+    // Centralized dialog used when there's no external event listener to handle
+    // game-over
     private void showGameOverDialogAndHandleChoice() {
-        int choice = JOptionPane.showConfirmDialog(
-            this,
-            "Game Over! You reached Level " + levelManager.getCurrentLevel() +
-            "\\n\\nWould you like to play again?",
-            "Game Over",
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.QUESTION_MESSAGE
-        );
+        int choice = uiManager.showConfirm(this, "Game Over",
+                "Game Over! You reached Level " + levelManager.getCurrentLevel() +
+                        "\\n\\nWould you like to play again?",
+                JOptionPane.YES_NO_OPTION);
 
         if (choice == JOptionPane.YES_OPTION) {
             restartGame();
@@ -368,16 +330,10 @@ public class GamePanel extends JPanel implements KeyListener {
     }
 
     private void showLevelComplete() {
-
-
-        int choice = JOptionPane.showConfirmDialog(
-            this,
-            "Level " + levelManager.getCurrentLevel() + " Complete!\\n\\n" +
-            "Continue to Level " + (levelManager.getCurrentLevel() + 1) + "?",
-            "Level Complete",
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.QUESTION_MESSAGE
-        );
+        int choice = uiManager.showConfirm(this, "Level Complete",
+                "Level " + levelManager.getCurrentLevel() + " Complete!\\n\\n" +
+                        "Continue to Level " + (levelManager.getCurrentLevel() + 1) + "?",
+                JOptionPane.YES_NO_OPTION);
 
         if (choice == JOptionPane.YES_OPTION) {
             levelManager.advanceLevel();
@@ -390,16 +346,12 @@ public class GamePanel extends JPanel implements KeyListener {
 
     private void showGameComplete() {
         // Cập nhật Ranking (thắng toàn bộ)
-        if (scoreManager != null && gameSession != null) scoreManager.submitIfNotSubmitted(gameSession);
-
-        int choice = JOptionPane.showConfirmDialog(
-            this,
-            "Congratulations! You completed all " + levelManager.getMaxLevels() +
-            " levels!\\n\\nWould you like to play again?",
-            "Game Complete",
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.QUESTION_MESSAGE
-        );
+        if (scoreManager != null && gameSession != null)
+            scoreManager.submitIfNotSubmitted(gameSession);
+        int choice = uiManager.showConfirm(this, "Game Complete",
+                "Congratulations! You completed all " + levelManager.getMaxLevels() +
+                        " levels!\\n\\nWould you like to play again?",
+                JOptionPane.YES_NO_OPTION);
 
         if (choice == JOptionPane.YES_OPTION) {
             restartGame();
@@ -411,7 +363,8 @@ public class GamePanel extends JPanel implements KeyListener {
     private void restartGame() {
         levelManager.reset();
         initializeLevel();
-        if (gameLoop != null) gameLoop.start();
+        if (gameLoop != null)
+            gameLoop.start();
         // reset run stats for a new session (used in local replay flow)
         elapsedMsAccum = 0;
         levelsCompleted = 0;
@@ -427,33 +380,36 @@ public class GamePanel extends JPanel implements KeyListener {
     private int countDestroyedDestructable() {
         int c = 0;
         for (Block b : blocks) {
-            if (b.getHitsRemaining() != GameConfig.UNDESTRUCTABLE_BLOCK && b.isDestroyed()) c++;
+            if (b.getHitsRemaining() != GameConfig.UNDESTRUCTABLE_BLOCK && b.isDestroyed())
+                c++;
         }
         return c;
     }
 
-
-
     private void showLevelMap() {
         // Delegate to LevelBuilder which now provides a reusable preview dialog
-        String input = JOptionPane.showInputDialog(this, "Nhập số level (1-" + GameConfig.MAX_LEVELS + "):", "Xem Map Level", JOptionPane.QUESTION_MESSAGE);
-        if (input == null) return;
-            try {
+        String input = uiManager.promptInput(this, "Xem Map Level", "Nhập số level (1-" + GameConfig.MAX_LEVELS + "):");
+        if (input == null)
+            return;
+        try {
             int levelNum = Integer.parseInt(input.trim());
             if (levelNum < 1 || levelNum > GameConfig.MAX_LEVELS) {
-                JOptionPane.showMessageDialog(this, "Level phải từ 1 đến " + GameConfig.MAX_LEVELS, "Lỗi", JOptionPane.ERROR_MESSAGE);
+                uiManager.showMessage(this, "Lỗi", "Level phải từ 1 đến " + GameConfig.MAX_LEVELS, JOptionPane.ERROR_MESSAGE);
                 return;
             }
             levels.LevelPreview.show(this, levelNum);
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Vui lòng nhập số hợp lệ!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            uiManager.showMessage(this, "Lỗi", "Vui lòng nhập số hợp lệ!", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     @Override
     public void keyPressed(KeyEvent e) {
         // forward to InputHandler for future refactor (non-invasive)
-        try { inputHandler.keyPressed(e); } catch (Throwable ignore) {}
+        try {
+            inputHandler.keyPressed(e);
+        } catch (Throwable ignore) {
+        }
 
         switch (e.getKeyCode()) {
             case KeyEvent.VK_LEFT, KeyEvent.VK_A -> leftPressed = true;
@@ -469,12 +425,7 @@ public class GamePanel extends JPanel implements KeyListener {
                 }
             }
             case KeyEvent.VK_ESCAPE -> {
-                int choice = JOptionPane.showConfirmDialog(
-                    this,
-                    "Are you sure you want to quit?",
-                    "Quit Game",
-                    JOptionPane.YES_NO_OPTION
-                );
+                int choice = uiManager.showConfirm(this, "Quit Game", "Are you sure you want to quit?", JOptionPane.YES_NO_OPTION);
                 if (choice == JOptionPane.YES_OPTION) {
                     System.exit(0);
                 }
@@ -490,7 +441,10 @@ public class GamePanel extends JPanel implements KeyListener {
     @Override
     public void keyReleased(KeyEvent e) {
         // forward to InputHandler for future refactor (non-invasive)
-        try { inputHandler.keyReleased(e); } catch (Throwable ignore) {}
+        try {
+            inputHandler.keyReleased(e);
+        } catch (Throwable ignore) {
+        }
 
         switch (e.getKeyCode()) {
             case KeyEvent.VK_LEFT, KeyEvent.VK_A -> leftPressed = false;
@@ -508,9 +462,11 @@ public class GamePanel extends JPanel implements KeyListener {
         this.eventsListener = listener;
     }
 
-    // Khởi tạo hoặc khôi phục thông tin người chơi và thống kê phiên chơi (khi solo mới hoặc load save)
+    // Khởi tạo hoặc khôi phục thông tin người chơi và thống kê phiên chơi (khi solo
+    // mới hoặc load save)
     public void setPlayerRunInfo(String playerName, long elapsedMs, int levelsCompleted, int totalBlocksDestroyed) {
-        if (playerName != null && !playerName.isBlank()) this.playerName = playerName.trim();
+        if (playerName != null && !playerName.isBlank())
+            this.playerName = playerName.trim();
         this.elapsedMsAccum = Math.max(0, elapsedMs);
         this.levelsCompleted = Math.max(0, levelsCompleted);
         this.totalBlocksDestroyed = Math.max(0, totalBlocksDestroyed);
@@ -523,13 +479,23 @@ public class GamePanel extends JPanel implements KeyListener {
         }
     }
 
-
-
     public static class RunStats {
-        public final String player; public final long elapsedMs; public final int levels; public final int blocks;
-        public RunStats(String p, long e, int l, int b) { this.player=p; this.elapsedMs=e; this.levels=l; this.blocks=b; }
+        public final String player;
+        public final long elapsedMs;
+        public final int levels;
+        public final int blocks;
+
+        public RunStats(String p, long e, int l, int b) {
+            this.player = p;
+            this.elapsedMs = e;
+            this.levels = l;
+            this.blocks = b;
+        }
     }
-    public RunStats getRunStats() { return new RunStats(playerName, elapsedMsAccum, levelsCompleted, totalBlocksDestroyed); }
+
+    public RunStats getRunStats() {
+        return new RunStats(playerName, elapsedMsAccum, levelsCompleted, totalBlocksDestroyed);
+    }
 
     public interface GameEvents {
         void onGameOver();
@@ -552,4 +518,3 @@ public class GamePanel extends JPanel implements KeyListener {
     }
 
 }
-

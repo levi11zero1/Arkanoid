@@ -201,7 +201,6 @@ public class ArkanoidGame {
                                 MusicPlayer.stop();
 
                                 GamePanel gamePanel = new GamePanel();
-
                                 try {
                                     function.SaveController.loadAndApply(frame, gamePanel, fileToLoad);
                                 } catch (Exception ex) {
