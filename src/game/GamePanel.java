@@ -78,9 +78,12 @@ public class GamePanel extends JPanel implements KeyListener {
     this.uiManager = new UIManager();
     this.audioManager = new AudioManager();
 
-    // wire game loop tick listener and start loop
+    // wire game loop để tick
     this.gameLoop.setTickListener(delta -> onTick(delta));
     this.gameLoop.start();
+
+    // cung cấp thực thể cho EntityManager
+    this.entityManager.setEntities(ball, paddle, blocks);
 
         // Trong constructor GamePanel()
     // start power-up spawning via manager
@@ -119,6 +122,9 @@ public class GamePanel extends JPanel implements KeyListener {
         blocks = LevelBuilder.createLevel(levelManager.getCurrentLevel());
         // baseline destroyed count for this level
         lastDestroyedCountThisLevel = countDestroyedDestructable();
+
+        // Cho biết EntityManager về các thực thể mới
+        if (entityManager != null) entityManager.setEntities(ball, paddle, blocks);
     }
 
     private void initSaveButton() {
@@ -232,6 +238,7 @@ public class GamePanel extends JPanel implements KeyListener {
         lastDestroyedCountThisLevel = countDestroyedDestructable();
 
         // 5) Vẽ lại
+        if (entityManager != null) entityManager.setEntities(ball, paddle, blocks);
         repaint();
     }
 
@@ -278,9 +285,18 @@ public class GamePanel extends JPanel implements KeyListener {
     }
 
     private void updateGame(double deltaTime) {
-        ball.move();
-        ball.checkBounds(getWidth(), getHeight());
-        paddle.update(leftPressed, rightPressed, getWidth(), deltaTime);
+        // Delegate entity updates to EntityManager
+        if (entityManager != null) {
+            entityManager.updateAll(deltaTime, getWidth(), getHeight(), leftPressed, rightPressed);
+        } else {
+            if (ball != null) {
+                ball.move();
+                ball.checkBounds(getWidth(), getHeight());
+            }
+            if (paddle != null) {
+                paddle.update(leftPressed, rightPressed, getWidth(), deltaTime);
+            }
+        }
 
         // Tick cooldown trong bộ xử lý va chạm
         collisionManager.tickCooldown();
