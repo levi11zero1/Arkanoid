@@ -21,7 +21,6 @@ import utils.AudioManager;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;           // Ảnh chụp trạng thái game để lưu/khôi phục
-import java.util.Random;         // Quản lý đọc/ghi file save
 import javax.swing.*;               // Điều khiển tạm dừng/tiếp tục
 import levels.LevelBuilder;
 import levels.LevelManager;
@@ -46,9 +45,8 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private UIManager uiManager;
     private AudioManager audioManager;
 
-    private java.util.List<PowerUp> activePowerUps = new ArrayList<>();
-    private javax.swing.Timer spawnTimer;
-    private Random random = new Random();  // ✅ chỉ tạo 1 lần
+    // Power-up management delegated
+    // active list, timer and random are now owned by PowerUpManager
 
     private boolean leftPressed = false;
     private boolean rightPressed = false;
@@ -86,19 +84,18 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         lastNanos = System.nanoTime();
 
         // Trong constructor GamePanel()
-        spawnTimer = new javax.swing.Timer(14000, e -> { if (e != null) { /* satisfy linter */ } spawnRandomPowerUp(); }); // mỗi 30s
-        spawnTimer.setRepeats(true);
-        spawnTimer.start();
+    // start power-up spawning via manager
+    powerUpManager.startSpawning(this);
 
         // Đăng ký Pause: dừng timer khi pause, chạy lại khi resume
         Pause.getInstance().setListener(new Pause.PauseListener() {
             @Override public void onPause() {
                 if (gameTimer != null) gameTimer.stop();
-                if (spawnTimer != null) spawnTimer.stop();
+                powerUpManager.stopSpawning();
             }
             @Override public void onResume() {
                 if (gameTimer != null) gameTimer.start();
-                if (spawnTimer != null) spawnTimer.start();
+                powerUpManager.startSpawning(GamePanel.this);
             }
         });
 
@@ -177,7 +174,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
                 Toolkit.getDefaultToolkit().beep();
                 // Stop timers to prevent further gameplay
                 if (gameTimer != null) gameTimer.stop();
-                if (spawnTimer != null) spawnTimer.stop();
+                powerUpManager.stopSpawning();
                 // Inform container to go back to menu
                 if (eventsListener != null) {
                     eventsListener.onGameOver();
@@ -259,7 +256,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         for (Block block : blocks) {
             block.draw(g);
         }
-        for (PowerUp p : activePowerUps) {
+        for (PowerUp p : powerUpManager.snapshot()) {
             g.setColor(p.getColor());
             g.fillRect(p.getX(), p.getY(), p.getWidth(), p.getHeight());
         }
@@ -292,19 +289,8 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             lastDestroyedCountThisLevel = curDestroyed;
         }
 
-        for (Iterator<PowerUp> it = activePowerUps.iterator(); it.hasNext();) {
-            PowerUp p = it.next();
-            p.updatePosition();
-
-            if (p.getBounds().intersects(paddle.getBounds())) {
-                applyPowerUpEffect(p);
-                it.remove();
-                continue;
-            }
-            if (p.isOutOfBounds(getHeight())) {
-                it.remove();
-            }
-        }
+        // delegate power-up updates to manager
+        powerUpManager.updateAll(getHeight(), paddle, ball);
 
         repaint();
     }
@@ -524,24 +510,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             case KeyEvent.VK_RIGHT, KeyEvent.VK_D -> rightPressed = false;
         }
     }
-    private void spawnRandomPowerUp() {
-        PowerUp.Type[] types = PowerUp.Type.values();
-        PowerUp.Type randomType = types[random.nextInt(types.length)];
-        int spawnX = random.nextInt(getWidth() - 20);
-        PowerUp p = new PowerUp(randomType, spawnX, 0);
-
-        activePowerUps.add(p);
-    }
-
-    private void applyPowerUpEffect(PowerUp p) {
-        PowerUp.Type type = p.getType();
-
-        if (type == PowerUp.Type.PADDLE_EXPAND || type == PowerUp.Type.PADDLE_SHRINK || type == PowerUp.Type.PADDLE_SPEED_UP) {
-            paddle.applyPowerUp(type);
-        } else if (type == PowerUp.Type.BALL_EXPAND || type == PowerUp.Type.BALL_SHRINK || type == PowerUp.Type.BALL_SLOW) {
-            ball.applyPowerUp(type);
-        }
-    }
+    // PowerUp spawn/update logic moved to PowerUpManager
 
     @Override
     public void keyTyped(KeyEvent e) {
@@ -582,15 +551,9 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         if (paddle != null) {
             paddle.resetSize();
         }
-
-        // 3️⃣ Xóa mọi power-up đang rơi
-        if (activePowerUps != null) {
-            activePowerUps.clear();
-        }
-
-        // 4️⃣ Dừng timer spawn power-up (nếu cần)
-        if (spawnTimer != null) {
-            spawnTimer.stop();
+        // 3️⃣ Delegate reset to PowerUpManager (clears list and stops spawning)
+        if (powerUpManager != null) {
+            powerUpManager.resetAll();
         }
     }
 
