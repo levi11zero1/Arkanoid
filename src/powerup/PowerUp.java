@@ -16,7 +16,7 @@ public class PowerUp {
     private Color color;
     private int x, y;
     private int width = 20, height = 20;
-    private double fallSpeed = 2.2; // tốc độ rơi xuống
+    private double fallSpeed = 2.8; // tốc độ rơi xuống
 
     public PowerUp(Type type, int startX, int startY) {
         this.type = type;

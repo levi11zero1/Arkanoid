@@ -10,7 +10,7 @@ public class GameConfig {
     public static int BALL_SIZE = 20;
     public static final double BALL_MIN_SPEED = 2.0;
     public static final double BALL_MAX_SPEED = 6.0;
-    public static final double BALL_DEFAULT_SPEED = 3.0;
+    public static double BALL_DEFAULT_SPEED = 10.0;
 
     // Paddle
     public static int PADDLE_WIDTH = 100;
