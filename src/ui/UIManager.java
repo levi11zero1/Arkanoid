@@ -1,5 +1,8 @@
 package ui;
 
+import function.Pause;
+import function.SaveController;
+import game.GamePanel;
 import java.awt.Component;
 import java.awt.Graphics2D;
 import java.awt.event.ComponentAdapter;
@@ -7,10 +10,6 @@ import java.awt.event.ComponentEvent;
 import java.util.function.Consumer;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
-
-import ui.StyledButton;
-import function.SaveController;
-import game.GamePanel;
 
 /**
  * UIManager skeleton. Draw HUD and overlays here (score, lives, pause menu).
@@ -51,9 +50,19 @@ public class UIManager {
         saveButton.addActionListener(ev -> {
             boolean saved = false;
             try {
+                // Pause the game while the save dialog is open. If the user cancels
+                // we'll resume; if they choose "Lưu và thoát" we leave it paused so
+                // the caller can perform stop/exit behavior.
+                try { Pause.getInstance().pause(); } catch (Throwable ignored) {}
+
                 saved = SaveController.promptAndSave(panel, panel);
             } catch (Throwable t) {
                 // swallow: SaveController will show its own dialogs
+            } finally {
+                if (!saved) {
+                    // user cancelled or save failed -> resume gameplay
+                    try { Pause.getInstance().resume(); } catch (Throwable ignored) {}
+                }
             }
             if (onSaved != null) onSaved.accept(saved);
         });
