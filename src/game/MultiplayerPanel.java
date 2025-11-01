@@ -38,14 +38,16 @@ public class MultiplayerPanel extends JPanel implements ActionListener, KeyListe
         // Center ball
         ball = new Ball(GameConfig.SCREEN_WIDTH / 2, GameConfig.SCREEN_HEIGHT / 2);
         // paddles
-        paddleBottom = new Paddle(
-                GameConfig.SCREEN_WIDTH / 2 - GameConfig.PADDLE_WIDTH / 2,
-                GameConfig.SCREEN_HEIGHT - 60
-        );
-        paddleTop = new Paddle(
-                GameConfig.SCREEN_WIDTH / 2 - GameConfig.PADDLE_WIDTH / 2,
-                30
-        );
+    paddleBottom = new Paddle(
+        GameConfig.SCREEN_WIDTH / 2 - GameConfig.DEFAULT_PADDLE_WIDTH / 2,
+        GameConfig.SCREEN_HEIGHT - 60,
+        false
+    );
+    paddleTop = new Paddle(
+        GameConfig.SCREEN_WIDTH / 2 - GameConfig.DEFAULT_PADDLE_WIDTH / 2,
+        30,
+        false
+    );
 
         // create protective rows
         topBlocks = new ArrayList<>();
@@ -109,10 +111,9 @@ public class MultiplayerPanel extends JPanel implements ActionListener, KeyListe
         }
 
         // center paddles
-        double midX = (getWidth() > 0 ? getWidth() : GameConfig.SCREEN_WIDTH) / 2.0 - GameConfig.PADDLE_WIDTH / 2.0;
-        // Using reflection of Paddle API: set by constructing new paddles at same Y
-        paddleTop = new Paddle((int) Math.round(midX), paddleTop.getY());
-        paddleBottom = new Paddle((int) Math.round(midX), paddleBottom.getY());
+    double midX = (getWidth() > 0 ? getWidth() : GameConfig.SCREEN_WIDTH) / 2.0 - GameConfig.DEFAULT_PADDLE_WIDTH / 2.0;
+    paddleTop = new Paddle(midX, paddleTop.getY(), false);
+    paddleBottom = new Paddle(midX, paddleBottom.getY(), false);
     }
 
     @Override

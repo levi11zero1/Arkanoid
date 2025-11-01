@@ -16,14 +16,14 @@ public class Test {
         Scanner scanner = new Scanner(System.in);
         
         System.out.println("=== ARKANOID LEVEL MAP VIEWER ===");
-        System.out.println("Enter level number to view map (1-" + GameConfig.MAX_LEVELS + "):");
+    System.out.println("Enter level number to view map (0-" + GameConfig.MAX_LEVELS + "):");
         System.out.print("Level: ");
         
         try {
             int levelNum = scanner.nextInt();
             
-            if (levelNum < 1 || levelNum > GameConfig.MAX_LEVELS) {
-                System.err.println("Error: Level must be from 1 to " + GameConfig.MAX_LEVELS);
+            if (levelNum < 0 || levelNum > GameConfig.MAX_LEVELS) {
+                System.err.println("Error: Level must be from 0 to " + GameConfig.MAX_LEVELS);
                 return;
             }
             

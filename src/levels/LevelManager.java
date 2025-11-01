@@ -3,7 +3,7 @@ package levels;
 import utils.GameConfig;
 
 public class LevelManager {
-    private int currentLevel = 1;
+    private int currentLevel = 0;
 
     public int getCurrentLevel() {
         return currentLevel;
@@ -22,7 +22,7 @@ public class LevelManager {
     }
 
     public void reset() {
-        currentLevel = 1;
+    currentLevel = 0;
     }
     
     public int getMaxLevels() {
@@ -32,7 +32,7 @@ public class LevelManager {
     // Dùng bởi GamePanel.applyGameState(...) để khớp màn hiện tại với dữ liệu đã lưu,
     // và bởi các phím tắt để nhảy trực tiếp.
     public void setLevel(int level) {
-        if (level < 1) level = 1;
+    if (level < 0) level = 0;
         if (level > GameConfig.MAX_LEVELS) level = GameConfig.MAX_LEVELS;
         this.currentLevel = level;
     }

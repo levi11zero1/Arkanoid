@@ -2,21 +2,38 @@ package entities;
 
 import java.awt.Color;
 import java.awt.Graphics;
-import utils.GameConfig;
-import powerup.PowerUp;
+import java.awt.Image;
 import java.awt.Rectangle;
+import javax.swing.Timer;
+import powerup.PowerUp;
+import utils.GameConfig;
 
 public class Paddle {
+    private final boolean useSkin;
     private double x;
     private int y;
-    private javax.swing.Timer sizeTimer;
-    private javax.swing.Timer speedTimer;
-    public int normalWidth = GameConfig.PADDLE_WIDTH;
-    public double normalSpeed = 320.0;
+    private Timer sizeTimer;
+    private Timer speedTimer;
+    private int width;
+    private int height;
+    private int normalWidth;
+    private double normalSpeed;
 
     public Paddle(double x, int y) {
-        this.x = x;
+        this(x, y, true);
+    }
+
+    public Paddle(double x, int y, boolean useSkin) {
+        this.useSkin = useSkin;
         this.y = y;
+        this.sizeTimer = null;
+        this.speedTimer = null;
+        this.width = GameConfig.DEFAULT_PADDLE_WIDTH;
+        this.height = GameConfig.PADDLE_HEIGHT;
+        this.normalWidth = GameConfig.DEFAULT_PADDLE_WIDTH;
+        this.normalSpeed = GameConfig.DEFAULT_PADDLE_SPEED;
+        double centerX = x + GameConfig.DEFAULT_PADDLE_WIDTH / 2.0;
+        applySkin(centerX);
     }
 
     public void update(boolean leftPressed, boolean rightPressed, int frameWidth, double dt) {
@@ -31,24 +48,36 @@ public class Paddle {
 
         x += velocity * dt;
 
-        // Keep paddle within screen bounds
         if (x < 0) {
             x = 0;
         }
-        if (x + GameConfig.PADDLE_WIDTH > frameWidth) {
-            x = frameWidth - GameConfig.PADDLE_WIDTH;
+        if (x + width > frameWidth) {
+            x = frameWidth - width;
         }
     }
 
     public void draw(Graphics g) {
+        int drawX = (int) Math.round(x);
+        if (useSkin) {
+            PaddleSkin.Skin skin = PaddleSkin.getSkin();
+            if (skin != null) {
+                Image image = skin.image();
+                int skinWidth = skin.width();
+                int skinHeight = skin.height();
+                if (skinWidth > 0 && skinHeight > 0) {
+                    g.drawImage(image, drawX, y, width, height, null);
+                    return;
+                }
+            }
+        }
+
         g.setColor(Color.GREEN);
-        g.fillRect((int) Math.round(x), y, GameConfig.PADDLE_WIDTH, GameConfig.PADDLE_HEIGHT);
+        g.fillRect(drawX, y, width, height);
     }
 
-    // Check va chạm của paddle với ball
     public boolean isHit(int ballX, int ballY, int ballSize) {
-        return ballX + ballSize > x && ballX < x + GameConfig.PADDLE_WIDTH &&
-               ballY + ballSize > y && ballY < y + GameConfig.PADDLE_HEIGHT;
+        return ballX + ballSize > x && ballX < x + width &&
+               ballY + ballSize > y && ballY < y + height;
     }
 
     public double getX() {
@@ -60,23 +89,27 @@ public class Paddle {
     }
 
     public int getWidth() {
-        return GameConfig.PADDLE_WIDTH;
+        return width;
     }
 
     public int getHeight() {
-        return GameConfig.PADDLE_HEIGHT;
+        return height;
     }
 
     public void resetSize() {
-        GameConfig.PADDLE_WIDTH = normalWidth; // quay về kích thước ban đầu
+        double centerX = x + width / 2.0;
+        width = normalWidth;
         if (sizeTimer != null) {
             sizeTimer.stop();
         }
+        applySkin(centerX);
     }
 
     public void resetSpeed() {
         GameConfig.PADDLE_SPEED = normalSpeed;
-        if (speedTimer != null) speedTimer.stop();
+        if (speedTimer != null) {
+            speedTimer.stop();
+        }
     }
 
     public void applyPowerUp(PowerUp.Type type) {
@@ -86,26 +119,37 @@ public class Paddle {
                 resetSize();
             }
 
-            if (type == PowerUp.Type.PADDLE_EXPAND) GameConfig.PADDLE_WIDTH *= 1.35;
-            else if (type == PowerUp.Type.PADDLE_SHRINK) GameConfig.PADDLE_WIDTH /= 1.3;
+            double centerX = x + width / 2.0;
+            if (type == PowerUp.Type.PADDLE_EXPAND) {
+                width = (int) Math.max(10, Math.round(width * 1.35));
+            } else {
+                width = (int) Math.max(10, Math.round(width / 1.3));
+            }
+            x = centerX - width / 2.0;
 
-            sizeTimer = new javax.swing.Timer(10000, e -> {
+            sizeTimer = new Timer(10000, e -> {
+                if (e != null) {
+                    e.getSource();
+                }
                 resetSize();
                 sizeTimer.stop();
             });
             sizeTimer.setRepeats(false);
             sizeTimer.start();
+            return;
         }
 
-        // ✅ Xử lý power-up tăng tốc độ paddle
-        else if (type == PowerUp.Type.PADDLE_SPEED_UP) {
+        if (type == PowerUp.Type.PADDLE_SPEED_UP) {
             if (speedTimer != null && speedTimer.isRunning()) {
                 speedTimer.stop();
                 resetSpeed();
             }
 
-            GameConfig.PADDLE_SPEED *= 1.5; // tăng 50% tốc độ
-            speedTimer = new javax.swing.Timer(20000, e -> {
+            GameConfig.PADDLE_SPEED *= 1.5;
+            speedTimer = new Timer(20000, e -> {
+                if (e != null) {
+                    e.getSource();
+                }
                 resetSpeed();
                 speedTimer.stop();
             });
@@ -115,6 +159,32 @@ public class Paddle {
     }
 
     public Rectangle getBounds() {
-        return new Rectangle((int)x, y, GameConfig.PADDLE_WIDTH, GameConfig.PADDLE_HEIGHT);
+        return new Rectangle((int) Math.round(x), y, width, height);
+    }
+
+    private void applySkin(double centerX) {
+        if (useSkin) {
+            PaddleSkin.Skin skin = PaddleSkin.getSkin();
+            if (skin != null && skin.width() > 0 && skin.height() > 0) {
+                width = skin.width();
+                height = Math.max(GameConfig.PADDLE_HEIGHT, skin.height());
+                normalWidth = width;
+            } else {
+                width = GameConfig.DEFAULT_PADDLE_WIDTH;
+                height = GameConfig.PADDLE_HEIGHT;
+                normalWidth = width;
+            }
+        } else {
+            width = GameConfig.DEFAULT_PADDLE_WIDTH;
+            height = GameConfig.PADDLE_HEIGHT;
+            normalWidth = width;
+        }
+
+        int overflow = y + height - GameConfig.SCREEN_HEIGHT;
+        if (overflow > 0) {
+            y = Math.max(0, y - overflow);
+        }
+
+        x = centerX - width / 2.0;
     }
 }

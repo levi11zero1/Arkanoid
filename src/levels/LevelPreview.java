@@ -18,7 +18,7 @@ public class LevelPreview {
      * Safe to call from Swing EDT.
      */
     public static void show(Component parent, int levelNum) {
-        if (levelNum < 1 || levelNum > GameConfig.MAX_LEVELS) return;
+    if (levelNum < 0 || levelNum > GameConfig.MAX_LEVELS) return;
         List<Block> previewBlocks = LevelBuilder.createLevel(levelNum);
 
         Window owner = SwingUtilities.getWindowAncestor(parent);
