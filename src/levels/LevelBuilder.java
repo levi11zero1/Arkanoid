@@ -45,6 +45,7 @@ public class LevelBuilder {
     
     public static List<Block> createLevel(int levelNumber) {
         String[] map = switch (levelNumber) {
+            case 0 -> Level0.MAP;
             case 1 -> Level1.MAP;
             case 2 -> Level2.MAP;
             case 3 -> Level3.MAP;
@@ -65,13 +66,6 @@ public class LevelBuilder {
         int cols = 15; // fits SCREEN_WIDTH with current spacing
         int totalWidth = cols * GameConfig.BLOCK_SPACING - (GameConfig.BLOCK_SPACING - GameConfig.BLOCK_WIDTH);
         int startX = (GameConfig.SCREEN_WIDTH - totalWidth) / 2;
-
-        java.util.function.BiFunction<Integer, Integer, Integer> rowToHits = (offsetRow, r) -> {
-            int globalRow = offsetRow + r;
-            if (globalRow < 3) return 3;
-            if (globalRow < 6) return 2;
-            return 1;
-        };
 
     int[][] src = parseHitMask(java.util.Arrays.asList(mapLines));
     int srcH = src.length, srcW = src[0].length;
@@ -129,6 +123,7 @@ public class LevelBuilder {
     }
 
     // Parse lines of '0'/'1' into boolean grid (rows x cols)
+    @SuppressWarnings("unused")
     private static boolean[][] parseBinaryMask(List<String> lines) {
         // Deprecated: use parseHitMask
         throw new UnsupportedOperationException("Use parseHitMask instead");
@@ -157,6 +152,7 @@ public class LevelBuilder {
         return g;
     }
     // Nearest-neighbor sampling to preserve 0/1 pattern as closely as possible
+    @SuppressWarnings("unused")
     private static boolean[][] scaleMaskNearest(boolean[][] src, int targetRows, int targetCols) {
         // Deprecated: use scaleHitMaskNearest
         throw new UnsupportedOperationException("Use scaleHitMaskNearest instead");

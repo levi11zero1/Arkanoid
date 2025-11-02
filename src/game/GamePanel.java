@@ -17,6 +17,7 @@ import ui.UIManager;
 import java.util.ArrayList;
 import java.util.List; // Ảnh chụp trạng thái game để lưu/khôi phục
 import javax.swing.*; // Điều khiển tạm dừng/tiếp tục
+import levels.LevelBackgrounds;
 import levels.LevelBuilder;
 import levels.LevelManager;
 import utils.GameConfig;
@@ -40,6 +41,8 @@ public class GamePanel extends JPanel implements KeyListener {
     // Ranking/session
     private ScoreManager scoreManager;
     private GameSession gameSession;
+
+    private Image levelBackground;
 
     // Power-up management delegated
     // active list, timer and random are now owned by PowerUpManager
@@ -128,11 +131,13 @@ public class GamePanel extends JPanel implements KeyListener {
     public void initializeLevel() {
         ball = new Ball(GameConfig.SCREEN_WIDTH / 2, GameConfig.SCREEN_HEIGHT / 2);
         paddle = new Paddle(
-                GameConfig.SCREEN_WIDTH / 2 - GameConfig.PADDLE_WIDTH / 2,
-                GameConfig.SCREEN_HEIGHT - 100);
+        GameConfig.SCREEN_WIDTH / 2 - GameConfig.DEFAULT_PADDLE_WIDTH / 2,
+        GameConfig.SCREEN_HEIGHT - GameConfig.PADDLE_BOTTOM_MARGIN - GameConfig.PADDLE_EXTRA_RAISE_PIXELS);
 
         // Tạo block
-        blocks = LevelBuilder.createLevel(levelManager.getCurrentLevel());
+    int currentLevel = levelManager.getCurrentLevel();
+    blocks = LevelBuilder.createLevel(currentLevel);
+    levelBackground = LevelBackgrounds.getForLevel(currentLevel);
         // baseline destroyed count for this level
         lastDestroyedCountThisLevel = countDestroyedDestructable();
 
@@ -177,11 +182,14 @@ public class GamePanel extends JPanel implements KeyListener {
         ball.setVelocity(new utils.Velocity(state.ballDx, state.ballDy));
         this.paddle = new Paddle((int) Math.round(state.paddleX), state.paddleY);
 
-        // 4) baseline destroyed count for this level (avoid recounting
+        // 4) Cập nhật lại nền theo level hiện tại
+        this.levelBackground = LevelBackgrounds.getForLevel(levelManager.getCurrentLevel());
+
+        // 5) baseline destroyed count for this level (avoid recounting
         // already-destroyed blocks)
         lastDestroyedCountThisLevel = countDestroyedDestructable();
 
-        // 5) Vẽ lại
+        // 6) Vẽ lại
         if (entityManager != null)
             entityManager.setEntities(ball, paddle, blocks);
         repaint();
@@ -190,6 +198,10 @@ public class GamePanel extends JPanel implements KeyListener {
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
+
+        if (levelBackground != null) {
+            g.drawImage(levelBackground, 0, 0, getWidth(), getHeight(), this);
+        }
 
         if (g instanceof Graphics2D g2d) {
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -389,13 +401,13 @@ public class GamePanel extends JPanel implements KeyListener {
 
     private void showLevelMap() {
         // Delegate to LevelBuilder which now provides a reusable preview dialog
-        String input = uiManager.promptInput(this, "Xem Map Level", "Nhập số level (1-" + GameConfig.MAX_LEVELS + "):");
+    String input = uiManager.promptInput(this, "Xem Map Level", "Nhập số level (0-" + GameConfig.MAX_LEVELS + "):");
         if (input == null)
             return;
         try {
             int levelNum = Integer.parseInt(input.trim());
-            if (levelNum < 1 || levelNum > GameConfig.MAX_LEVELS) {
-                uiManager.showMessage(this, "Lỗi", "Level phải từ 1 đến " + GameConfig.MAX_LEVELS,
+            if (levelNum < 0 || levelNum > GameConfig.MAX_LEVELS) {
+                uiManager.showMessage(this, "Lỗi", "Level phải từ 0 đến " + GameConfig.MAX_LEVELS,
                         JOptionPane.ERROR_MESSAGE);
                 return;
             }

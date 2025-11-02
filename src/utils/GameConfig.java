@@ -13,9 +13,13 @@ public class GameConfig {
     public static double BALL_DEFAULT_SPEED = 10.0;
 
     // Paddle
-    public static int PADDLE_WIDTH = 100;
+    public static final int DEFAULT_PADDLE_WIDTH = 100;
+    public static int PADDLE_WIDTH = DEFAULT_PADDLE_WIDTH;
     public static final int PADDLE_HEIGHT = 15;
-    public static double PADDLE_SPEED = 320.0;
+    public static final double DEFAULT_PADDLE_SPEED = 320.0;
+    public static double PADDLE_SPEED = DEFAULT_PADDLE_SPEED;
+    public static final int PADDLE_BOTTOM_MARGIN = 100;
+    public static final int PADDLE_EXTRA_RAISE_PIXELS = 75; // ~2cm at 96 DPI
 
     // Block
     public static final int BLOCK_WIDTH = 40;
