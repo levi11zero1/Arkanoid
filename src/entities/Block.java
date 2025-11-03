@@ -129,7 +129,7 @@ public class Block implements GameObject {
                 ballY + ballSize > y && ballY < y + GameConfig.BLOCK_HEIGHT) {
 
             // ✅ Nếu bóng đang to hơn kích thước mặc định (20 là size gốc)
-            if (GameConfig.BALL_SIZE > 20) {
+            if (GameConfig.BALL_SIZE > GameConfig.DEFAULT_BALL_SIZE) {
                 if (hitsRemaining == 3) {
                     // Gạch cấp 3 → giảm xuống cấp 1
                     hitsRemaining = 1;

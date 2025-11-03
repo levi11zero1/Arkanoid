@@ -1,6 +1,7 @@
 package levels;
 
 public class Level1 {
+    // Map-only: original complex shape mask used in previous Level6
     public static final String[] MAP = new String[]{
             "01111111111111111111111110001111",
             "01111111111111111111111110001111",

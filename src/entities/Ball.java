@@ -2,7 +2,11 @@ package entities;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.Shape;
+import java.awt.geom.Ellipse2D;
 import powerup.PowerUp;
 import utils.GameConfig;
 import utils.AudioManager;
@@ -14,11 +18,13 @@ public class Ball implements GameObject {
     private javax.swing.Timer sizeTimer;
     private double prevX, prevY;
     private int prevSize;
+    private boolean attachedToPaddle;
 
     public Ball(int x, int y) {
         this.x = x;
         this.y = y;
         this.velocity = new Velocity(GameConfig.BALL_DEFAULT_SPEED, -GameConfig.BALL_DEFAULT_SPEED);
+        this.attachedToPaddle = false;
     }
 
     public Ball(int x, int y, Velocity velocity) {
@@ -28,6 +34,10 @@ public class Ball implements GameObject {
     }
 
     public void move() {
+        if (attachedToPaddle) {
+            return;
+        }
+
         // Lưu vị trí trước khi di chuyển
         prevX = x;
         prevY = y;
@@ -67,6 +77,22 @@ public class Ball implements GameObject {
 
     @Override
     public void draw(Graphics g) {
+        BallSkin.Skin skin = BallSkin.getSkin();
+        if (skin != null) {
+            if (g instanceof Graphics2D g2d) {
+                // Ghép ảnh vào clip tròn để dễ thay skin mà vẫn giữ hình tròn
+                Shape oldClip = g2d.getClip();
+                Ellipse2D circle = new Ellipse2D.Double(getX(), getY(), GameConfig.BALL_SIZE, GameConfig.BALL_SIZE);
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                g2d.setClip(circle);
+                g2d.drawImage(skin.image(), getX(), getY(), GameConfig.BALL_SIZE, GameConfig.BALL_SIZE, null);
+                g2d.setClip(oldClip);
+            } else {
+                g.drawImage(skin.image(), getX(), getY(), GameConfig.BALL_SIZE, GameConfig.BALL_SIZE, null);
+            }
+            return;
+        }
         g.setColor(Color.BLUE);
         g.fillOval(getX(), getY(), GameConfig.BALL_SIZE, GameConfig.BALL_SIZE);
     }
@@ -83,6 +109,9 @@ public class Ball implements GameObject {
 
     // Nảy bóng dựa trên điểm chạm
     public void bounceOffPaddle(double paddleX, double paddleWidth) {
+        if (attachedToPaddle) {
+            return;
+        }
         double paddleCenter = paddleX + paddleWidth / 2;
         double ballCenter = x + GameConfig.BALL_SIZE / 2;
         double hitOffset = (ballCenter - paddleCenter) / (paddleWidth / 2); // -1 -> 1
@@ -111,16 +140,52 @@ public class Ball implements GameObject {
     }
 
     public void resetSize() {
-        GameConfig.BALL_SIZE = 20;
+        GameConfig.BALL_SIZE = GameConfig.DEFAULT_BALL_SIZE;
         if (sizeTimer != null) {
             sizeTimer.stop();
         }
     }
 
     public void resetSpeed() {
+        double magnitude = velocity.getMagnitude();
+        if (magnitude == 0) {
+            velocity = Velocity.fromAngle(-90, GameConfig.BALL_DEFAULT_SPEED);
+            return;
+        }
         double angle = Math.atan2(velocity.getDy(), velocity.getDx());
         velocity.setDx(Math.cos(angle) * GameConfig.BALL_DEFAULT_SPEED);
         velocity.setDy(Math.sin(angle) * GameConfig.BALL_DEFAULT_SPEED);
+    }
+
+    public boolean isAttachedToPaddle() {
+        return attachedToPaddle;
+    }
+
+    public void attachToPaddle(Paddle paddle) {
+        if (paddle == null) {
+            return;
+        }
+        attachedToPaddle = true;
+        velocity = new Velocity(0, 0);
+        centerOnPaddle(paddle);
+    }
+
+    public void detachFromPaddle() {
+        attachedToPaddle = false;
+        if (velocity.getMagnitude() == 0) {
+            velocity = Velocity.fromAngle(-90, GameConfig.BALL_DEFAULT_SPEED);
+        }
+    }
+
+    public void centerOnPaddle(Paddle paddle) {
+        if (paddle == null) {
+            return;
+        }
+        double paddleCenter = paddle.getX() + paddle.getWidth() / 2.0;
+        this.x = paddleCenter - GameConfig.BALL_SIZE / 2.0;
+        this.y = paddle.getY() - GameConfig.BALL_SIZE;
+        this.prevX = x;
+        this.prevY = y;
     }
 
 
@@ -163,6 +228,9 @@ public class Ball implements GameObject {
 
     // Check mép để ko lỗi
     public void checkBounds(int screenWidth, int screenHeight) {
+        if (attachedToPaddle) {
+            return;
+        }
         boolean bounced = false;
 
         if (x < 0) {
