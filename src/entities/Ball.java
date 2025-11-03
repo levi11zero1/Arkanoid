@@ -2,12 +2,13 @@ package entities;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Rectangle;
 import powerup.PowerUp;
 import utils.GameConfig;
 import utils.AudioManager;
 import utils.Velocity;
 
-public class Ball {
+public class Ball implements GameObject {
     private double x, y;
     private Velocity velocity;
     private javax.swing.Timer sizeTimer;
@@ -64,6 +65,7 @@ public class Ball {
         this.y = y;
     }
 
+    @Override
     public void draw(Graphics g) {
         g.setColor(Color.BLUE);
         g.fillOval(getX(), getY(), GameConfig.BALL_SIZE, GameConfig.BALL_SIZE);
@@ -191,5 +193,10 @@ public class Ball {
                 // ignore
             }
         }
+    }
+
+    @Override
+    public Rectangle getBounds() {
+        return new Rectangle(getX(), getY(), GameConfig.BALL_SIZE, GameConfig.BALL_SIZE);
     }
 }

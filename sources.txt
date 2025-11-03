@@ -4,6 +4,7 @@ C:\Users\admin\OneDrive\Máy tính\ARKANOID\ARKANOID\src\entities\Ball.java
 C:\Users\admin\OneDrive\Máy tính\ARKANOID\ARKANOID\src\entities\Block.java
 C:\Users\admin\OneDrive\Máy tính\ARKANOID\ARKANOID\src\entities\EntityManager.java
 C:\Users\admin\OneDrive\Máy tính\ARKANOID\ARKANOID\src\entities\Paddle.java
+C:\Users\admin\OneDrive\Máy tính\ARKANOID\ARKANOID\src\entities\GameObject.java
 C:\Users\admin\OneDrive\Máy tính\ARKANOID\ARKANOID\src\entities\PaddleSkinManager.java
 C:\Users\admin\OneDrive\Máy tính\ARKANOID\ARKANOID\src\function\GameState.java
 C:\Users\admin\OneDrive\Máy tính\ARKANOID\ARKANOID\src\function\Pause.java

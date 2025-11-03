@@ -2,9 +2,10 @@ package entities;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Rectangle;
 import utils.GameConfig;
 
-public class Block {
+public class Block implements GameObject {
     private int x, y;
     private boolean destroyed = false;
     private int hitsRemaining;
@@ -38,6 +39,7 @@ public class Block {
     }
 
     // Set màu các block khác nhàu
+    @Override
     public void draw(Graphics g) {
         if (!destroyed) {
             Color color = (customColor != null)
@@ -141,5 +143,15 @@ public class Block {
 
     public int getHitsRemaining() {
         return hitsRemaining;
+    }
+
+    @Override
+    public Rectangle getBounds() {
+        return new Rectangle(x, y, GameConfig.BLOCK_WIDTH, GameConfig.BLOCK_HEIGHT);
+    }
+
+    @Override
+    public boolean isActive() {
+        return !destroyed;
     }
 }
