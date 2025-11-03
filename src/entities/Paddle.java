@@ -8,7 +8,7 @@ import javax.swing.Timer;
 import powerup.PowerUp;
 import utils.GameConfig;
 
-public class Paddle {
+public class Paddle implements GameObject {
     private final boolean useSkin;
     private double x;
     private int y;
@@ -56,6 +56,7 @@ public class Paddle {
         }
     }
 
+    @Override
     public void draw(Graphics g) {
         int drawX = (int) Math.round(x);
         if (useSkin) {
@@ -158,6 +159,7 @@ public class Paddle {
         }
     }
 
+    @Override
     public Rectangle getBounds() {
         return new Rectangle((int) Math.round(x), y, width, height);
     }
