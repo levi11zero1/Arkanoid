@@ -2,24 +2,23 @@ package game;
 
 import entities.Ball;
 import entities.Block;
+import entities.EntityManager;
 import entities.Paddle;
+import function.GameSession;
 import function.GameState;
 import function.Pause;
-// import function.SaveManager; // removed: save orchestration moved to SaveController
 import function.ScoreManager;
-import function.GameSession;
+import input.InputHandler;
 import java.awt.*;
 import java.awt.event.*;
-import input.InputHandler;
-import entities.EntityManager;
+import java.util.ArrayList;
+import java.util.List;
+import javax.swing.*;
+import levels.LevelBackgrounds; // Ảnh chụp trạng thái game để lưu/khôi phục
+import levels.LevelBuilder; // Điều khiển tạm dừng/tiếp tục
+import levels.LevelManager;
 import powerup.PowerUpManager;
 import ui.UIManager;
-import java.util.ArrayList;
-import java.util.List; // Ảnh chụp trạng thái game để lưu/khôi phục
-import javax.swing.*; // Điều khiển tạm dừng/tiếp tục
-import levels.LevelBackgrounds;
-import levels.LevelBuilder;
-import levels.LevelManager;
 import utils.GameConfig;
 
 public class GamePanel extends JPanel implements KeyListener {
@@ -58,6 +57,7 @@ public class GamePanel extends JPanel implements KeyListener {
     private int levelsCompleted = 0; // số màn đã hoàn thành
     private int totalBlocksDestroyed = 0; // tổng số block phá được qua các màn
     private int lastDestroyedCountThisLevel = 0; // baseline để tính delta mỗi tick
+    private int totalScore = 0; // tổng điểm (mặc định 10 điểm = 1 block)
 
     public GamePanel() {
         levelManager = new LevelManager();
@@ -213,8 +213,18 @@ public class GamePanel extends JPanel implements KeyListener {
         }
         // Render UI overlay using UIManager (non-invasive call)
         if (g instanceof Graphics2D) {
+            Graphics2D g2 = (Graphics2D) g;
+            // Draw score top-left
             try {
-                uiManager.renderOverlay((Graphics2D) g);
+                g2.setColor(Color.WHITE);
+                // Match Renderer HUD font size and place below the Level text to avoid overlap
+                g2.setFont(new Font("Arial", Font.BOLD, 16));
+                String scoreText = "Score: " + totalScore;
+                g2.drawString(scoreText, 10, 45);
+            } catch (Throwable ignored) {
+            }
+            try {
+                uiManager.renderOverlay(g2);
             } catch (Throwable t) {
                 // keep rendering resilient during incremental refactor
             }
@@ -230,7 +240,10 @@ public class GamePanel extends JPanel implements KeyListener {
         // cập nhật số block phá (delta so với lần đo trước)
         int curDestroyed = countDestroyedDestructable();
         if (curDestroyed > lastDestroyedCountThisLevel) {
-            totalBlocksDestroyed += (curDestroyed - lastDestroyedCountThisLevel);
+            int newly = (curDestroyed - lastDestroyedCountThisLevel);
+            totalBlocksDestroyed += newly;
+            // mỗi block = 10 điểm
+            totalScore += newly * 10;
             lastDestroyedCountThisLevel = curDestroyed;
         }
 
@@ -239,6 +252,7 @@ public class GamePanel extends JPanel implements KeyListener {
             gameSession.setElapsedMs(elapsedMsAccum);
             gameSession.setLevelsCompleted(levelsCompleted);
             gameSession.setTotalBlocksDestroyed(totalBlocksDestroyed);
+            gameSession.setTotalScore(totalScore);
         }
 
         // delegate power-up updates to manager
@@ -382,10 +396,12 @@ public class GamePanel extends JPanel implements KeyListener {
         elapsedMsAccum = 0;
         levelsCompleted = 0;
         totalBlocksDestroyed = 0;
+        totalScore = 0;
         if (gameSession != null) {
             gameSession.setElapsedMs(0);
             gameSession.setLevelsCompleted(0);
             gameSession.setTotalBlocksDestroyed(0);
+            gameSession.setTotalScore(0);
             gameSession.resetSubmitted();
         }
     }
