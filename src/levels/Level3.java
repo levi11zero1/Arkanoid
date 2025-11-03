@@ -1,7 +1,6 @@
 package levels;
 
 public class Level3 {
-    // Map-only: diamond-ish pyramid
     public static final String[] MAP = new String[]{
         "000001100000",
         "000011110000",

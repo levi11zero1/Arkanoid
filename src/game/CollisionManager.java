@@ -4,13 +4,9 @@ import entities.Ball;
 import entities.Block;
 import entities.Paddle;
 import java.util.List;
-import utils.GameConfig;
 import utils.AudioManager;
+import utils.GameConfig;
 
-/**
- * Handles collision detection and response between the ball, paddle and blocks.
- * Keeps an internal small cooldown to avoid multiple bounces in a single frame.
- */
 public class CollisionManager {
     private int collisionCooldown = 0; // frames of cooldown
 

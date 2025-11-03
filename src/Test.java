@@ -96,31 +96,52 @@ public class Test {
                 
                 g.drawString("LEGEND:", legendX, legendY);
                 
-                // Gạch đỏ - 1 hit
-                g.setColor(Color.RED);
-                g.fillRect(legendX, legendY + 10, 30, 15);
+                // Try to show images for bricks (fallback to colored rects if missing)
+                java.awt.Image img1 = loadLegendImage("images/Brick1_4.png");
+                java.awt.Image img2 = loadLegendImage("images/Brick2_4.png");
+                java.awt.Image img3 = loadLegendImage("images/Brick3_4.png");
+                java.awt.Image img9 = loadLegendImage("images/Brick9_4.png");
+
+                int bw = GameConfig.BLOCK_WIDTH > 0 ? Math.min(GameConfig.BLOCK_WIDTH, 60) : 30;
+                int bh = GameConfig.BLOCK_HEIGHT > 0 ? Math.min(GameConfig.BLOCK_HEIGHT, 30) : 15;
+
+                // 1-hit
+                if (img1 != null) g.drawImage(img1, legendX, legendY + 10, bw, bh, null);
+                else {
+                    g.setColor(Color.RED);
+                    g.fillRect(legendX, legendY + 10, bw, bh);
+                }
                 g.setColor(Color.WHITE);
-                g.drawString("= 1 hit", legendX + 40, legendY + 23);
-                
-                // Gạch cam - 2 hits
-                g.setColor(Color.ORANGE);
-                g.fillRect(legendX, legendY + 35, 30, 15);
+                g.drawString("= 1 hit", legendX + bw + 10, legendY + 10 + bh - 2);
+
+                // 2-hit
+                if (img2 != null) g.drawImage(img2, legendX, legendY + 10 + bh + 10, bw, bh, null);
+                else {
+                    g.setColor(Color.ORANGE);
+                    g.fillRect(legendX, legendY + 10 + bh + 10, bw, bh);
+                }
                 g.setColor(Color.WHITE);
-                g.drawString("= 2 hits", legendX + 40, legendY + 48);
-                
-                // Gạch tím - 3 hits
-                g.setColor(Color.MAGENTA);
-                g.fillRect(legendX, legendY + 60, 30, 15);
+                g.drawString("= 2 hits", legendX + bw + 10, legendY + 10 + bh + 10 + bh - 2);
+
+                // 3-hit
+                if (img3 != null) g.drawImage(img3, legendX, legendY + 10 + (bh + 10) * 2, bw, bh, null);
+                else {
+                    g.setColor(Color.MAGENTA);
+                    g.fillRect(legendX, legendY + 10 + (bh + 10) * 2, bw, bh);
+                }
                 g.setColor(Color.WHITE);
-                g.drawString("= 3 hits", legendX + 40, legendY + 73);
-                
-                // Gạch trắng - Undestructable
+                g.drawString("= 3 hits", legendX + bw + 10, legendY + 10 + (bh + 10) * 2 + bh - 2);
+
+                // Undestructable
+                if (img9 != null) g.drawImage(img9, legendX, legendY + 10 + (bh + 10) * 3, bw, bh, null);
+                else {
+                    g.setColor(Color.WHITE);
+                    g.fillRect(legendX, legendY + 10 + (bh + 10) * 3, bw, bh);
+                    g.setColor(Color.BLACK);
+                    g.drawRect(legendX, legendY + 10 + (bh + 10) * 3, bw, bh);
+                }
                 g.setColor(Color.WHITE);
-                g.fillRect(legendX, legendY + 85, 30, 15);
-                g.setColor(Color.BLACK);
-                g.drawRect(legendX, legendY + 85, 30, 15);
-                g.setColor(Color.WHITE);
-                g.drawString("= Undestructable", legendX + 40, legendY + 98);
+                g.drawString("= Undestructable", legendX + bw + 10, legendY + 10 + (bh + 10) * 3 + bh - 2);
             }
         };
         
@@ -134,5 +155,18 @@ public class Test {
         
         System.out.println("Map window opened!");
         System.out.println("Close the window to exit.");
+    }
+
+    // Load image helper used by the legend. Tries classpath resources first, then file system.
+    private static java.awt.Image loadLegendImage(String path) {
+        if (path == null || path.isBlank()) return null;
+        try {
+            java.net.URL res = Test.class.getClassLoader().getResource(path);
+            if (res != null) return new javax.swing.ImageIcon(res).getImage();
+            java.io.File f = new java.io.File(path);
+            if (f.exists()) return javax.imageio.ImageIO.read(f);
+        } catch (Exception ignored) {
+        }
+        return null;
     }
 }

@@ -1,31 +1,34 @@
 package game;
 
-import java.awt.Graphics2D;
+import entities.Ball;
+import entities.Block;
+import entities.Paddle;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.Graphics2D;
 import java.util.List;
-import entities.Ball;
-import entities.Paddle;
-import entities.Block;
-import powerup.PowerUp;
 import levels.LevelManager;
+import powerup.PowerUp;
 import utils.GameConfig;
 
-/**
- * Renderer implementation responsible for drawing the game world.
- */
 public class Renderer implements IRenderer {
     @Override
     public void render(Graphics2D g, Ball ball, Paddle paddle, List<Block> blocks, List<PowerUp> powerUps, LevelManager levelManager) {
-        // Draw HUD info
-        g.setColor(Color.WHITE);
-        g.setFont(new Font("Arial", Font.BOLD, 16));
-        g.drawString("Level: " + levelManager.getCurrentLevel(), 10, 25);
-
-        long remainingBlocks = blocks.stream().filter(block -> !block.isDestroyed()).count();
-        g.drawString("Blocks: " + remainingBlocks, GameConfig.SCREEN_WIDTH - 100, 25);
-
-        // Draw entities
+        
+    g.setColor(Color.WHITE);
+    g.setFont(new Font("Arial", Font.BOLD, 16));
+    g.drawString("Level: " + levelManager.getCurrentLevel(), 10, 25);
+    long remainingBlocks = blocks.stream().filter(block -> !block.isDestroyed()).count();.
+    int blocksTextX = GameConfig.SCREEN_WIDTH - 170;
+    int blocksBoxY = 8;
+    int blocksBoxW = 160;
+    int blocksBoxH = 22;
+    java.awt.Composite old = g.getComposite();
+    g.setColor(new java.awt.Color(0, 0, 0, 160));
+    g.fillRoundRect(blocksTextX - 6, blocksBoxY, blocksBoxW, blocksBoxH, 6, 6);
+    g.setComposite(old);
+    g.setColor(Color.WHITE);
+    g.drawString("Blocks: " + remainingBlocks, blocksTextX, 25);
         if (ball != null) ball.draw(g);
         if (paddle != null) paddle.draw(g);
         if (blocks != null) {
@@ -34,7 +37,7 @@ public class Renderer implements IRenderer {
             }
         }
 
-        // Draw powerups
+        
         if (powerUps != null) {
             for (PowerUp p : powerUps) {
                 g.setColor(p.getColor());

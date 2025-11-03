@@ -1,8 +1,6 @@
 package levels;
 
 public class Level1 {
-    // Simple level with undestructable block borders
-    // '0' = empty, '1' = 1-hit, 'X' = undestructable (white blocks)
     public static final String[] MAP = new String[]{
         "01111111111111111111111110001111",
         "01111111111111111111111110001111",

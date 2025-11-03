@@ -1,7 +1,6 @@
 package levels;
 
 public class Level4 {
-    // Heart layout as 1/0 strings
     public static final String[] MAP = new String[]{
         "011100000001110",
         "111110000011111",

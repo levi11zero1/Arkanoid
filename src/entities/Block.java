@@ -2,7 +2,13 @@ package entities;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Image;
 import java.awt.Rectangle;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
 import utils.GameConfig;
 
 public class Block implements GameObject {
@@ -38,14 +44,35 @@ public class Block implements GameObject {
         this.customColor = colorOverride;
     }
 
-    // Set màu các block khác nhàu
+    // Set màu các block khác nhau hoặc vẽ ảnh brick nếu có
     @Override
     public void draw(Graphics g) {
-        if (!destroyed) {
+        if (destroyed) return;
+
+        // Prefer image-based bricks if available
+        ensureBrickImagesLoaded();
+
+    Image img;
+        if (customColor != null) {
+            // custom color: still draw colored rect
+            img = null;
+        } else if (hitsRemaining == GameConfig.UNDESTRUCTABLE_BLOCK) {
+            img = brick9_4;
+        } else if (hitsRemaining == 3) {
+            img = brick3_4;
+        } else if (hitsRemaining == 2) {
+            img = brick2_4;
+        } else {
+            img = brick1_4;
+        }
+
+        if (img != null) {
+            g.drawImage(img, x, y, GameConfig.BLOCK_WIDTH, GameConfig.BLOCK_HEIGHT, null);
+        } else {
             Color color = (customColor != null)
                 ? customColor
                 : switch (hitsRemaining) {
-                    case GameConfig.UNDESTRUCTABLE_BLOCK -> Color.WHITE; // Undestructable blocks are white
+                    case GameConfig.UNDESTRUCTABLE_BLOCK -> Color.WHITE;
                     case 3 -> Color.MAGENTA;
                     case 2 -> Color.ORANGE;
                     default -> Color.RED;
@@ -57,6 +84,38 @@ public class Block implements GameObject {
             g.setColor(Color.BLACK);
             g.drawRect(x, y, GameConfig.BLOCK_WIDTH, GameConfig.BLOCK_HEIGHT);
         }
+    }
+
+    // --- Brick images (loaded lazily) ---
+    private static Image brick1_4;
+    private static Image brick2_4;
+    private static Image brick3_4;
+    private static Image brick9_4;
+    private static boolean brickImagesInitialized = false;
+
+    private static void ensureBrickImagesLoaded() {
+        if (brickImagesInitialized) return;
+        brickImagesInitialized = true;
+        brick1_4 = loadImage("images/Brick1_4.png");
+        brick2_4 = loadImage("images/Brick2_4.png");
+        brick3_4 = loadImage("images/Brick3_4.png");
+        brick9_4 = loadImage("images/Brick9_4.png");
+    }
+
+    private static Image loadImage(String path) {
+        if (path == null || path.isBlank()) return null;
+        try {
+            URL res = Block.class.getClassLoader().getResource(path);
+            if (res != null) {
+                return new ImageIcon(res).getImage();
+            }
+            File f = new File(path);
+            if (f.exists()) {
+                return ImageIO.read(f);
+            }
+        } catch (IOException | SecurityException ignored) {
+        }
+        return null;
     }
 
     /**
