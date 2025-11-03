@@ -1,9 +1,5 @@
 package function;
 
-/**
- * Lightweight mutable container representing a single play session's run stats.
- * This is intentionally small and serializable-to-file is delegated to RankingManager.
- */
 public class GameSession {
     private String playerName;
     private long elapsedMs;

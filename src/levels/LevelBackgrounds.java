@@ -7,9 +7,6 @@ import java.net.URL;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 
-/**
- * Central place to load optional background images for individual levels.
- */
 public final class LevelBackgrounds {
     private static final String[] LEVEL0_PATHS = {
         "images/bgr_levels0.png",
@@ -110,7 +107,6 @@ public final class LevelBackgrounds {
                 return ImageIO.read(file);
             }
         } catch (IOException | SecurityException ignored) {
-            // Fail silently and allow caller to fall back gracefully
         }
         return null;
     }

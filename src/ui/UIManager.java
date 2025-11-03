@@ -11,11 +11,6 @@ import java.util.function.Consumer;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-/**
- * UIManager skeleton. Draw HUD and overlays here (score, lives, pause menu).
- * Also provides small helpers for creating overlay buttons and dialogs so views
- * such as GamePanel can remain thin.
- */
 public class UIManager {
     public void renderOverlay(Graphics2D g) { }
 

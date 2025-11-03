@@ -4,34 +4,7 @@ import entities.Block;
 import java.util.ArrayList;
 import java.util.List;
 import utils.GameConfig;
-// UI moved to LevelPreview; LevelBuilder remains UI-free
-
-/**
- * LevelBuilder – Unified level construction from binary (0/1) maps.
- * 
- * Rules (originally from Level6, now shared by all levels):
- *   1. Each level defines a static String[] MAP with characters:
- *      '0' => empty space
- *      '1' => 1-hit block (RED)
- *      '2' => 2-hit block (ORANGE)
- *      '3' => 3-hit block (MAGENTA)
- *      'X' => undestructable block (WHITE) - not required to win
- *   2. Map is scaled to fit 15 columns across screen width with aspect ratio preserved (nearest-neighbor).
- *   3. Result is horizontally & vertically centered in available grid space.
- *   4. Undestructable blocks ('X') reflect the ball but cannot be destroyed.
- *      They are excluded from the win condition.
- * 
- * To add a new level:
- *   - Create a LevelN class with a static MAP field (String[] of '0'/'1'/'2'/'3'/'X').
- *   - Add a case to createLevel(int) referencing LevelN.MAP.
- *   - Update GameConfig.MAX_LEVELS if needed.
- */
 public class LevelBuilder {
-    /**
-     * Direct mapping: Each cell in mapLines is a block (no scaling).
-     * Supports '1', '2', '3' for hit count, and 'X' for undestructable blocks.
-     * Blocks are centered horizontally.
-     */
     public static List<Block> buildFromMapDirect(String[] mapLines) {
         List<Block> blocks = new ArrayList<>();
         int[][] grid = parseHitMask(java.util.Arrays.asList(mapLines));
@@ -58,12 +31,10 @@ public class LevelBuilder {
         return buildFromMap(map);
     }
 
-    // ================= Shared rules implementation =================
-
     private static List<Block> buildFromMap(String[] mapLines) {
         List<Block> blocks = new ArrayList<>();
 
-        int cols = 15; // fits SCREEN_WIDTH with current spacing
+        int cols = 15;
         int totalWidth = cols * GameConfig.BLOCK_SPACING - (GameConfig.BLOCK_SPACING - GameConfig.BLOCK_WIDTH);
         int startX = (GameConfig.SCREEN_WIDTH - totalWidth) / 2;
 
@@ -86,7 +57,6 @@ public class LevelBuilder {
         }
 
         int[][] scaled = scaleHitMaskNearest(src, targetRows, targetCols);
-        // Center horizontally within maxCols by padding columns
         int[][] grid = new int[targetRows][maxCols];
         int padLeft = (maxCols - targetCols) / 2;
         for (int r = 0; r < targetRows; r++) {
@@ -100,7 +70,6 @@ public class LevelBuilder {
         return blocks;
     }
 
-    // (removed old addMask)
     private static void addMaskWithHits(
             List<Block> out,
             int startX,
@@ -112,7 +81,6 @@ public class LevelBuilder {
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
                 int hits = grid[r][c];
-                // Add block if hits > 0 OR if it's an undestructable block (-1)
                 if (hits > 0 || hits == GameConfig.UNDESTRUCTABLE_BLOCK) {
                     int x = startX + (offsetCol + c) * GameConfig.BLOCK_SPACING;
                     int y = GameConfig.BLOCKS_START_Y + (offsetRow + r) * GameConfig.BLOCK_ROW_SPACING;
@@ -122,15 +90,12 @@ public class LevelBuilder {
         }
     }
 
-    // Parse lines of '0'/'1' into boolean grid (rows x cols)
     @SuppressWarnings("unused")
     private static boolean[][] parseBinaryMask(List<String> lines) {
         // Deprecated: use parseHitMask
         throw new UnsupportedOperationException("Use parseHitMask instead");
     }
 
-    // Parse lines of '0'/'1'/'2'/'3'/'X' into int grid (rows x cols)
-    // '0' = empty space, '1'-'3' = blocks with 1-3 hits, 'X' = undestructable block
     private static int[][] parseHitMask(List<String> lines) {
         int h = lines.size();
         int w = 0;
@@ -143,7 +108,7 @@ public class LevelBuilder {
                 if (ch == '1' || ch == '2' || ch == '3') {
                     g[r][c] = ch - '0';
                 } else if (ch == 'X' || ch == 'x') {
-                    g[r][c] = GameConfig.UNDESTRUCTABLE_BLOCK; // -1 for undestructable
+                    g[r][c] = GameConfig.UNDESTRUCTABLE_BLOCK;
                 } else {
                     g[r][c] = 0;
                 }
@@ -151,14 +116,11 @@ public class LevelBuilder {
         }
         return g;
     }
-    // Nearest-neighbor sampling to preserve 0/1 pattern as closely as possible
     @SuppressWarnings("unused")
     private static boolean[][] scaleMaskNearest(boolean[][] src, int targetRows, int targetCols) {
-        // Deprecated: use scaleHitMaskNearest
         throw new UnsupportedOperationException("Use scaleHitMaskNearest instead");
     }
 
-    // Nearest-neighbor sampling for int hit mask
     private static int[][] scaleHitMaskNearest(int[][] src, int targetRows, int targetCols) {
         int srcH = src.length, srcW = src[0].length;
         int[][] dst = new int[targetRows][targetCols];
