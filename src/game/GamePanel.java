@@ -145,6 +145,11 @@ public class GamePanel extends JPanel implements KeyListener {
         // Cho biết EntityManager về các thực thể mới
         if (entityManager != null)
             entityManager.setEntities(ball, paddle, blocks);
+
+        if (powerUpManager != null) {
+            powerUpManager.resetAll();
+            powerUpManager.startSpawning(this); // bắt đầu spawn lại
+        }
     }
 
     // ================== LƯU/LOAD (PHỤC VỤ NÚT "TIẾP TỤC" Ở MENU)
@@ -368,6 +373,9 @@ public class GamePanel extends JPanel implements KeyListener {
         if (choice == JOptionPane.YES_OPTION) {
             levelManager.advanceLevel();
             initializeLevel();
+            if (powerUpManager != null) {
+                powerUpManager.startSpawning(this);
+            }
             gameLoop.start();
         } else {
             System.exit(0);

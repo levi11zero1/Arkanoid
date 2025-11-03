@@ -217,7 +217,7 @@ public class Ball implements GameObject {
         velocity.setDx(velocity.getDx() * 0.6);
         velocity.setDy(velocity.getDy() * 0.6);
 
-        javax.swing.Timer slowTimer = new javax.swing.Timer(15000, e -> {
+        javax.swing.Timer slowTimer = new javax.swing.Timer(10000, e -> {
             // Sau 20s, trả lại tốc độ bình thường
             velocity.setDx(velocity.getDx() / 0.6);
             velocity.setDy(velocity.getDy() / 0.6);

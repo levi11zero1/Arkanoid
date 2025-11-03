@@ -147,7 +147,7 @@ public class Paddle implements GameObject {
             }
 
             GameConfig.PADDLE_SPEED *= 1.5;
-            speedTimer = new Timer(20000, e -> {
+            speedTimer = new Timer(10000, e -> {
                 if (e != null) {
                     e.getSource();
                 }
