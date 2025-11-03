@@ -14,11 +14,13 @@ public class Ball implements GameObject {
     private javax.swing.Timer sizeTimer;
     private double prevX, prevY;
     private int prevSize;
+    private boolean attachedToPaddle;
 
     public Ball(int x, int y) {
         this.x = x;
         this.y = y;
         this.velocity = new Velocity(GameConfig.BALL_DEFAULT_SPEED, -GameConfig.BALL_DEFAULT_SPEED);
+        this.attachedToPaddle = false;
     }
 
     public Ball(int x, int y, Velocity velocity) {
@@ -28,6 +30,10 @@ public class Ball implements GameObject {
     }
 
     public void move() {
+        if (attachedToPaddle) {
+            return;
+        }
+
         // Lưu vị trí trước khi di chuyển
         prevX = x;
         prevY = y;
@@ -83,6 +89,9 @@ public class Ball implements GameObject {
 
     // Nảy bóng dựa trên điểm chạm
     public void bounceOffPaddle(double paddleX, double paddleWidth) {
+        if (attachedToPaddle) {
+            return;
+        }
         double paddleCenter = paddleX + paddleWidth / 2;
         double ballCenter = x + GameConfig.BALL_SIZE / 2;
         double hitOffset = (ballCenter - paddleCenter) / (paddleWidth / 2); // -1 -> 1
@@ -118,9 +127,45 @@ public class Ball implements GameObject {
     }
 
     public void resetSpeed() {
+        double magnitude = velocity.getMagnitude();
+        if (magnitude == 0) {
+            velocity = Velocity.fromAngle(-90, GameConfig.BALL_DEFAULT_SPEED);
+            return;
+        }
         double angle = Math.atan2(velocity.getDy(), velocity.getDx());
         velocity.setDx(Math.cos(angle) * GameConfig.BALL_DEFAULT_SPEED);
         velocity.setDy(Math.sin(angle) * GameConfig.BALL_DEFAULT_SPEED);
+    }
+
+    public boolean isAttachedToPaddle() {
+        return attachedToPaddle;
+    }
+
+    public void attachToPaddle(Paddle paddle) {
+        if (paddle == null) {
+            return;
+        }
+        attachedToPaddle = true;
+        velocity = new Velocity(0, 0);
+        centerOnPaddle(paddle);
+    }
+
+    public void detachFromPaddle() {
+        attachedToPaddle = false;
+        if (velocity.getMagnitude() == 0) {
+            velocity = Velocity.fromAngle(-90, GameConfig.BALL_DEFAULT_SPEED);
+        }
+    }
+
+    public void centerOnPaddle(Paddle paddle) {
+        if (paddle == null) {
+            return;
+        }
+        double paddleCenter = paddle.getX() + paddle.getWidth() / 2.0;
+        this.x = paddleCenter - GameConfig.BALL_SIZE / 2.0;
+        this.y = paddle.getY() - GameConfig.BALL_SIZE;
+        this.prevX = x;
+        this.prevY = y;
     }
 
 
@@ -163,6 +208,9 @@ public class Ball implements GameObject {
 
     // Check mép để ko lỗi
     public void checkBounds(int screenWidth, int screenHeight) {
+        if (attachedToPaddle) {
+            return;
+        }
         boolean bounced = false;
 
         if (x < 0) {

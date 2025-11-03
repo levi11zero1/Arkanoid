@@ -129,10 +129,11 @@ public class GamePanel extends JPanel implements KeyListener {
     }
 
     public void initializeLevel() {
-        ball = new Ball(GameConfig.SCREEN_WIDTH / 2, GameConfig.SCREEN_HEIGHT / 2);
+    ball = new Ball(GameConfig.SCREEN_WIDTH / 2, GameConfig.SCREEN_HEIGHT / 2);
         paddle = new Paddle(
         GameConfig.SCREEN_WIDTH / 2 - GameConfig.DEFAULT_PADDLE_WIDTH / 2,
         GameConfig.SCREEN_HEIGHT - GameConfig.PADDLE_BOTTOM_MARGIN - GameConfig.PADDLE_EXTRA_RAISE_PIXELS);
+    ball.attachToPaddle(paddle);
 
         // Tạo block
     int currentLevel = levelManager.getCurrentLevel();
@@ -253,12 +254,20 @@ public class GamePanel extends JPanel implements KeyListener {
             entityManager.updateAll(deltaTime, getWidth(), getHeight(), leftPressed, rightPressed);
         } else {
             if (ball != null) {
-                ball.move();
-                ball.checkBounds(getWidth(), getHeight());
+                if (ball.isAttachedToPaddle()) {
+                    ball.centerOnPaddle(paddle);
+                } else {
+                    ball.move();
+                    ball.checkBounds(getWidth(), getHeight());
+                }
             }
             if (paddle != null) {
                 paddle.update(leftPressed, rightPressed, getWidth(), deltaTime);
             }
+        }
+
+        if (ball != null && ball.isAttachedToPaddle()) {
+            ball.centerOnPaddle(paddle);
         }
 
     }
@@ -421,6 +430,13 @@ public class GamePanel extends JPanel implements KeyListener {
     public void keyPressed(KeyEvent e) {
         try {
             inputHandler.keyPressed(e, this);
+            if (e.getKeyCode() == KeyEvent.VK_SPACE) {
+                if (entityManager != null) {
+                    entityManager.queueLaunch();
+                } else if (ball != null && ball.isAttachedToPaddle()) {
+                    ball.detachFromPaddle();
+                }
+            }
         } catch (Throwable ignore) {
         }
     }

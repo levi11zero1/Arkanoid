@@ -13,6 +13,7 @@ public class EntityManager {
     private Paddle paddle;
     private List<Block> blocks = new ArrayList<>();
     private final CollisionManager collisionManager = new CollisionManager();
+    private boolean launchQueued;
 
     public EntityManager() { }
 
@@ -20,13 +21,24 @@ public class EntityManager {
         this.ball = ball;
         this.paddle = paddle;
         this.blocks = blocks;
+        if (ball != null && paddle != null && ball.isAttachedToPaddle()) {
+            ball.centerOnPaddle(paddle);
+        }
     }
 
     /** Cập nhật tất cả các thực thể sau mỗi tick. */
     public void updateAll(double deltaSeconds, int panelWidth, int panelHeight, boolean leftPressed, boolean rightPressed) {
         if (ball != null) {
-            ball.move();
-            ball.checkBounds(panelWidth, panelHeight);
+            if (ball.isAttachedToPaddle()) {
+                ball.centerOnPaddle(paddle);
+                if (launchQueued) {
+                    ball.detachFromPaddle();
+                    launchQueued = false;
+                }
+            } else {
+                ball.move();
+                ball.checkBounds(panelWidth, panelHeight);
+            }
         }
         if (paddle != null) {
             paddle.update(leftPressed, rightPressed, panelWidth, deltaSeconds);
@@ -42,5 +54,11 @@ public class EntityManager {
 
     public void addBlock(Block b) { if (blocks != null) blocks.add(b); }
     public void removeBlock(Block b) { if (blocks != null) blocks.remove(b); }
+
+    public void queueLaunch() {
+        if (ball != null && ball.isAttachedToPaddle()) {
+            launchQueued = true;
+        }
+    }
 }
 
