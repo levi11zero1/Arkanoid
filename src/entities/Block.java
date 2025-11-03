@@ -16,6 +16,10 @@ public class Block implements GameObject {
     private boolean destroyed = false;
     private int hitsRemaining;
     private Color customColor = null;
+    // Hiệu ứng gạch nứt: sau khi bị đập, hiển thị sprite "broken" của cấp hiện tại
+    // cho tới lần va chạm tiếp theo.
+    private boolean showBroken = false;
+    private int brokenTier = 0; // 2 hoặc 3; 0 = không broken
 
 
     /**
@@ -58,6 +62,21 @@ public class Block implements GameObject {
             img = null;
         } else if (hitsRemaining == GameConfig.UNDESTRUCTABLE_BLOCK) {
             img = brick9_4;
+        } else if (showBroken && brokenTier >= 2) {
+            // Ưu tiên hiển thị sprite broken nếu có
+            img = switch (brokenTier) {
+                case 3 -> brick3_broken;
+                case 2 -> brick2_broken;
+                default -> null;
+            };
+            if (img == null) {
+                // Fallback nếu thiếu ảnh broken
+                img = switch (hitsRemaining) {
+                    case 3 -> brick3_4;
+                    case 2 -> brick2_4;
+                    default -> brick1_4;
+                };
+            }
         } else if (hitsRemaining == 3) {
             img = brick3_4;
         } else if (hitsRemaining == 2) {
@@ -91,15 +110,20 @@ public class Block implements GameObject {
     private static Image brick2_4;
     private static Image brick3_4;
     private static Image brick9_4;
+    private static Image brick2_broken;
+    private static Image brick3_broken;
     private static boolean brickImagesInitialized = false;
 
     private static void ensureBrickImagesLoaded() {
         if (brickImagesInitialized) return;
         brickImagesInitialized = true;
-        brick1_4 = loadImage("images/Brick1_4.png");
-        brick2_4 = loadImage("images/Brick2_4.png");
-        brick3_4 = loadImage("images/Brick3_4.png");
-        brick9_4 = loadImage("images/Brick9_4.png");
+        brick1_4 = loadImage("images/Brick1.png");
+        brick2_4 = loadImage("images/Brick2.png");
+        brick3_4 = loadImage("images/Brick3.png");
+        brick9_4 = loadImage("images/BrickX.png");
+        // Ảnh gạch nứt
+        brick2_broken = loadImage("images/Brick2_broken.png");
+        brick3_broken = loadImage("images/Brick3_broken.png");
     }
 
     private static Image loadImage(String path) {
@@ -131,17 +155,29 @@ public class Block implements GameObject {
             // ✅ Nếu bóng đang to hơn kích thước mặc định (20 là size gốc)
             if (GameConfig.BALL_SIZE > GameConfig.DEFAULT_BALL_SIZE) {
                 if (hitsRemaining == 3) {
-                    // Gạch cấp 3 → giảm xuống cấp 1
+                    // Gạch cấp 3 → giảm xuống cấp 1, nhưng hiển thị Brick3_broken
+                    int prevTier = hitsRemaining;
                     hitsRemaining = 1;
+                    showBroken = true;
+                    brokenTier = prevTier; // 3
                 } else {
                     // Gạch cấp 1 hoặc 2 → vỡ ngay lập tức
                     destroyed = true;
+                    showBroken = false;
+                    brokenTier = 0;
                 }
             } else {
                 // ✅ Bóng bình thường: giảm độ bền như thường lệ
+                int prevTier = hitsRemaining;
                 hitsRemaining--;
                 if (hitsRemaining <= 0) {
                     destroyed = true;
+                    showBroken = false;
+                    brokenTier = 0;
+                } else {
+                    // Hiển thị sprite broken của tier trước đó (prevTier)
+                    showBroken = prevTier >= 2;
+                    brokenTier = prevTier;
                 }
             }
             return true;
@@ -185,9 +221,15 @@ public class Block implements GameObject {
     // Áp dụng 1 lần sát thương bất kể có overlap hình học hay không (dùng cho CCD)
     public void applyHit() {
         if (!destroyed && hitsRemaining != GameConfig.UNDESTRUCTABLE_BLOCK) {
+            int prevTier = hitsRemaining;
             hitsRemaining--;
             if (hitsRemaining <= 0) {
                 destroyed = true;
+                showBroken = false;
+                brokenTier = 0;
+            } else {
+                showBroken = prevTier >= 2;
+                brokenTier = prevTier;
             }
         }
     }

@@ -97,10 +97,10 @@ public class Test {
                 g.drawString("LEGEND:", legendX, legendY);
                 
                 // Try to show images for bricks (fallback to colored rects if missing)
-                java.awt.Image img1 = loadLegendImage("images/Brick1_4.png");
-                java.awt.Image img2 = loadLegendImage("images/Brick2_4.png");
-                java.awt.Image img3 = loadLegendImage("images/Brick3_4.png");
-                java.awt.Image img9 = loadLegendImage("images/Brick9_4.png");
+                java.awt.Image img1 = loadLegendImage("images/Brick1.png");
+                java.awt.Image img2 = loadLegendImage("images/Brick2.png");
+                java.awt.Image img3 = loadLegendImage("images/Brick3.png");
+                java.awt.Image img9 = loadLegendImage("images/BrickX.png");
 
                 int bw = GameConfig.BLOCK_WIDTH > 0 ? Math.min(GameConfig.BLOCK_WIDTH, 60) : 30;
                 int bh = GameConfig.BLOCK_HEIGHT > 0 ? Math.min(GameConfig.BLOCK_HEIGHT, 30) : 15;

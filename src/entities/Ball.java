@@ -8,8 +8,8 @@ import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.geom.Ellipse2D;
 import powerup.PowerUp;
-import utils.GameConfig;
 import utils.AudioManager;
+import utils.GameConfig;
 import utils.Velocity;
 
 public class Ball implements GameObject {
@@ -140,7 +140,12 @@ public class Ball implements GameObject {
     }
 
     public void resetSize() {
+        // Giữ nguyên tâm bóng khi đổi kích thước để tránh cảm giác "nhảy" vị trí
+        double cx = x + GameConfig.BALL_SIZE / 2.0;
+        double cy = y + GameConfig.BALL_SIZE / 2.0;
         GameConfig.BALL_SIZE = GameConfig.DEFAULT_BALL_SIZE;
+        this.x = cx - GameConfig.BALL_SIZE / 2.0;
+        this.y = cy - GameConfig.BALL_SIZE / 2.0;
         if (sizeTimer != null) {
             sizeTimer.stop();
         }
@@ -198,9 +203,18 @@ public class Ball implements GameObject {
             resetSize();
         }
         if (type == PowerUp.Type.BALL_EXPAND) {
-            GameConfig.BALL_SIZE *= 1.5;
+            // Giữ nguyên tâm bóng khi nở để tránh "nhảy" vị trí
+            double cx = x + GameConfig.BALL_SIZE / 2.0;
+            double cy = y + GameConfig.BALL_SIZE / 2.0;
+            GameConfig.BALL_SIZE = (int) Math.round(GameConfig.BALL_SIZE * 1.5);
+            this.x = cx - GameConfig.BALL_SIZE / 2.0;
+            this.y = cy - GameConfig.BALL_SIZE / 2.0;
         } else if (type == PowerUp.Type.BALL_SHRINK) {
-            GameConfig.BALL_SIZE /= 1.5;
+            double cx = x + GameConfig.BALL_SIZE / 2.0;
+            double cy = y + GameConfig.BALL_SIZE / 2.0;
+            GameConfig.BALL_SIZE = (int) Math.max(4, Math.round(GameConfig.BALL_SIZE / 1.5));
+            this.x = cx - GameConfig.BALL_SIZE / 2.0;
+            this.y = cy - GameConfig.BALL_SIZE / 2.0;
             velocity.setDx(velocity.getDx() * 1.5);
             velocity.setDy(velocity.getDy() * 1.5);
         } else if (type == PowerUp.Type.BALL_SLOW) {
