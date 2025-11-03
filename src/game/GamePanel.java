@@ -8,6 +8,7 @@ import function.Pause;
 // import function.SaveManager; // removed: save orchestration moved to SaveController
 import function.ScoreManager;
 import function.GameSession;
+import function.LifeManager;
 import java.awt.*;
 import java.awt.event.*;
 import input.InputHandler;
@@ -50,6 +51,8 @@ public class GamePanel extends JPanel implements KeyListener {
     private boolean leftPressed = false;
     private boolean rightPressed = false;
 
+    private int lives;
+
     // Save button is created by UIManager; GamePanel does not keep a reference
 
     // ==== RUN STATS ====
@@ -61,6 +64,7 @@ public class GamePanel extends JPanel implements KeyListener {
 
     public GamePanel() {
         levelManager = new LevelManager();
+        lives = LifeManager.resetLives();
         initializeLevel();
 
         // Khởi tạo các manager
@@ -178,6 +182,8 @@ public class GamePanel extends JPanel implements KeyListener {
         }
         this.blocks = newBlocks;
 
+    lives = LifeManager.loadLives();
+
         // 3) Khôi phục bóng và thanh đỡ
         ball.setPosition(state.ballX, state.ballY);
         ball.setVelocity(new utils.Velocity(state.ballDx, state.ballDy));
@@ -215,7 +221,7 @@ public class GamePanel extends JPanel implements KeyListener {
         // Render UI overlay using UIManager (non-invasive call)
         if (g instanceof Graphics2D) {
             try {
-                uiManager.renderOverlay((Graphics2D) g);
+                uiManager.renderOverlay((Graphics2D) g, this);
             } catch (Throwable t) {
                 // keep rendering resilient during incremental refactor
             }
@@ -282,10 +288,7 @@ public class GamePanel extends JPanel implements KeyListener {
         }
 
         if (ball.getY() > getHeight()) {
-            if (gameController != null)
-                gameController.handleGameOver();
-            else
-                handleGameOver();
+            handleBallLost();
         }
     }
 
@@ -383,6 +386,7 @@ public class GamePanel extends JPanel implements KeyListener {
             return;
         }
 
+        resetLivesForNewSession();
         levelManager.reset();
         initializeLevel();
         if (gameLoop != null)
@@ -545,6 +549,39 @@ public class GamePanel extends JPanel implements KeyListener {
 
     public interface GameEvents {
         void onGameOver();
+    }
+
+    private void handleBallLost() {
+        if (ball == null || paddle == null) {
+            return;
+        }
+
+        if (entityManager != null) {
+            entityManager.cancelQueuedLaunch();
+        }
+
+        ball.attachToPaddle(paddle);
+        ball.centerOnPaddle(paddle);
+
+        lives = LifeManager.decrementLife();
+
+        if (lives > 0) {
+            return;
+        }
+
+        if (gameController != null) {
+            gameController.handleGameOver();
+        } else {
+            handleGameOver();
+        }
+    }
+
+    public void resetLivesForNewSession() {
+        lives = LifeManager.resetLives();
+    }
+
+    public int getLives() {
+        return lives;
     }
 
     public void resetAllPowerUps() {

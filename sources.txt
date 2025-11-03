@@ -11,6 +11,7 @@ C:\Users\admin\OneDrive\Máy tính\ARKANOID\ARKANOID\src\function\GameState.java
 C:\Users\admin\OneDrive\Máy tính\ARKANOID\ARKANOID\src\function\Pause.java
 C:\Users\admin\OneDrive\Máy tính\ARKANOID\ARKANOID\src\function\RankingManager.java
 C:\Users\admin\OneDrive\Máy tính\ARKANOID\ARKANOID\src\function\SaveManager.java
+C:\Users\admin\OneDrive\Máy tính\ARKANOID\ARKANOID\src\function\LifeManager.java
 C:\Users\admin\OneDrive\Máy tính\ARKANOID\ARKANOID\src\game\CollisionManager.java
 C:\Users\admin\OneDrive\Máy tính\ARKANOID\ARKANOID\src\game\GameFrame.java
 C:\Users\admin\OneDrive\Máy tính\ARKANOID\ARKANOID\src\game\GameLoop.java
