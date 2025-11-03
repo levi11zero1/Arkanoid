@@ -2,7 +2,11 @@ package entities;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.Shape;
+import java.awt.geom.Ellipse2D;
 import powerup.PowerUp;
 import utils.GameConfig;
 import utils.AudioManager;
@@ -73,6 +77,22 @@ public class Ball implements GameObject {
 
     @Override
     public void draw(Graphics g) {
+        BallSkin.Skin skin = BallSkin.getSkin();
+        if (skin != null) {
+            if (g instanceof Graphics2D g2d) {
+                // Ghép ảnh vào clip tròn để dễ thay skin mà vẫn giữ hình tròn
+                Shape oldClip = g2d.getClip();
+                Ellipse2D circle = new Ellipse2D.Double(getX(), getY(), GameConfig.BALL_SIZE, GameConfig.BALL_SIZE);
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                g2d.setClip(circle);
+                g2d.drawImage(skin.image(), getX(), getY(), GameConfig.BALL_SIZE, GameConfig.BALL_SIZE, null);
+                g2d.setClip(oldClip);
+            } else {
+                g.drawImage(skin.image(), getX(), getY(), GameConfig.BALL_SIZE, GameConfig.BALL_SIZE, null);
+            }
+            return;
+        }
         g.setColor(Color.BLUE);
         g.fillOval(getX(), getY(), GameConfig.BALL_SIZE, GameConfig.BALL_SIZE);
     }
@@ -120,7 +140,7 @@ public class Ball implements GameObject {
     }
 
     public void resetSize() {
-        GameConfig.BALL_SIZE = 20;
+        GameConfig.BALL_SIZE = GameConfig.DEFAULT_BALL_SIZE;
         if (sizeTimer != null) {
             sizeTimer.stop();
         }
