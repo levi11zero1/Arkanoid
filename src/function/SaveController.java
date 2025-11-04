@@ -137,6 +137,12 @@ public final class SaveController {
             if (meta != null) {
                 panel.setPlayerRunInfo(meta.player, meta.elapsedMs, meta.levelsCompleted, meta.blocksDestroyed);
             }
+            // The selected save is meant as a one-time resume; delete it after successful load
+            try {
+                Files.deleteIfExists(file);
+            } catch (Exception ignored) {
+                // ignore deletion failures (won't block resume)
+            }
         } catch (IOException ex) {
             JOptionPane.showMessageDialog(parent, "Không thể tải bản lưu: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
         }

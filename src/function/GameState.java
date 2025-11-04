@@ -18,12 +18,14 @@ public class GameState {
     public final double paddleX;      // Toạ độ X của paddle (double để khớp nội bộ)
     public final int paddleY;         // Toạ độ Y của paddle (thường cố định theo cấu hình)
     public final List<BlockState> blocks; // Danh sách trạng thái block (vị trí, số lần chịu đòn còn lại, đã phá chưa)
+    public final boolean ballAttached; // whether the ball was attached to the paddle when saved
 
     public GameState(int level,
                      double ballX, double ballY,
                      double ballDx, double ballDy,
                      double paddleX, int paddleY,
-                     List<BlockState> blocks) {
+                     List<BlockState> blocks,
+                     boolean ballAttached) {
         this.level = level;
         this.ballX = ballX;
         this.ballY = ballY;
@@ -32,6 +34,7 @@ public class GameState {
         this.paddleX = paddleX;
         this.paddleY = paddleY;
         this.blocks = new ArrayList<>(blocks);
+        this.ballAttached = ballAttached;
     }
 
     // Ảnh chụp một viên gạch trong game
