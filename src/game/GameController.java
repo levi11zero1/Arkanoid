@@ -125,6 +125,7 @@ public class GameController {
 
     public void restartGame() {
         levelManager.reset();
+        panel.resetLivesForNewSession();
         panel.initializeLevel();
         if (gameLoop != null) gameLoop.start();
         panel.resetRunStatsForNewSession();

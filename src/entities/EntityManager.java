@@ -60,5 +60,9 @@ public class EntityManager {
             launchQueued = true;
         }
     }
+
+    public void cancelQueuedLaunch() {
+        launchQueued = false;
+    }
 }
 
