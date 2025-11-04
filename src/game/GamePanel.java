@@ -58,6 +58,7 @@ public class GamePanel extends JPanel implements KeyListener {
     private int totalBlocksDestroyed = 0; // tổng số block phá được qua các màn
     private int lastDestroyedCountThisLevel = 0; // baseline để tính delta mỗi tick
     private int totalScore = 0; // tổng điểm (mặc định 10 điểm = 1 block)
+    private boolean gameStarted = false;
 
     public GamePanel() {
         levelManager = new LevelManager();
@@ -85,7 +86,7 @@ public class GamePanel extends JPanel implements KeyListener {
         this.entityManager.setEntities(ball, paddle, blocks);
 
         // start power-up spawning via manager
-        powerUpManager.startSpawning(this);
+        // powerUpManager.startSpawning(this);
 
         // Đăng ký Pause: dừng timer khi pause, chạy lại khi resume
         Pause.getInstance().setListener(new Pause.PauseListener() {
@@ -148,8 +149,9 @@ public class GamePanel extends JPanel implements KeyListener {
 
         if (powerUpManager != null) {
             powerUpManager.resetAll();
-            powerUpManager.startSpawning(this); // bắt đầu spawn lại
+            powerUpManager.stopSpawning(); // bắt đầu spawn lại
         }
+        gameStarted = false;
     }
 
     // ================== LƯU/LOAD (PHỤC VỤ NÚT "TIẾP TỤC" Ở MENU)
@@ -373,6 +375,7 @@ public class GamePanel extends JPanel implements KeyListener {
         if (choice == JOptionPane.YES_OPTION) {
             levelManager.advanceLevel();
             initializeLevel();
+            gameStarted = false; // yêu cầu người chơi bắt đầu lại
             if (powerUpManager != null) {
                 powerUpManager.startSpawning(this);
             }
@@ -462,6 +465,17 @@ public class GamePanel extends JPanel implements KeyListener {
                 }
             }
         } catch (Throwable ignore) {
+        }
+
+        // 🟢 Khi người chơi nhấn SPACE để bắt đầu game
+        if (e.getKeyCode() == KeyEvent.VK_SPACE && !gameStarted) {
+            gameStarted = true;
+            if (powerUpManager != null) {
+                powerUpManager.startSpawning(this); // Bắt đầu spawn Power-Up
+            }
+            if (gameLoop != null && !gameLoop.isRunning()) {
+                gameLoop.start(); // Chạy game loop
+            }
         }
     }
 
