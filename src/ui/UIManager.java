@@ -21,11 +21,6 @@ import javax.swing.SwingUtilities;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 
-/**
- * UIManager skeleton. Draw HUD and overlays here (score, lives, pause menu).
- * Also provides small helpers for creating overlay buttons and dialogs so views
- * such as GamePanel can remain thin.
- */
 public class UIManager {
     private static final String LIFE_ICON_PATH = "images/life.png";
     private static final int LIFE_ICON_SIZE = 28;

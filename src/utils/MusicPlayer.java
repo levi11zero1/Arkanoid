@@ -5,116 +5,144 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.file.Paths;
 
-// Reflection-based MusicPlayer that tries to use JavaFX MediaPlayer if available.
-// This avoids compile-time dependency on JavaFX so the project can still compile
-// when JavaFX is not present. If JavaFX is absent at runtime, calls will fail
-// gracefully.
 public class MusicPlayer {
-    // opaque reference to MediaPlayer (javafx.scene.media.MediaPlayer) if available
-    private static Object player = null;
+    // Tham chiếu đến player hiện tại (có thể là javax.sound.sampled.Clip hoặc một instance của JavaFX MediaPlayer)
+    private static Object currentPlayer = null;
 
+    // ------------ Utility helpers ------------
+    // Kiểm tra xem file có phải là dạng âm thanh được Java Sound hỗ trợ trực tiếp không
+    private static boolean isNativeSoundFile(String path) {
+        if (path == null) return false;
+        String lower = path.toLowerCase();
+        return lower.endsWith(".wav") ;
+    }
+
+    // ------------ Khởi tạo runtime JavaFX (tùy chọn) ------------
+    /**
+     * Thử khởi tạo JavaFX runtime (nếu JavaFX có trên classpath) bằng cách tạo 1 JFXPanel.
+     * Việc này giúp JavaFX MediaPlayer hoạt động trong ứng dụng Swing.
+     */
     public static void init() {
         try {
-            // Initialize JavaFX runtime by creating a JFXPanel if the class exists
-            Class<?> jfxPanelClass = Class.forName("javafx.embed.swing.JFXPanel");
-            jfxPanelClass.getConstructor().newInstance();
-        } catch (ClassNotFoundException cnf) {
-            // JavaFX not on classpath; caller should handle absence gracefully
-            System.err.println("MusicPlayer: JavaFX not available on classpath.");
+            Class<?> jfxPanel = Class.forName("javafx.embed.swing.JFXPanel");
+            jfxPanel.getConstructor().newInstance();
+        } catch (ClassNotFoundException e) {
+            // JavaFX không có -> không sao, chỉ in thông báo
+            System.err.println("MusicPlayer: JavaFX không có trên classpath. Chỉ hỗ trợ WAV/AU bằng Java Sound.");
         } catch (Throwable t) {
-            System.err.println("MusicPlayer: Failed to initialize JavaFX runtime: " + t.getMessage());
+            System.err.println("MusicPlayer: Lỗi khi khởi tạo JavaFX: " + t.getMessage());
         }
     }
 
+    // ------------ Phát nhạc lặp (background) ------------
+    /**
+     * Phát file âm thanh lặp liên tục (dùng cho nhạc nền). Nếu trước đó có player đang
+     * chạy thì sẽ dừng nó trước khi khởi tạo player mới.
+     */
     public static void playLoop(String filePath) {
         if (filePath == null) return;
-        // Ensure we don't leave previous players running when starting a new loop
-        try { stop(); } catch (Throwable _t) {}
+        // Dừng player đang chạy (nếu có)
+        try { stop(); } catch (Throwable ignored) {}
+
+        // Nếu file là WAV/AIFF/AU, ưu tiên dùng Java Sound (không cần JavaFX)
+        if (isNativeSoundFile(filePath)) {
+            if (tryPlayLoopWithJavaSound(filePath)) return;
+            // nếu thất bại thì tiếp tục thử JavaFX
+        }
+
+        // Thử dùng JavaFX MediaPlayer (reflection) cho các định dạng khác như MP3
+        tryPlayLoopWithJavaFX(filePath);
+    }
+
+    // Dùng javax.sound.sampled.Clip để phát lặp (nếu định dạng hỗ trợ)
+    private static boolean tryPlayLoopWithJavaSound(String filePath) {
         try {
-            // If the file is a WAV/AIFF/ AU, use Java Sound (no external deps)
-            String lower = filePath.toLowerCase();
-            if (lower.endsWith(".wav") || lower.endsWith(".aiff") || lower.endsWith(".aif") || lower.endsWith(".au")) {
-                try {
-                    java.io.File f = new java.io.File(filePath);
-                    javax.sound.sampled.AudioInputStream ais = javax.sound.sampled.AudioSystem.getAudioInputStream(f);
-                    javax.sound.sampled.DataLine.Info info = new javax.sound.sampled.DataLine.Info(javax.sound.sampled.Clip.class, ais.getFormat());
-                    javax.sound.sampled.Clip clip = (javax.sound.sampled.Clip) javax.sound.sampled.AudioSystem.getLine(info);
-                    clip.open(ais);
-                    clip.loop(javax.sound.sampled.Clip.LOOP_CONTINUOUSLY);
-                    player = clip; // reuse opaque player field
-                    return;
-                } catch (Exception e) {
-                    System.err.println("MusicPlayer: failed to play WAV via Java Sound: " + e.getMessage());
-                    // fallthrough to try JavaFX if present
-                }
-            }
+            java.io.File f = new java.io.File(filePath);
+            javax.sound.sampled.AudioInputStream ais = javax.sound.sampled.AudioSystem.getAudioInputStream(f);
+            javax.sound.sampled.DataLine.Info info = new javax.sound.sampled.DataLine.Info(javax.sound.sampled.Clip.class, ais.getFormat());
+            javax.sound.sampled.Clip clip = (javax.sound.sampled.Clip) javax.sound.sampled.AudioSystem.getLine(info);
+            clip.open(ais);
+            clip.loop(javax.sound.sampled.Clip.LOOP_CONTINUOUSLY);
+            currentPlayer = clip;
+            return true;
+        } catch (Throwable t) {
+            System.err.println("MusicPlayer: Không thể phát vòng bằng Java Sound: " + t.getMessage());
+            return false;
+        }
+    }
 
+    // Dùng JavaFX MediaPlayer (nếu có) để phát lặp
+    private static void tryPlayLoopWithJavaFX(String filePath) {
+        try {
             String uri = Paths.get(filePath).toUri().toString();
-
-            // Load Media and MediaPlayer classes via reflection
             Class<?> mediaClass = Class.forName("javafx.scene.media.Media");
             Constructor<?> mediaCtor = mediaClass.getConstructor(String.class);
             Object media = mediaCtor.newInstance(uri);
 
             Class<?> mediaPlayerClass = Class.forName("javafx.scene.media.MediaPlayer");
             Constructor<?> playerCtor = mediaPlayerClass.getConstructor(mediaClass);
-            player = playerCtor.newInstance(media);
+            Object fxPlayer = playerCtor.newInstance(media);
 
-            // setCycleCount(MediaPlayer.INDEFINITE)
+            // setCycleCount(MediaPlayer.INDEFINITE) nếu có hằng số này
             try {
-                Field indefiniteField = mediaPlayerClass.getField("INDEFINITE");
-                Object indefiniteVal = indefiniteField.get(null);
-                Method setCycleCount = mediaPlayerClass.getMethod("setCycleCount", int.class);
-                // Many JavaFX versions define INDEFINITE as an int constant
-                if (indefiniteVal instanceof Integer) {
-                    setCycleCount.invoke(player, (Integer) indefiniteVal);
-                }
+                Field indField = mediaPlayerClass.getField("INDEFINITE");
+                Object indVal = indField.get(null);
+                Method setCycle = mediaPlayerClass.getMethod("setCycleCount", int.class);
+                if (indVal instanceof Integer) setCycle.invoke(fxPlayer, (Integer) indVal);
             } catch (NoSuchFieldException nsf) {
-                // ignore if unavailable
+                // bỏ qua nếu không tồn tại
             }
 
-            // start playback
-            Method playMethod = mediaPlayerClass.getMethod("play");
-            playMethod.invoke(player);
+            Method play = mediaPlayerClass.getMethod("play");
+            play.invoke(fxPlayer);
+            currentPlayer = fxPlayer;
         } catch (ClassNotFoundException cnf) {
-            System.err.println("MusicPlayer: JavaFX Media classes not found; cannot play MP3.");
+            System.err.println("MusicPlayer: Không có lớp JavaFX Media. Không thể phát: " + filePath);
         } catch (Throwable t) {
-            System.err.println("MusicPlayer: Failed to play music '" + filePath + "' - " + t.getMessage());
+            System.err.println("MusicPlayer: Lỗi khi phát (JavaFX) '" + filePath + "' - " + t.getMessage());
         }
     }
 
+    // ------------ Phát một lần (sound effect) ------------
     /**
-     * Play a single sound once (non-blocking). Calls onComplete.run() when playback finishes (if non-null).
-     * This will not replace the global background `player` so it can play concurrently.
+     * Phát một file một lần. Hàm onComplete.run() sẽ được gọi khi phát xong (nếu không null).
+     * Không thay thế `currentPlayer` để cho phép hiệu ứng và nhạc nền chạy đồng thời.
      */
     public static void playOnce(String filePath, Runnable onComplete) {
         if (filePath == null) return;
-        String lower = filePath.toLowerCase();
-        // Prefer Java Sound for WAV-like files
-        if (lower.endsWith(".wav") || lower.endsWith(".aiff") || lower.endsWith(".aif") || lower.endsWith(".au")) {
-            try {
-                java.io.File f = new java.io.File(filePath);
-                javax.sound.sampled.AudioInputStream ais = javax.sound.sampled.AudioSystem.getAudioInputStream(f);
-                javax.sound.sampled.DataLine.Info info = new javax.sound.sampled.DataLine.Info(javax.sound.sampled.Clip.class, ais.getFormat());
-                javax.sound.sampled.Clip clip = (javax.sound.sampled.Clip) javax.sound.sampled.AudioSystem.getLine(info);
-                clip.open(ais);
-                clip.addLineListener(ev -> {
-                    if (ev.getType() == javax.sound.sampled.LineEvent.Type.STOP || ev.getType() == javax.sound.sampled.LineEvent.Type.CLOSE) {
-                        try { clip.close(); } catch (Throwable t) {}
-                        if (onComplete != null) {
-                            try { onComplete.run(); } catch (Throwable t) {}
-                        }
-                    }
-                });
-                clip.start();
-                return;
-            } catch (Exception e) {
-                System.err.println("MusicPlayer: failed to play once via Java Sound: " + e.getMessage());
-                // fallthrough to try JavaFX if present
-            }
+
+        // Nếu là file native được Java Sound hỗ trợ, dùng Clip và lắng nghe LineEvent
+        if (isNativeSoundFile(filePath)) {
+            if (tryPlayOnceWithJavaSound(filePath, onComplete)) return;
+            // nếu thất bại -> thử JavaFX
         }
 
-        // Try JavaFX MediaPlayer via reflection for other formats
+        // Thử JavaFX (reflection) cho các định dạng khác
+        tryPlayOnceWithJavaFX(filePath, onComplete);
+    }
+
+    private static boolean tryPlayOnceWithJavaSound(String filePath, Runnable onComplete) {
+        try {
+            java.io.File f = new java.io.File(filePath);
+            javax.sound.sampled.AudioInputStream ais = javax.sound.sampled.AudioSystem.getAudioInputStream(f);
+            javax.sound.sampled.DataLine.Info info = new javax.sound.sampled.DataLine.Info(javax.sound.sampled.Clip.class, ais.getFormat());
+            javax.sound.sampled.Clip clip = (javax.sound.sampled.Clip) javax.sound.sampled.AudioSystem.getLine(info);
+            clip.open(ais);
+            clip.addLineListener(ev -> {
+                if (ev.getType() == javax.sound.sampled.LineEvent.Type.STOP || ev.getType() == javax.sound.sampled.LineEvent.Type.CLOSE) {
+                    try { clip.close(); } catch (Throwable ignored) {}
+                    if (onComplete != null) try { onComplete.run(); } catch (Throwable ignored) {}
+                }
+            });
+            clip.start();
+            return true;
+        } catch (Throwable t) {
+            System.err.println("MusicPlayer: Không thể phát một lần bằng Java Sound: " + t.getMessage());
+            return false;
+        }
+    }
+
+    private static void tryPlayOnceWithJavaFX(String filePath, Runnable onComplete) {
         try {
             String uri = Paths.get(filePath).toUri().toString();
             Class<?> mediaClass = Class.forName("javafx.scene.media.Media");
@@ -123,60 +151,67 @@ public class MusicPlayer {
 
             Class<?> mediaPlayerClass = Class.forName("javafx.scene.media.MediaPlayer");
             Constructor<?> playerCtor = mediaPlayerClass.getConstructor(mediaClass);
-            Object one = playerCtor.newInstance(media);
-            // setOnEndOfMedia -> call onComplete
+            Object fxPlayer = playerCtor.newInstance(media);
+
+            // setOnEndOfMedia -> dispose và gọi onComplete
             try {
                 Method setOnEnd = mediaPlayerClass.getMethod("setOnEndOfMedia", Runnable.class);
-                setOnEnd.invoke(one, (Runnable) () -> {
+                setOnEnd.invoke(fxPlayer, (Runnable) () -> {
                     try {
                         Method dispose = mediaPlayerClass.getMethod("dispose");
-                        dispose.invoke(one);
-                    } catch (Throwable t) {}
-                    if (onComplete != null) try { onComplete.run(); } catch (Throwable t) {}
+                        dispose.invoke(fxPlayer);
+                    } catch (Throwable ignored) {}
+                    if (onComplete != null) try { onComplete.run(); } catch (Throwable ignored) {}
                 });
             } catch (NoSuchMethodException ns) {
-                // ignore
+                // một số phiên bản không có method này -> bỏ qua
             }
-            Method playMethod = mediaPlayerClass.getMethod("play");
-            playMethod.invoke(one);
+
+            Method play = mediaPlayerClass.getMethod("play");
+            play.invoke(fxPlayer);
         } catch (ClassNotFoundException cnf) {
-            System.err.println("MusicPlayer: JavaFX Media classes not found; cannot play sound: " + filePath);
+            System.err.println("MusicPlayer: JavaFX không tìm thấy, không thể phát: " + filePath);
         } catch (Throwable t) {
-            System.err.println("MusicPlayer: Failed to play once '" + filePath + "' - " + t.getMessage());
+            System.err.println("MusicPlayer: Lỗi khi phát một lần (JavaFX) '" + filePath + "' - " + t.getMessage());
         }
     }
 
+    // ------------ Dừng phát ------------
+    /**
+     * Dừng và giải phóng player hiện tại (nếu có).
+     */
     public static void stop() {
-        if (player == null) return;
+        if (currentPlayer == null) return;
         try {
-            // If the player is a javax.sound.sampled.Clip, stop and close it
-            if (player instanceof javax.sound.sampled.Clip) {
+            // Nếu currentPlayer là Clip (Java Sound)
+            if (currentPlayer instanceof javax.sound.sampled.Clip) {
                 try {
-                    javax.sound.sampled.Clip clip = (javax.sound.sampled.Clip) player;
+                    javax.sound.sampled.Clip clip = (javax.sound.sampled.Clip) currentPlayer;
                     clip.stop();
                     clip.close();
-                } catch (Throwable t) {
-                    // ignore
-                } finally {
-                    player = null;
-                    return;
-                }
+                } catch (Throwable ignored) {}
+                currentPlayer = null;
+                return;
             }
 
-            Class<?> mediaPlayerClass = Class.forName("javafx.scene.media.MediaPlayer");
-            Method stopMethod = mediaPlayerClass.getMethod("stop");
-            stopMethod.invoke(player);
-            Method disposeMethod = null;
+            // Nếu là JavaFX MediaPlayer (sử dụng reflection để gọi stop/dispose)
             try {
-                disposeMethod = mediaPlayerClass.getMethod("dispose");
-            } catch (NoSuchMethodException ns) {
-                // some versions may not have dispose
+                Class<?> mediaPlayerClass = Class.forName("javafx.scene.media.MediaPlayer");
+                Method stop = mediaPlayerClass.getMethod("stop");
+                stop.invoke(currentPlayer);
+                try {
+                    Method dispose = mediaPlayerClass.getMethod("dispose");
+                    dispose.invoke(currentPlayer);
+                } catch (NoSuchMethodException ns) {
+                    // một số phiên bản không có dispose
+                }
+            } catch (ClassNotFoundException cnf) {
+                // không phải JavaFX -> bỏ qua
             }
-            if (disposeMethod != null) disposeMethod.invoke(player);
-        } catch (Throwable t) {
-            // ignore errors on stop
+        } catch (Throwable ignored) {
+            // bỏ qua mọi lỗi khi dừng
         } finally {
-            player = null;
+            currentPlayer = null;
         }
     }
 }

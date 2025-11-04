@@ -1,7 +1,6 @@
 package levels;
 
 public class Level2 {
-    // Louis Vuitton "LV" monogram mask (0/1/3); builder will handle scaling & hits
     public static final String[] MAP = new String[]{
         "00000000000000000000000000000000",
         "00000000000000000000000000000000",

@@ -2,7 +2,13 @@ package entities;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Image;
 import java.awt.Rectangle;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
 import utils.GameConfig;
 
 public class Block implements GameObject {
@@ -10,6 +16,10 @@ public class Block implements GameObject {
     private boolean destroyed = false;
     private int hitsRemaining;
     private Color customColor = null;
+    // Hiệu ứng gạch nứt: sau khi bị đập, hiển thị sprite "broken" của cấp hiện tại
+    // cho tới lần va chạm tiếp theo.
+    private boolean showBroken = false;
+    private int brokenTier = 0; // 2 hoặc 3; 0 = không broken
 
 
     /**
@@ -38,14 +48,50 @@ public class Block implements GameObject {
         this.customColor = colorOverride;
     }
 
-    // Set màu các block khác nhàu
+    // Set màu các block khác nhau hoặc vẽ ảnh brick nếu có
     @Override
     public void draw(Graphics g) {
-        if (!destroyed) {
+        if (destroyed) return;
+
+        // Prefer image-based bricks if available
+        ensureBrickImagesLoaded();
+
+    Image img;
+        if (customColor != null) {
+            // custom color: still draw colored rect
+            img = null;
+        } else if (hitsRemaining == GameConfig.UNDESTRUCTABLE_BLOCK) {
+            img = brick9_4;
+        } else if (showBroken && brokenTier >= 2) {
+            // Ưu tiên hiển thị sprite broken nếu có
+            img = switch (brokenTier) {
+                case 3 -> brick3_broken;
+                case 2 -> brick2_broken;
+                default -> null;
+            };
+            if (img == null) {
+                // Fallback nếu thiếu ảnh broken
+                img = switch (hitsRemaining) {
+                    case 3 -> brick3_4;
+                    case 2 -> brick2_4;
+                    default -> brick1_4;
+                };
+            }
+        } else if (hitsRemaining == 3) {
+            img = brick3_4;
+        } else if (hitsRemaining == 2) {
+            img = brick2_4;
+        } else {
+            img = brick1_4;
+        }
+
+        if (img != null) {
+            g.drawImage(img, x, y, GameConfig.BLOCK_WIDTH, GameConfig.BLOCK_HEIGHT, null);
+        } else {
             Color color = (customColor != null)
                 ? customColor
                 : switch (hitsRemaining) {
-                    case GameConfig.UNDESTRUCTABLE_BLOCK -> Color.WHITE; // Undestructable blocks are white
+                    case GameConfig.UNDESTRUCTABLE_BLOCK -> Color.WHITE;
                     case 3 -> Color.MAGENTA;
                     case 2 -> Color.ORANGE;
                     default -> Color.RED;
@@ -57,6 +103,43 @@ public class Block implements GameObject {
             g.setColor(Color.BLACK);
             g.drawRect(x, y, GameConfig.BLOCK_WIDTH, GameConfig.BLOCK_HEIGHT);
         }
+    }
+
+    // --- Brick images (loaded lazily) ---
+    private static Image brick1_4;
+    private static Image brick2_4;
+    private static Image brick3_4;
+    private static Image brick9_4;
+    private static Image brick2_broken;
+    private static Image brick3_broken;
+    private static boolean brickImagesInitialized = false;
+
+    private static void ensureBrickImagesLoaded() {
+        if (brickImagesInitialized) return;
+        brickImagesInitialized = true;
+        brick1_4 = loadImage("images/Brick1.png");
+        brick2_4 = loadImage("images/Brick2.png");
+        brick3_4 = loadImage("images/Brick3.png");
+        brick9_4 = loadImage("images/BrickX.png");
+        // Ảnh gạch nứt
+        brick2_broken = loadImage("images/Brick2_broken.png");
+        brick3_broken = loadImage("images/Brick3_broken.png");
+    }
+
+    private static Image loadImage(String path) {
+        if (path == null || path.isBlank()) return null;
+        try {
+            URL res = Block.class.getClassLoader().getResource(path);
+            if (res != null) {
+                return new ImageIcon(res).getImage();
+            }
+            File f = new File(path);
+            if (f.exists()) {
+                return ImageIO.read(f);
+            }
+        } catch (IOException | SecurityException ignored) {
+        }
+        return null;
     }
 
     /**
@@ -72,17 +155,29 @@ public class Block implements GameObject {
             // ✅ Nếu bóng đang to hơn kích thước mặc định (20 là size gốc)
             if (GameConfig.BALL_SIZE > GameConfig.DEFAULT_BALL_SIZE) {
                 if (hitsRemaining == 3) {
-                    // Gạch cấp 3 → giảm xuống cấp 1
+                    // Gạch cấp 3 → giảm xuống cấp 1, nhưng hiển thị Brick3_broken
+                    int prevTier = hitsRemaining;
                     hitsRemaining = 1;
+                    showBroken = true;
+                    brokenTier = prevTier; // 3
                 } else {
                     // Gạch cấp 1 hoặc 2 → vỡ ngay lập tức
                     destroyed = true;
+                    showBroken = false;
+                    brokenTier = 0;
                 }
             } else {
                 // ✅ Bóng bình thường: giảm độ bền như thường lệ
+                int prevTier = hitsRemaining;
                 hitsRemaining--;
                 if (hitsRemaining <= 0) {
                     destroyed = true;
+                    showBroken = false;
+                    brokenTier = 0;
+                } else {
+                    // Hiển thị sprite broken của tier trước đó (prevTier)
+                    showBroken = prevTier >= 2;
+                    brokenTier = prevTier;
                 }
             }
             return true;
@@ -126,9 +221,15 @@ public class Block implements GameObject {
     // Áp dụng 1 lần sát thương bất kể có overlap hình học hay không (dùng cho CCD)
     public void applyHit() {
         if (!destroyed && hitsRemaining != GameConfig.UNDESTRUCTABLE_BLOCK) {
+            int prevTier = hitsRemaining;
             hitsRemaining--;
             if (hitsRemaining <= 0) {
                 destroyed = true;
+                showBroken = false;
+                brokenTier = 0;
+            } else {
+                showBroken = prevTier >= 2;
+                brokenTier = prevTier;
             }
         }
     }
