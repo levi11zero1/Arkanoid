@@ -14,6 +14,8 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import utils.Velocity;
 import javax.swing.*;
 import levels.LevelBackgrounds;
 import levels.LevelBuilder;
@@ -51,6 +53,7 @@ public class GamePanel extends JPanel implements KeyListener {
     private boolean rightPressed = false;
 
     private int lives;
+    private final Random random = new Random();
 
     // Save button is created by UIManager; GamePanel does not keep a reference
 
@@ -138,7 +141,11 @@ public class GamePanel extends JPanel implements KeyListener {
         paddle = new Paddle(
         GameConfig.SCREEN_WIDTH / 2 - GameConfig.DEFAULT_PADDLE_WIDTH / 2,
         GameConfig.SCREEN_HEIGHT - GameConfig.PADDLE_BOTTOM_MARGIN - GameConfig.PADDLE_EXTRA_RAISE_PIXELS);
-    ball.attachToPaddle(paddle);
+    // Start with a random upward launch so the player doesn't always need to "serve" manually
+    double angleOffset = (random.nextDouble() * 40.0) - 20.0; // -20 .. +20
+    double angle = -90.0 + angleOffset; // -90 is straight up
+    ball.detachFromPaddle();
+    ball.setVelocity(Velocity.fromAngle(angle, GameConfig.BALL_DEFAULT_SPEED));
 
         // Tạo block
     int currentLevel = levelManager.getCurrentLevel();

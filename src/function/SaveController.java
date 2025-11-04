@@ -81,7 +81,7 @@ public final class SaveController {
                 return;
             }
             try {
-                SaveManager.Metadata meta = new SaveManager.Metadata(panel.getRunStats().player, panel.getRunStats().elapsedMs, panel.getRunStats().levels, panel.getRunStats().blocks);
+                SaveManager.Metadata meta = new SaveManager.Metadata(panel.getRunStats().player, panel.getRunStats().elapsedMs, panel.getRunStats().levels, panel.getRunStats().blocks, panel.getLives());
                 SaveManager.save(panel.toGameState(), name, meta);
                 result[0] = name;
                 dialog.dispose();
@@ -130,6 +130,9 @@ public final class SaveController {
         try {
             GameState state = SaveManager.load(file);
             SaveManager.Metadata meta = SaveManager.readMetadata(file);
+            if (meta != null && meta.lives >= 0) {
+                LifeManager.setLives(meta.lives);
+            }
             panel.applyGameState(state);
             if (meta != null) {
                 panel.setPlayerRunInfo(meta.player, meta.elapsedMs, meta.levelsCompleted, meta.blocksDestroyed);

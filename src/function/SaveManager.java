@@ -63,9 +63,14 @@ public class SaveManager {
         public long elapsedMs;
         public int levelsCompleted;
         public int blocksDestroyed;
+        public int lives; // optional: saved lives snapshot
         public Metadata() {}
         public Metadata(String player, long elapsedMs, int levelsCompleted, int blocksDestroyed) {
-            this.player = player; this.elapsedMs = elapsedMs; this.levelsCompleted = levelsCompleted; this.blocksDestroyed = blocksDestroyed;
+            this.player = player; this.elapsedMs = elapsedMs; this.levelsCompleted = levelsCompleted; this.blocksDestroyed = blocksDestroyed; this.lives = -1;
+        }
+
+        public Metadata(String player, long elapsedMs, int levelsCompleted, int blocksDestroyed, int lives) {
+            this.player = player; this.elapsedMs = elapsedMs; this.levelsCompleted = levelsCompleted; this.blocksDestroyed = blocksDestroyed; this.lives = lives;
         }
     }
 
@@ -122,6 +127,7 @@ public class SaveManager {
                 w.write("meta_elapsed=" + meta.elapsedMs); w.newLine();
                 w.write("meta_levels=" + meta.levelsCompleted); w.newLine();
                 w.write("meta_blocks=" + meta.blocksDestroyed); w.newLine();
+                if (meta.lives >= 0) { w.write("meta_lives=" + meta.lives); w.newLine(); }
             }
             w.write("level=" + state.level); w.newLine();
             w.write(String.format("ball=%.6f,%.6f,%.6f,%.6f", state.ballX, state.ballY, state.ballDx, state.ballDy)); w.newLine();
@@ -204,6 +210,7 @@ public class SaveManager {
                 else if (line.startsWith("meta_elapsed=")) { try { meta.elapsedMs = Long.parseLong(line.substring("meta_elapsed=".length())); } catch (Exception ignored) {} }
                 else if (line.startsWith("meta_levels=")) { try { meta.levelsCompleted = Integer.parseInt(line.substring("meta_levels=".length())); } catch (Exception ignored) {} }
                 else if (line.startsWith("meta_blocks=")) { try { meta.blocksDestroyed = Integer.parseInt(line.substring("meta_blocks=".length())); } catch (Exception ignored) {} }
+                else if (line.startsWith("meta_lives=")) { try { meta.lives = Integer.parseInt(line.substring("meta_lives=".length())); } catch (Exception ignored) { meta.lives = -1; } }
             }
         }
         if ((meta.player == null || meta.player.isBlank()) && meta.elapsedMs == 0 && meta.levelsCompleted == 0 && meta.blocksDestroyed == 0) {
