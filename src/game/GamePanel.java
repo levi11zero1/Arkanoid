@@ -6,16 +6,17 @@ import entities.EntityManager;
 import entities.Paddle;
 import function.GameSession;
 import function.GameState;
+import function.LifeManager;
 import function.Pause;
 import function.ScoreManager;
-import function.GameSession;
+import input.InputHandler;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.*;
-import levels.LevelBackgrounds; // Ảnh chụp trạng thái game để lưu/khôi phục
-import levels.LevelBuilder; // Điều khiển tạm dừng/tiếp tục
+import levels.LevelBackgrounds;
+import levels.LevelBuilder;
 import levels.LevelManager;
 import powerup.PowerUpManager;
 import ui.UIManager;
@@ -225,7 +226,7 @@ public class GamePanel extends JPanel implements KeyListener {
         // Render UI overlay using UIManager (non-invasive call)
         if (g instanceof Graphics2D) {
             try {
-                uiManager.renderOverlay((Graphics2D) g);
+                uiManager.renderOverlay((Graphics2D) g, this);
             } catch (Throwable t) {
                 // keep rendering resilient during incremental refactor
             }
