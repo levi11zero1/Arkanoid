@@ -14,6 +14,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.List;
+import utils.Velocity;
 import javax.swing.*;
 import levels.LevelBackgrounds;
 import levels.LevelBuilder;
@@ -51,6 +52,7 @@ public class GamePanel extends JPanel implements KeyListener {
     private boolean rightPressed = false;
 
     private int lives;
+
 
     // Save button is created by UIManager; GamePanel does not keep a reference
 
@@ -138,7 +140,9 @@ public class GamePanel extends JPanel implements KeyListener {
         paddle = new Paddle(
         GameConfig.SCREEN_WIDTH / 2 - GameConfig.DEFAULT_PADDLE_WIDTH / 2,
         GameConfig.SCREEN_HEIGHT - GameConfig.PADDLE_BOTTOM_MARGIN - GameConfig.PADDLE_EXTRA_RAISE_PIXELS);
+    
     ball.attachToPaddle(paddle);
+    ball.setVelocity(new Velocity(0, 0));
 
         // Tạo block
     int currentLevel = levelManager.getCurrentLevel();
@@ -173,7 +177,8 @@ public class GamePanel extends JPanel implements KeyListener {
                 ball.getPreciseX(), ball.getPreciseY(),
                 ball.getVelocity().getDx(), ball.getVelocity().getDy(),
                 paddle.getX(), paddle.getY(),
-                bs);
+                bs,
+                ball != null && ball.isAttachedToPaddle());
     }
 
     // Áp dụng trạng thái đã lưu vào game panel này.
@@ -206,6 +211,14 @@ public class GamePanel extends JPanel implements KeyListener {
         // 6) Vẽ lại
         if (entityManager != null)
             entityManager.setEntities(ball, paddle, blocks);
+        // Restore attachment state: if the saved state had the ball attached, re-attach
+        try {
+            if (state.ballAttached) {
+                if (ball != null && paddle != null) ball.attachToPaddle(paddle);
+            } else {
+                if (ball != null) ball.detachFromPaddle();
+            }
+        } catch (Throwable ignored) {}
         repaint();
     }
 

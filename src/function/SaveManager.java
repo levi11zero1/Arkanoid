@@ -63,9 +63,14 @@ public class SaveManager {
         public long elapsedMs;
         public int levelsCompleted;
         public int blocksDestroyed;
+        public int lives; // optional: saved lives snapshot
         public Metadata() {}
         public Metadata(String player, long elapsedMs, int levelsCompleted, int blocksDestroyed) {
-            this.player = player; this.elapsedMs = elapsedMs; this.levelsCompleted = levelsCompleted; this.blocksDestroyed = blocksDestroyed;
+            this.player = player; this.elapsedMs = elapsedMs; this.levelsCompleted = levelsCompleted; this.blocksDestroyed = blocksDestroyed; this.lives = -1;
+        }
+
+        public Metadata(String player, long elapsedMs, int levelsCompleted, int blocksDestroyed, int lives) {
+            this.player = player; this.elapsedMs = elapsedMs; this.levelsCompleted = levelsCompleted; this.blocksDestroyed = blocksDestroyed; this.lives = lives;
         }
     }
 
@@ -96,14 +101,14 @@ public class SaveManager {
     private static String sanitizeName(String s) {
         if (s == null) return "";
         String trimmed = s.trim();
-        // Replace forbidden characters in filenames on common OS: \\/:*?"<>| and control chars
+        
         String cleaned = trimmed.replaceAll("[\\\\/:*?\"<>|]+", "_");
-        // Collapse whitespace to single space, then replace spaces with underscore for consistency
+        
         cleaned = cleaned.replaceAll("\\s+", " ").trim();
         cleaned = cleaned.replace(' ', '_');
-        // Limit length to a reasonable size (e.g., 64)
+        
         if (cleaned.length() > 64) cleaned = cleaned.substring(0, 64);
-        // Avoid reserved names on Windows (CON, PRN, AUX, NUL, COM1, LPT1, ...)
+        
         String upper = cleaned.toUpperCase();
         String[] reserved = {"CON","PRN","AUX","NUL","COM1","COM2","COM3","COM4","COM5","COM6","COM7","COM8","COM9","LPT1","LPT2","LPT3","LPT4","LPT5","LPT6","LPT7","LPT8","LPT9"};
         for (String r : reserved) {
@@ -122,10 +127,12 @@ public class SaveManager {
                 w.write("meta_elapsed=" + meta.elapsedMs); w.newLine();
                 w.write("meta_levels=" + meta.levelsCompleted); w.newLine();
                 w.write("meta_blocks=" + meta.blocksDestroyed); w.newLine();
+                if (meta.lives >= 0) { w.write("meta_lives=" + meta.lives); w.newLine(); }
             }
             w.write("level=" + state.level); w.newLine();
             w.write(String.format("ball=%.6f,%.6f,%.6f,%.6f", state.ballX, state.ballY, state.ballDx, state.ballDy)); w.newLine();
             w.write(String.format("paddle=%.6f,%d", state.paddleX, state.paddleY)); w.newLine();
+            w.write("ball_attached=" + (state.ballAttached ? 1 : 0)); w.newLine();
             w.write("blocks=" + state.blocks.size()); w.newLine();
             for (GameState.BlockState b : state.blocks) {
                 w.write(String.format("%d,%d,%d,%d", b.x, b.y, b.hitsRemaining, b.destroyed ? 1 : 0));
@@ -147,6 +154,7 @@ public class SaveManager {
         int blockCount = 0;
         List<GameState.BlockState> blocks = new ArrayList<>();
 
+        boolean ballAttached = false;
         try (BufferedReader r = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
             String line;
             int step = 0;
@@ -154,6 +162,13 @@ public class SaveManager {
                 line = line.trim();
                 if (line.isEmpty()) continue;
                 if (line.startsWith("meta_")) continue; // bỏ qua metadata ở đây
+                if (line.startsWith("ball_attached=")) {
+                    try {
+                        int v = Integer.parseInt(line.substring("ball_attached=".length()));
+                        ballAttached = v != 0;
+                    } catch (Exception ignored) {}
+                    continue;
+                }
                 if (step == 0 && line.startsWith("level=")) {
                     level = Integer.parseInt(line.substring(6));
                     step = 1; continue;
@@ -187,7 +202,7 @@ public class SaveManager {
                 }
             }
         }
-        return new GameState(level, ballX, ballY, ballDx, ballDy, paddleX, paddleY, blocks);
+        return new GameState(level, ballX, ballY, ballDx, ballDy, paddleX, paddleY, blocks, ballAttached);
     }
 
     // Đọc metadata (nếu có) từ file save
@@ -204,6 +219,7 @@ public class SaveManager {
                 else if (line.startsWith("meta_elapsed=")) { try { meta.elapsedMs = Long.parseLong(line.substring("meta_elapsed=".length())); } catch (Exception ignored) {} }
                 else if (line.startsWith("meta_levels=")) { try { meta.levelsCompleted = Integer.parseInt(line.substring("meta_levels=".length())); } catch (Exception ignored) {} }
                 else if (line.startsWith("meta_blocks=")) { try { meta.blocksDestroyed = Integer.parseInt(line.substring("meta_blocks=".length())); } catch (Exception ignored) {} }
+                else if (line.startsWith("meta_lives=")) { try { meta.lives = Integer.parseInt(line.substring("meta_lives=".length())); } catch (Exception ignored) { meta.lives = -1; } }
             }
         }
         if ((meta.player == null || meta.player.isBlank()) && meta.elapsedMs == 0 && meta.levelsCompleted == 0 && meta.blocksDestroyed == 0) {
