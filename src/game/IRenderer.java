@@ -12,5 +12,5 @@ import levels.LevelManager;
  * Renderer interface for drawing the game scene.
  */
 public interface IRenderer {
-    void render(Graphics2D g, Ball ball, Paddle paddle, List<Block> blocks, List<PowerUp> powerUps, LevelManager levelManager);
+    void render(Graphics2D g, List<Ball> balls, Paddle paddle, List<Block> blocks, List<PowerUp> powerUps, LevelManager levelManager);
 }

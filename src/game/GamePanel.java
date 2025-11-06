@@ -14,7 +14,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.List;
-import utils.Velocity;
 import javax.swing.*;
 import levels.LevelBackgrounds;
 import levels.LevelBuilder;
@@ -52,7 +51,6 @@ public class GamePanel extends JPanel implements KeyListener {
     private boolean rightPressed = false;
 
     private int lives;
-
 
     // Save button is created by UIManager; GamePanel does not keep a reference
 
@@ -140,9 +138,7 @@ public class GamePanel extends JPanel implements KeyListener {
         paddle = new Paddle(
         GameConfig.SCREEN_WIDTH / 2 - GameConfig.DEFAULT_PADDLE_WIDTH / 2,
         GameConfig.SCREEN_HEIGHT - GameConfig.PADDLE_BOTTOM_MARGIN - GameConfig.PADDLE_EXTRA_RAISE_PIXELS);
-    
     ball.attachToPaddle(paddle);
-    ball.setVelocity(new Velocity(0, 0));
 
         // Tạo block
     int currentLevel = levelManager.getCurrentLevel();
@@ -177,8 +173,7 @@ public class GamePanel extends JPanel implements KeyListener {
                 ball.getPreciseX(), ball.getPreciseY(),
                 ball.getVelocity().getDx(), ball.getVelocity().getDy(),
                 paddle.getX(), paddle.getY(),
-                bs,
-                ball != null && ball.isAttachedToPaddle());
+                bs);
     }
 
     // Áp dụng trạng thái đã lưu vào game panel này.
@@ -211,14 +206,6 @@ public class GamePanel extends JPanel implements KeyListener {
         // 6) Vẽ lại
         if (entityManager != null)
             entityManager.setEntities(ball, paddle, blocks);
-        // Restore attachment state: if the saved state had the ball attached, re-attach
-        try {
-            if (state.ballAttached) {
-                if (ball != null && paddle != null) ball.attachToPaddle(paddle);
-            } else {
-                if (ball != null) ball.detachFromPaddle();
-            }
-        } catch (Throwable ignored) {}
         repaint();
     }
 
@@ -233,7 +220,15 @@ public class GamePanel extends JPanel implements KeyListener {
         if (g instanceof Graphics2D g2d) {
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             try {
-                renderer.render(g2d, ball, paddle, blocks, powerUpManager.snapshot(), levelManager);
+                List<Ball> renderBalls;
+                if (entityManager != null) {
+                    renderBalls = entityManager.getBalls();
+                } else if (ball != null) {
+                    renderBalls = java.util.Collections.singletonList(ball);
+                } else {
+                    renderBalls = java.util.Collections.emptyList();
+                }
+                renderer.render(g2d, renderBalls, paddle, blocks, powerUpManager.snapshot(), levelManager);
             } catch (Throwable t) {
                 // keep paint resilient during refactor
             }
@@ -273,7 +268,7 @@ public class GamePanel extends JPanel implements KeyListener {
         }
 
         // delegate power-up updates to manager
-        powerUpManager.updateAll(getHeight(), paddle, ball);
+    powerUpManager.updateAll(getHeight(), paddle, entityManager);
 
         repaint();
     }
@@ -282,6 +277,14 @@ public class GamePanel extends JPanel implements KeyListener {
         // Delegate entity updates to EntityManager
         if (entityManager != null) {
             entityManager.updateAll(deltaTime, getWidth(), getHeight(), leftPressed, rightPressed);
+            entityManager.removeOutOfBoundsBalls(getHeight());
+            Ball currentPrimary = entityManager.getPrimaryBall();
+            if (currentPrimary != null) {
+                ball = currentPrimary;
+            }
+            if (entityManager.getActiveBallCount() == 0) {
+                handleBallLost();
+            }
         } else {
             if (ball != null) {
                 if (ball.isAttachedToPaddle()) {
@@ -294,10 +297,9 @@ public class GamePanel extends JPanel implements KeyListener {
             if (paddle != null) {
                 paddle.update(leftPressed, rightPressed, getWidth(), deltaTime);
             }
-        }
-
-        if (ball != null && ball.isAttachedToPaddle()) {
-            ball.centerOnPaddle(paddle);
+            if (ball != null && ball.isAttachedToPaddle()) {
+                ball.centerOnPaddle(paddle);
+            }
         }
 
     }
@@ -309,10 +311,6 @@ public class GamePanel extends JPanel implements KeyListener {
                 gameController.handleLevelComplete();
             else
                 handleLevelComplete();
-        }
-
-        if (ball.getY() > getHeight()) {
-            handleBallLost();
         }
     }
 
@@ -603,6 +601,10 @@ public class GamePanel extends JPanel implements KeyListener {
 
         ball.attachToPaddle(paddle);
         ball.centerOnPaddle(paddle);
+
+        if (entityManager != null) {
+            entityManager.resetToSingleBall(ball);
+        }
 
         lives = LifeManager.decrementLife();
 
