@@ -19,6 +19,7 @@ import levels.LevelBackgrounds;
 import levels.LevelBuilder;
 import levels.LevelManager;
 import powerup.PowerUpManager;
+import powerup.PowerUp;
 import ui.UIManager;
 import utils.GameConfig;
 
@@ -291,6 +292,21 @@ public class GamePanel extends JPanel implements KeyListener {
             }
             if (entityManager.getActiveBallCount() == 0) {
                 handleBallLost();
+            }
+
+            for (Block block : blocks) {
+                if (block.isDestroyed() && !block.isPowerUpSpawned()) {
+                    double spawnChance = 0.36; // 36% tỉ lệ rơi power-up
+                    if (Math.random() < spawnChance) {
+                        PowerUp.Type type = getRandomAvailablePowerUpType();
+                        if (type != null && powerUpManager != null) {
+                            int spawnX = block.getX() + GameConfig.BLOCK_WIDTH / 2 - 10;
+                            int spawnY = block.getY() + GameConfig.BLOCK_HEIGHT / 2;
+                            powerUpManager.spawnPowerUp(type, spawnX, spawnY);
+                            block.setPowerUpSpawned(true);
+                        }
+                    }
+                }
             }
         } else {
             if (ball != null) {
@@ -651,4 +667,19 @@ public class GamePanel extends JPanel implements KeyListener {
         }
     }
 
-}
+        private PowerUp.Type getRandomAvailablePowerUpType() {
+            PowerUp.Type[] all = PowerUp.Type.values();
+            List<PowerUp.Type> available = new ArrayList<>();
+
+            for (PowerUp.Type t : all) {
+                if (!powerUpManager.isActive(t)) {
+                    available.add(t);
+                }
+            }
+
+            if (available.isEmpty()) return null;
+            return available.get(new java.util.Random().nextInt(available.size()));
+        }
+
+
+    }
