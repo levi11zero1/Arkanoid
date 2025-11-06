@@ -11,6 +11,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import entities.Paddle;
+import entities.EntityManager;
 import entities.Ball;
 
 /**
@@ -60,14 +61,14 @@ public class PowerUpManager {
      * Update powerups position and detect collection/out-of-bounds.
      * If collected, apply directly to provided paddle/ball.
      */
-    public void updateAll(int panelHeight, Paddle paddle, Ball ball) {
+    public void updateAll(int panelHeight, Paddle paddle, EntityManager entityManager) {
         synchronized (active) {
             for (Iterator<PowerUp> it = active.iterator(); it.hasNext();) {
                 PowerUp p = it.next();
                 p.updatePosition();
 
-                if (p.getBounds().intersects(paddle.getBounds())) {
-                    applyEffect(p, paddle, ball);
+                if (paddle != null && p.getBounds().intersects(paddle.getBounds())) {
+                    applyEffect(p, paddle, entityManager);
                     it.remove();
                     continue;
                 }
@@ -78,13 +79,29 @@ public class PowerUpManager {
         }
     }
 
-    private void applyEffect(PowerUp p, Paddle paddle, Ball ball) {
+    private void applyEffect(PowerUp p, Paddle paddle, EntityManager entityManager) {
         PowerUp.Type type = p.getType();
 
         if (type == PowerUp.Type.PADDLE_EXPAND || type == PowerUp.Type.PADDLE_SHRINK || type == PowerUp.Type.PADDLE_SPEED_UP) {
             paddle.applyPowerUp(type);
-        } else if (type == PowerUp.Type.BALL_EXPAND || type == PowerUp.Type.BALL_SHRINK || type == PowerUp.Type.BALL_SLOW) {
-            ball.applyPowerUp(type);
+            return;
+        }
+
+        if (entityManager == null) {
+            return;
+        }
+
+        switch (type) {
+            case BALL_EXPAND, BALL_SHRINK, BALL_SLOW -> {
+                Ball mainBall = entityManager.getPrimaryBall();
+                if (mainBall != null) {
+                    mainBall.applyPowerUp(type);
+                }
+            }
+            case BALL_MULTIPLY_TEN -> entityManager.multiplyBallsTo(10);
+            default -> {
+                // no-op for unhandled types
+            }
         }
     }
 
