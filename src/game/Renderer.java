@@ -13,14 +13,20 @@ import utils.GameConfig;
 
 public class Renderer implements IRenderer {
     @Override
-    public void render(Graphics2D g, Ball ball, Paddle paddle, List<Block> blocks, List<PowerUp> powerUps, LevelManager levelManager) {
+    public void render(Graphics2D g, List<Ball> balls, Paddle paddle, List<Block> blocks, List<PowerUp> powerUps, LevelManager levelManager) {
         
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 16));
         g.drawString("Level: " + levelManager.getCurrentLevel(), 10, 25);
         long remainingBlocks = blocks.stream().filter(block -> !block.isDestroyed()).count();
         g.drawString("Blocks: " + remainingBlocks, GameConfig.SCREEN_WIDTH - 100, 25);
-        if (ball != null) ball.draw(g);
+        if (balls != null) {
+            for (Ball b : balls) {
+                if (b != null) {
+                    b.draw(g);
+                }
+            }
+        }
         if (paddle != null) paddle.draw(g);
         if (blocks != null) {
             for (Block block : blocks) {
