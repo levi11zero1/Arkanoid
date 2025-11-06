@@ -1,9 +1,10 @@
 package game;
 
-import function.GameSession;
-import function.ScoreManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
+
+import function.ScoreManager;
+import function.GameSession;
 import levels.LevelManager;
 import powerup.PowerUpManager;
 import ui.UIManager;
@@ -92,8 +93,18 @@ public class GameController {
     }
 
     private void showLevelComplete() {
-        // Hiển thị ảnh hoàn thành level trong 3s rồi tự động chuyển sang level tiếp theo
-        panel.showLevelCompleteOverlayAndAdvance(3000);
+        int choice = uiManager.showConfirm(panel, "Level Complete",
+                "Level " + levelManager.getCurrentLevel() + " Complete!\n\n" +
+                        "Continue to Level " + (levelManager.getCurrentLevel() + 1) + "?",
+                JOptionPane.YES_NO_OPTION);
+
+        if (choice == JOptionPane.YES_OPTION) {
+            levelManager.advanceLevel();
+            panel.initializeLevel();
+            if (gameLoop != null) gameLoop.start();
+        } else {
+            System.exit(0);
+        }
     }
 
     private void showGameComplete() {
