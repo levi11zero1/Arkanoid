@@ -170,12 +170,12 @@ public class GamePanel extends JPanel implements KeyListener {
             bs.add(new GameState.BlockState(b.getX(), b.getY(), b.getHitsRemaining(), b.isDestroyed()));
         }
     return new GameState(
-        levelManager.getCurrentLevel(),
-        ball.getPreciseX(), ball.getPreciseY(),
-        ball.getVelocity().getDx(), ball.getVelocity().getDy(),
-        paddle.getX(), paddle.getY(),
-        bs,
-        ball != null && ball.isAttachedToPaddle());
+                levelManager.getCurrentLevel(),
+                ball.getPreciseX(), ball.getPreciseY(),
+                ball.getVelocity().getDx(), ball.getVelocity().getDy(),
+                paddle.getX(), paddle.getY(),
+                bs,
+                ball != null && ball.isAttachedToPaddle());
     }
 
     // Áp dụng trạng thái đã lưu vào game panel này.
@@ -296,7 +296,8 @@ public class GamePanel extends JPanel implements KeyListener {
 
             for (Block block : blocks) {
                 if (block.isDestroyed() && !block.isPowerUpSpawned()) {
-                    double spawnChance = 0.36; // 36% tỉ lệ rơi power-up
+                    block.setPowerUpSpawned(true);
+                    double spawnChance = 0.15; // 15% tỉ lệ rơi power-up
                     if (Math.random() < spawnChance) {
                         PowerUp.Type type = getRandomAvailablePowerUpType();
                         if (type != null && powerUpManager != null) {
