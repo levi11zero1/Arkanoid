@@ -13,6 +13,11 @@ public class MenuPanel extends JPanel {
     private final StyledButton continueButton = new StyledButton("Tiếp tục");
     private final StyledButton rankingButton = new StyledButton("Bảng xếp hạng");
     private final StyledButton instructionsButton = new StyledButton("Hướng dẫn");
+
+    private final StyledButton skinButton = new StyledButton("Chọn skin");
+    private final JPanel skinOptionsPanel = new JPanel();
+    private final StyledButton chooseBallSkinButton = new StyledButton("Chọn Ball Skin");
+    private final StyledButton choosePaddleSkinButton = new StyledButton("Chọn Paddle Skin");
     private Image backgroundImage;
     // Khối chứa tiêu đề + nút để dễ điều chỉnh vị trí
     private final JPanel vbox;
@@ -95,7 +100,31 @@ public class MenuPanel extends JPanel {
         vbox.add(Box.createVerticalStrut(16));
         vbox.add(rankingButton);
         vbox.add(Box.createVerticalStrut(16));
-        vbox.add(instructionsButton);
+    vbox.add(instructionsButton);
+
+
+    skinButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+    skinButton.setPreferredSize(btnSize);
+    skinButton.setCornerRadius(20);
+    vbox.add(Box.createVerticalStrut(12));
+    vbox.add(skinButton);
+
+
+    skinOptionsPanel.setOpaque(false);
+    skinOptionsPanel.setLayout(new BoxLayout(skinOptionsPanel, BoxLayout.Y_AXIS));
+    chooseBallSkinButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+    choosePaddleSkinButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+    chooseBallSkinButton.setPreferredSize(new Dimension(180, 36));
+    choosePaddleSkinButton.setPreferredSize(new Dimension(180, 36));
+    chooseBallSkinButton.setCornerRadius(14);
+    choosePaddleSkinButton.setCornerRadius(14);
+
+    skinOptionsPanel.add(Box.createVerticalStrut(8));
+    skinOptionsPanel.add(chooseBallSkinButton);
+    skinOptionsPanel.add(Box.createVerticalStrut(6));
+    skinOptionsPanel.add(choosePaddleSkinButton);
+    skinOptionsPanel.setVisible(false);
+    vbox.add(skinOptionsPanel);
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
@@ -105,6 +134,9 @@ public class MenuPanel extends JPanel {
         gbc.anchor = computeAnchor();
         gbc.insets = new Insets(marginTop, marginLeft, marginBottom, marginRight);
         add(vbox, gbc);
+
+
+        initSkinSelection();
 
         // Mode selection overlay (hidden by default). Splits the panel into two big
         // clickable halves.
@@ -272,8 +304,69 @@ public class MenuPanel extends JPanel {
         this.modeListener = l;
     }
 
-    // Try to load a pixel font from project `fonts/` folder or fall back to common
-    // names/monospaced.
+    private Timer skinAnimTimer;
+    private int skinAnimTarget = 0;
+    private int skinAnimCurrent = 0;
+    private final int SKIN_ANIM_STEP = 12; // px per frame
+
+    private void initSkinSelection() {
+
+        skinOptionsPanel.setVisible(false);
+        skinOptionsPanel.setPreferredSize(new Dimension(200, 0));
+
+        skinButton.addActionListener(e -> toggleSkinOptions());
+
+        chooseBallSkinButton.addActionListener(e -> {
+            try {
+                entities.SkinManager.selectBallSkin();
+            } catch (Throwable ex) {
+                JOptionPane.showMessageDialog(this, "Không thể mở trình chọn skin bóng: " + ex.getMessage());
+            }
+        });
+
+        choosePaddleSkinButton.addActionListener(e -> {
+            try {
+                entities.SkinManager.selectPaddleSkin();
+            } catch (Throwable ex) {
+                JOptionPane.showMessageDialog(this, "Không thể mở trình chọn skin paddle: " + ex.getMessage());
+            }
+        });
+    }
+
+    private void toggleSkinOptions() {
+        if (skinAnimTimer != null && skinAnimTimer.isRunning()) {
+            return; 
+        }
+        final int expandedHeight = 90; 
+        if (!skinOptionsPanel.isVisible() || skinAnimCurrent == 0) {
+
+            skinOptionsPanel.setVisible(true);
+            skinAnimTarget = expandedHeight;
+        } else {
+            skinAnimTarget = 0;
+        }
+
+        skinAnimTimer = new Timer(15, null);
+        skinAnimTimer.addActionListener(evt -> {
+            if (skinAnimCurrent < skinAnimTarget) {
+                skinAnimCurrent = Math.min(skinAnimTarget, skinAnimCurrent + SKIN_ANIM_STEP);
+            } else if (skinAnimCurrent > skinAnimTarget) {
+                skinAnimCurrent = Math.max(skinAnimTarget, skinAnimCurrent - SKIN_ANIM_STEP);
+            }
+            skinOptionsPanel.setPreferredSize(new Dimension(200, skinAnimCurrent));
+            skinOptionsPanel.revalidate();
+            skinOptionsPanel.repaint();
+            if (skinAnimCurrent == skinAnimTarget) {
+                skinAnimTimer.stop();
+                if (skinAnimTarget == 0) {
+                    skinOptionsPanel.setVisible(false);
+                }
+            }
+        });
+        skinAnimTimer.start();
+    }
+
+
     private Font getPixelFont(float size) {
         // Try project fonts folder first
         String[] candidates = new String[] { "fonts/PressStart2P-Regular.ttf", "fonts/pixel.ttf" };

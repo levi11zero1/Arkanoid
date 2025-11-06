@@ -168,12 +168,13 @@ public class GamePanel extends JPanel implements KeyListener {
         for (Block b : blocks) {
             bs.add(new GameState.BlockState(b.getX(), b.getY(), b.getHitsRemaining(), b.isDestroyed()));
         }
-        return new GameState(
-                levelManager.getCurrentLevel(),
-                ball.getPreciseX(), ball.getPreciseY(),
-                ball.getVelocity().getDx(), ball.getVelocity().getDy(),
-                paddle.getX(), paddle.getY(),
-                bs);
+    return new GameState(
+        levelManager.getCurrentLevel(),
+        ball.getPreciseX(), ball.getPreciseY(),
+        ball.getVelocity().getDx(), ball.getVelocity().getDy(),
+        paddle.getX(), paddle.getY(),
+        bs,
+        ball != null && ball.isAttachedToPaddle());
     }
 
     // Áp dụng trạng thái đã lưu vào game panel này.
@@ -195,6 +196,12 @@ public class GamePanel extends JPanel implements KeyListener {
         ball.setPosition(state.ballX, state.ballY);
         ball.setVelocity(new utils.Velocity(state.ballDx, state.ballDy));
         this.paddle = new Paddle((int) Math.round(state.paddleX), state.paddleY);
+
+        if (state.ballAttached) {
+            ball.attachToPaddle(this.paddle);
+        } else {
+            ball.detachFromPaddle();
+        }
 
         // 4) Cập nhật lại nền theo level hiện tại
         this.levelBackground = LevelBackgrounds.getForLevel(levelManager.getCurrentLevel());
