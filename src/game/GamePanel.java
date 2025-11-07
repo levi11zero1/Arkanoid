@@ -19,6 +19,7 @@ import levels.LevelBackgrounds;
 import levels.LevelBuilder;
 import levels.LevelManager;
 import powerup.PowerUpManager;
+import powerup.PowerUp;
 import ui.UIManager;
 import utils.GameConfig;
 
@@ -169,12 +170,12 @@ public class GamePanel extends JPanel implements KeyListener {
             bs.add(new GameState.BlockState(b.getX(), b.getY(), b.getHitsRemaining(), b.isDestroyed()));
         }
     return new GameState(
-        levelManager.getCurrentLevel(),
-        ball.getPreciseX(), ball.getPreciseY(),
-        ball.getVelocity().getDx(), ball.getVelocity().getDy(),
-        paddle.getX(), paddle.getY(),
-        bs,
-        ball != null && ball.isAttachedToPaddle());
+                levelManager.getCurrentLevel(),
+                ball.getPreciseX(), ball.getPreciseY(),
+                ball.getVelocity().getDx(), ball.getVelocity().getDy(),
+                paddle.getX(), paddle.getY(),
+                bs,
+                ball != null && ball.isAttachedToPaddle());
     }
 
     // Áp dụng trạng thái đã lưu vào game panel này.
@@ -291,6 +292,22 @@ public class GamePanel extends JPanel implements KeyListener {
             }
             if (entityManager.getActiveBallCount() == 0) {
                 handleBallLost();
+            }
+
+            for (Block block : blocks) {
+                if (block.isDestroyed() && !block.isPowerUpSpawned()) {
+                    block.setPowerUpSpawned(true);
+                    double spawnChance = 0.15; // 15% tỉ lệ rơi power-up
+                    if (Math.random() < spawnChance) {
+                        PowerUp.Type type = getRandomAvailablePowerUpType();
+                        if (type != null && powerUpManager != null) {
+                            int spawnX = block.getX() + GameConfig.BLOCK_WIDTH / 2 - 10;
+                            int spawnY = block.getY() + GameConfig.BLOCK_HEIGHT / 2;
+                            powerUpManager.spawnPowerUp(type, spawnX, spawnY);
+                            block.setPowerUpSpawned(true);
+                        }
+                    }
+                }
             }
         } else {
             if (ball != null) {
@@ -651,4 +668,19 @@ public class GamePanel extends JPanel implements KeyListener {
         }
     }
 
-}
+        private PowerUp.Type getRandomAvailablePowerUpType() {
+            PowerUp.Type[] all = PowerUp.Type.values();
+            List<PowerUp.Type> available = new ArrayList<>();
+
+            for (PowerUp.Type t : all) {
+                if (!powerUpManager.isActive(t)) {
+                    available.add(t);
+                }
+            }
+
+            if (available.isEmpty()) return null;
+            return available.get(new java.util.Random().nextInt(available.size()));
+        }
+
+
+    }

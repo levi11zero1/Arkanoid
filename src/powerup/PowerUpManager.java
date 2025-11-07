@@ -57,6 +57,14 @@ public class PowerUpManager {
         }
     }
 
+    public void spawnPowerUp(PowerUp.Type type, int x, int y) {
+        PowerUp p = new PowerUp(type, x, y);
+        synchronized (active) {
+            active.add(p);
+        }
+    }
+
+
     /**
      * Update powerups position and detect collection/out-of-bounds.
      * If collected, apply directly to provided paddle/ball.
@@ -118,4 +126,15 @@ public class PowerUpManager {
             return new ArrayList<>(active);
         }
     }
+    public boolean isActive(PowerUp.Type type) {
+        synchronized (active) {
+            for (PowerUp p : active) {
+                if (p.getType() == type) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
 }
