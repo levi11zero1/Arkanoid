@@ -88,6 +88,13 @@ public class PowerUpManager {
     }
 
     private void applyEffect(PowerUp p, Paddle paddle, EntityManager entityManager) {
+        // ✅ Phát âm thanh khi nhặt Power-Up
+        try {
+            utils.AudioManager.playOnce("music/get_powerup.wav", null);
+        } catch (Throwable ignored) {
+            // bỏ qua nếu không tìm thấy file hoặc lỗi audio
+        }
+
         PowerUp.Type type = p.getType();
 
         if (type == PowerUp.Type.PADDLE_EXPAND || type == PowerUp.Type.PADDLE_SHRINK || type == PowerUp.Type.PADDLE_SPEED_UP) {
