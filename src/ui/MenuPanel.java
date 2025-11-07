@@ -11,13 +11,13 @@ public class MenuPanel extends JPanel {
 
     private final StyledButton playButton = new StyledButton("Chơi");
     private final StyledButton continueButton = new StyledButton("Tiếp tục");
-    private final StyledButton rankingButton = new StyledButton("Bảng xếp hạng");
+    private final StyledButton rankingButton = new StyledButton("Ranking");
     private final StyledButton instructionsButton = new StyledButton("Hướng dẫn");
 
     private final StyledButton skinButton = new StyledButton("Chọn skin");
     private final JPanel skinOptionsPanel = new JPanel();
-    private final StyledButton chooseBallSkinButton = new StyledButton("Chọn Ball Skin");
-    private final StyledButton choosePaddleSkinButton = new StyledButton("Chọn Paddle Skin");
+    private final StyledButton chooseBallSkinButton = new StyledButton("Chọn Ball");
+    private final StyledButton choosePaddleSkinButton = new StyledButton("Chọn Paddle");
     private Image backgroundImage;
     // Khối chứa tiêu đề + nút để dễ điều chỉnh vị trí
     private final JPanel vbox;
