@@ -18,8 +18,8 @@ import javax.swing.*;
 import levels.LevelBackgrounds;
 import levels.LevelBuilder;
 import levels.LevelManager;
-import powerup.PowerUpManager;
 import powerup.PowerUp;
+import powerup.PowerUpManager;
 import ui.UIManager;
 import utils.GameConfig;
 
@@ -44,6 +44,9 @@ public class GamePanel extends JPanel implements KeyListener {
     private GameSession gameSession;
 
     private Image levelBackground;
+    // Overlay text khi hoàn thành level (hiển thị 3s rồi chuyển tiếp)
+    private volatile boolean showingLevelCompleteOverlay = false;
+    private String levelCompleteText = null;
 
     // Power-up management delegated
     // active list, timer and random are now owned by PowerUpManager
@@ -249,6 +252,31 @@ public class GamePanel extends JPanel implements KeyListener {
                 // keep rendering resilient during incremental refactor
             }
         }
+
+        // Vẽ overlay text khi hoàn thành level
+        if (showingLevelCompleteOverlay && g instanceof Graphics2D) {
+            try {
+                Graphics2D g2 = (Graphics2D) g;
+                // nền mờ
+                Composite old = g2.getComposite();
+                g2.setColor(new Color(0,0,0,160));
+                g2.fillRect(0,0,getWidth(), getHeight());
+
+                String text = levelCompleteText != null ? levelCompleteText : ("Level " + levelManager.getCurrentLevel() + " Complete!");
+                Font font = new Font("SansSerif", Font.BOLD, Math.max(28, getWidth() / 16));
+                g2.setFont(font);
+                FontMetrics fm = g2.getFontMetrics(font);
+                int tx = (getWidth() - fm.stringWidth(text)) / 2;
+                int ty = (getHeight() - fm.getHeight()) / 2 + fm.getAscent();
+                // shadow
+                g2.setColor(new Color(0,0,0,200));
+                g2.drawString(text, tx+3, ty+3);
+                // main
+                g2.setColor(new Color(255, 215, 64));
+                g2.drawString(text, tx, ty);
+                g2.setComposite(old);
+            } catch (Throwable ignored) {}
+        }
     }
 
     // Called by GameLoop every tick
@@ -395,22 +423,8 @@ public class GamePanel extends JPanel implements KeyListener {
     }
 
     private void showLevelComplete() {
-        int choice = uiManager.showConfirm(this, "Level Complete",
-                "Level " + levelManager.getCurrentLevel() + " Complete!\\n\\n" +
-                        "Continue to Level " + (levelManager.getCurrentLevel() + 1) + "?",
-                JOptionPane.YES_NO_OPTION);
-
-        if (choice == JOptionPane.YES_OPTION) {
-            levelManager.advanceLevel();
-            initializeLevel();
-            gameStarted = false; // yêu cầu người chơi bắt đầu lại
-            if (powerUpManager != null) {
-                powerUpManager.startSpawning(this);
-            }
-            gameLoop.start();
-        } else {
-            System.exit(0);
-        }
+        // Hiển thị overlay text trong 3 giây rồi tự động chuyển sang level tiếp theo
+        showLevelCompleteOverlayAndAdvance(3000);
     }
 
     private void showGameComplete() {
@@ -427,6 +441,34 @@ public class GamePanel extends JPanel implements KeyListener {
         } else {
             System.exit(0);
         }
+    }
+
+    /**
+     * Hiển thị overlay text "Bạn đã hoàn thành Level X" trong delayMs milliseconds,
+     * sau đó tự động advance level và resume game.
+     */
+    public void showLevelCompleteOverlayAndAdvance(int delayMs) {
+        if (showingLevelCompleteOverlay) return;
+        showingLevelCompleteOverlay = true;
+        levelCompleteText = "Bạn đã hoàn thành Level " + levelManager.getCurrentLevel() + "!";
+        repaint();
+
+        Timer t = new Timer(delayMs, ev -> {
+            try {
+                levelManager.advanceLevel();
+                initializeLevel();
+                if (powerUpManager != null) powerUpManager.startSpawning(this);
+                if (gameLoop != null) gameLoop.start();
+            } catch (Throwable ignored) {
+            } finally {
+                showingLevelCompleteOverlay = false;
+                levelCompleteText = null;
+                repaint();
+                ((Timer) ev.getSource()).stop();
+            }
+        });
+        t.setRepeats(false);
+        t.start();
     }
 
     private void restartGame() {
