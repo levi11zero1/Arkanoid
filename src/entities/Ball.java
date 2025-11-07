@@ -20,6 +20,10 @@ public class Ball implements GameObject {
     private int prevSize;
     private boolean attachedToPaddle;
 
+    private boolean slowed = false;
+    private static final double SLOW_MULTIPLIER = 0.6;
+
+
     public Ball(int x, int y) {
         this.x = x;
         this.y = y;
@@ -32,6 +36,11 @@ public class Ball implements GameObject {
         this.y = y;
         this.velocity = velocity;
     }
+
+    public boolean isSlowed() {
+        return slowed;
+    }
+
 
     public void move() {
         if (attachedToPaddle) {
@@ -152,15 +161,12 @@ public class Ball implements GameObject {
     }
 
     public void resetSpeed() {
-        double magnitude = velocity.getMagnitude();
-        if (magnitude == 0) {
-            velocity = Velocity.fromAngle(-90, GameConfig.BALL_DEFAULT_SPEED);
-            return;
-        }
         double angle = Math.atan2(velocity.getDy(), velocity.getDx());
         velocity.setDx(Math.cos(angle) * GameConfig.BALL_DEFAULT_SPEED);
         velocity.setDy(Math.sin(angle) * GameConfig.BALL_DEFAULT_SPEED);
+        slowed = false;
     }
+
 
     public boolean isAttachedToPaddle() {
         return attachedToPaddle;
@@ -222,19 +228,21 @@ public class Ball implements GameObject {
             return;
         }
 
-    sizeTimer = new javax.swing.Timer(9000, e -> { if (e != null) { resetSize(); resetSpeed(); sizeTimer.stop(); } });
+    sizeTimer = new javax.swing.Timer(8000, e -> { if (e != null) { resetSize(); resetSpeed(); sizeTimer.stop(); } });
         sizeTimer.setRepeats(false);
         sizeTimer.start();
     }
 
     private void slowDown() {
-        velocity.setDx(velocity.getDx() * 0.6);
-        velocity.setDy(velocity.getDy() * 0.6);
+        if (slowed) return; // tránh làm chậm lại nhiều lần
+
+        velocity.setDx(velocity.getDx() * SLOW_MULTIPLIER);
+        velocity.setDy(velocity.getDy() * SLOW_MULTIPLIER);
+        slowed = true;
 
         javax.swing.Timer slowTimer = new javax.swing.Timer(10000, e -> {
-            // Sau 10s, trả lại tốc độ bình thường
-            velocity.setDx(velocity.getDx() / 0.6);
-            velocity.setDy(velocity.getDy() / 0.6);
+            resetSpeed();
+            slowed = false;
         });
         slowTimer.setRepeats(false);
         slowTimer.start();
@@ -280,5 +288,24 @@ public class Ball implements GameObject {
     @Override
     public Rectangle getBounds() {
         return new Rectangle(getX(), getY(), GameConfig.BALL_SIZE, GameConfig.BALL_SIZE);
+    }
+
+    public void applySlowEffect() {
+        if (slowed) return; // Nếu đã bị chậm thì bỏ qua (tránh trùng)
+        slowed = true;
+
+        // Giảm tốc độ xuống 60%
+        velocity.setDx(velocity.getDx() * 0.6);
+        velocity.setDy(velocity.getDy() * 0.6);
+
+        // Sau 10s thì trả lại tốc độ ban đầu
+        javax.swing.Timer slowTimer = new javax.swing.Timer(10000, e -> {
+            if (e != null) { /* tránh cảnh báo biến chưa dùng */ }
+            velocity.setDx(velocity.getDx() / 0.6);
+            velocity.setDy(velocity.getDy() / 0.6);
+            slowed = false;
+        });
+        slowTimer.setRepeats(false);
+        slowTimer.start();
     }
 }

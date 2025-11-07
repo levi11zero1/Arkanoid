@@ -11,7 +11,7 @@ import utils.Velocity;
 
 /**
  * Kiểm soát các thực thể trong trò chơi: bóng, thanh trượt, và các khối.
- * 
+ *
  */
 public class EntityManager {
     private final List<Ball> balls = new ArrayList<>();
@@ -157,6 +157,19 @@ public class EntityManager {
             clone.detachFromPaddle();
             balls.add(clone);
         }
+    }
+
+    public void resetAllBallSpeeds() {
+        for (Ball b : balls) {
+            b.resetSpeed();
+        }
+    }
+
+    public boolean isBallSlowed() {
+        for (Ball b : balls) {
+            if (b.isSlowed()) return true;
+        }
+        return false;
     }
 }
 
