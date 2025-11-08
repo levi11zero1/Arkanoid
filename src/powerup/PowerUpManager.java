@@ -124,7 +124,7 @@ public class PowerUpManager {
             }
 
             case BALL_MULTIPLY_TEN -> {
-                entityManager.multiplyBallsTo(10);
+                entityManager.multiplyBallsTo(3);
                 // ✅ Bảo đảm nếu đang trong trạng thái "chậm" thì bóng mới sinh ra cũng chậm theo
                 if (entityManager.isBallSlowed()) {
                     for (Ball b : entityManager.getBalls()) {
