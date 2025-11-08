@@ -5,12 +5,12 @@ package utils;
  */
 public class AudioManager {
     public static void init() {
-        try { MusicPlayer.init(); } catch (Throwable t) { /* ignore */ }
+        MusicPlayer.init();
     }
 
     public static void playLoop(String path) {
         if (path == null) return;
-        try { MusicPlayer.playLoop(path); } catch (Throwable t) { /* ignore */ }
+        MusicPlayer.playLoop(path); 
     }
 
     /**
@@ -18,7 +18,7 @@ public class AudioManager {
      */
     public static void playOnce(String path, Runnable onComplete) {
         if (path == null) return;
-        try { MusicPlayer.playOnce(path, onComplete); } catch (Throwable t) { if (onComplete != null) try { onComplete.run(); } catch (Throwable _t) {} }
+        MusicPlayer.playOnce(path, onComplete); 
     }
 
     public static void playOnce(String path) {
@@ -26,7 +26,7 @@ public class AudioManager {
     }
 
     public static void stop() {
-        try { MusicPlayer.stop(); } catch (Throwable t) { /* ignore */ }
+        MusicPlayer.stop();
     }
 
     @Deprecated
