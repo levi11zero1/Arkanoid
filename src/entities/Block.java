@@ -169,7 +169,7 @@ public class Block implements GameObject {
                     int prevTier = hitsRemaining;
                     hitsRemaining = 1;
                     showBroken = true;
-                    brokenTier = prevTier; // 3
+                    brokenTier = 3; // 3
                 } else {
                     // Gạch cấp 1 hoặc 2 → vỡ ngay lập tức
                     destroyed = true;

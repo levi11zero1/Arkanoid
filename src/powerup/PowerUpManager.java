@@ -66,8 +66,8 @@ public class PowerUpManager {
 
 
     /**
-     * Update powerups position and detect collection/out-of-bounds.
-     * If collected, apply directly to provided paddle/ball.
+     * Cập nhật vị trí power up.
+     * nếu đã thu thập, áp dụng theo tính năng.
      */
     public void updateAll(int panelHeight, Paddle paddle, EntityManager entityManager) {
         synchronized (active) {
@@ -154,7 +154,7 @@ public class PowerUpManager {
         try {
             utils.AudioManager.playOnce(path, null);
         } catch (Throwable e) {
-            System.err.println("⚠️ Không thể phát âm thanh cho: " + type + " (" + e.getMessage() + ")");
+
         }
     }
 
