@@ -277,6 +277,11 @@ public class GamePanel extends JPanel implements KeyListener {
                 g2.setComposite(old);
             } catch (Throwable ignored) {}
         }
+
+        for (PowerUp p : powerUpManager.snapshot()) {
+            p.draw(g);
+        }
+
     }
 
     // Called by GameLoop every tick
