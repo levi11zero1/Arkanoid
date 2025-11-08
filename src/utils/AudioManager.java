@@ -14,7 +14,7 @@ public class AudioManager {
     }
 
     /**
-     * Play a one-off sound. onComplete may be null.
+     * Chơi một lần.
      */
     public static void playOnce(String path, Runnable onComplete) {
         if (path == null) return;
@@ -34,5 +34,5 @@ public class AudioManager {
     @Deprecated
     public void stopAll() { stop(); }
     @Deprecated
-    public void setVolume(float v) { /* no-op currently */ }
+    public void setVolume(float v) { /* chưa hỗ trợ */ }
 }
