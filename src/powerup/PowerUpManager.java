@@ -88,6 +88,13 @@ public class PowerUpManager {
     }
 
     private void applyEffect(PowerUp p, Paddle paddle, EntityManager entityManager) {
+        // ✅ Phát âm thanh khi nhặt Power-Up
+        try {
+            utils.AudioManager.playOnce("music/get_powerup.wav", null);
+        } catch (Throwable ignored) {
+            // bỏ qua nếu không tìm thấy file hoặc lỗi audio
+        }
+
         PowerUp.Type type = p.getType();
 
         if (type == PowerUp.Type.PADDLE_EXPAND || type == PowerUp.Type.PADDLE_SHRINK || type == PowerUp.Type.PADDLE_SPEED_UP) {
@@ -100,17 +107,40 @@ public class PowerUpManager {
         }
 
         switch (type) {
-            case BALL_EXPAND, BALL_SHRINK, BALL_SLOW -> {
+            case BALL_EXPAND, BALL_SHRINK -> {
                 Ball mainBall = entityManager.getPrimaryBall();
                 if (mainBall != null) {
                     mainBall.applyPowerUp(type);
                 }
             }
-            case BALL_MULTIPLY_TEN -> entityManager.multiplyBallsTo(10);
+
+            case BALL_SLOW -> {
+                for (Ball b : entityManager.getBalls()) {
+                    b.applyPowerUp(type);
+                }
+
+                new javax.swing.Timer(10000, e -> {
+                    for (Ball b : entityManager.getBalls()) {
+                        b.resetSpeed();
+                    }
+                }).start();
+            }
+
+            case BALL_MULTIPLY_TEN -> {
+                entityManager.multiplyBallsTo(10);
+                // ✅ Bảo đảm nếu đang trong trạng thái "chậm" thì bóng mới sinh ra cũng chậm theo
+                if (entityManager.isBallSlowed()) {
+                    for (Ball b : entityManager.getBalls()) {
+                        b.applySlowEffect();
+                    }
+                }
+            }
+
             default -> {
                 // no-op for unhandled types
             }
         }
+
     }
 
     public void resetAll() {
