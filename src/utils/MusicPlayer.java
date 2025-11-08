@@ -85,7 +85,7 @@ public class MusicPlayer {
     public static void playOnce(String filePath) { playOnce(filePath, null); }
 
     public static void stop() {
-        // Stop loop clip if present
+        // Dừng và đóng clip nhạc nền nếu đang có
         try {
             Clip c = loopClip;
             if (c != null) {
@@ -99,7 +99,6 @@ public class MusicPlayer {
         }
     }
 
-    // Optional: shutdown executor when app exits (not strictly necessary here)
     public static void shutdown() {
         try {
             stop();
