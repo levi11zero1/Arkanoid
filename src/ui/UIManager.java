@@ -16,10 +16,10 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.function.Consumer;
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 public class UIManager {
     private static final String LIFE_ICON_PATH = "images/life.png";
@@ -147,8 +147,9 @@ public class UIManager {
      * is invoked with true when a save occurred, false when cancelled or failed.
      */
     public StyledButton createSaveButton(GamePanel panel, Consumer<Boolean> onSaved) {
-        final StyledButton saveButton = new StyledButton("Save");
-        saveButton.setFont(saveButton.getFont().deriveFont(java.awt.Font.BOLD, 16f));
+    final StyledButton saveButton = new StyledButton("Save");
+    // Nút Save nằm trên màn hình chơi — dùng cỡ chữ nhỏ hơn để tránh tràn
+    saveButton.setFont(saveButton.getFont().deriveFont(java.awt.Font.BOLD, 14f));
         saveButton.setToolTipText("Lưu game");
 
         final int btnW = 90, btnH = 34;

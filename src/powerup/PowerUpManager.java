@@ -57,9 +57,17 @@ public class PowerUpManager {
         }
     }
 
+    public void spawnPowerUp(PowerUp.Type type, int x, int y) {
+        PowerUp p = new PowerUp(type, x, y);
+        synchronized (active) {
+            active.add(p);
+        }
+    }
+
+
     /**
-     * Update powerups position and detect collection/out-of-bounds.
-     * If collected, apply directly to provided paddle/ball.
+     * Cập nhật vị trí power up.
+     * nếu đã thu thập, áp dụng theo tính năng.
      */
     public void updateAll(int panelHeight, Paddle paddle, EntityManager entityManager) {
         synchronized (active) {
@@ -80,7 +88,11 @@ public class PowerUpManager {
     }
 
     private void applyEffect(PowerUp p, Paddle paddle, EntityManager entityManager) {
+        // ✅ Phát âm thanh khi nhặt Power-Up
+
         PowerUp.Type type = p.getType();
+
+        playPowerUpSound(type);
 
         if (type == PowerUp.Type.PADDLE_EXPAND || type == PowerUp.Type.PADDLE_SHRINK || type == PowerUp.Type.PADDLE_SPEED_UP) {
             paddle.applyPowerUp(type);
@@ -92,18 +104,60 @@ public class PowerUpManager {
         }
 
         switch (type) {
-            case BALL_EXPAND, BALL_SHRINK, BALL_SLOW -> {
+            case BALL_EXPAND, BALL_SHRINK -> {
                 Ball mainBall = entityManager.getPrimaryBall();
                 if (mainBall != null) {
                     mainBall.applyPowerUp(type);
                 }
             }
-            case BALL_MULTIPLY_TEN -> entityManager.multiplyBallsTo(10);
+
+            case BALL_SLOW -> {
+                for (Ball b : entityManager.getBalls()) {
+                    b.applyPowerUp(type);
+                }
+
+                new javax.swing.Timer(10000, e -> {
+                    for (Ball b : entityManager.getBalls()) {
+                        b.resetSpeed();
+                    }
+                }).start();
+            }
+
+            case BALL_MULTIPLY_TEN -> {
+                entityManager.multiplyBallsTo(10);
+                // ✅ Bảo đảm nếu đang trong trạng thái "chậm" thì bóng mới sinh ra cũng chậm theo
+                if (entityManager.isBallSlowed()) {
+                    for (Ball b : entityManager.getBalls()) {
+                        b.applySlowEffect();
+                    }
+                }
+            }
+
             default -> {
                 // no-op for unhandled types
             }
         }
+
     }
+
+    private void playPowerUpSound(PowerUp.Type type) {
+        String path = switch (type) {
+            case PADDLE_EXPAND -> "music/paddle_expand.wav";
+            case PADDLE_SHRINK -> "music/paddle_shrink.wav";
+            case BALL_EXPAND -> "music/ball_expand.wav";
+            case BALL_SHRINK -> "music/ball_shrink.wav";
+            case BALL_SLOW -> "music/ball_slow.wav";
+            case PADDLE_SPEED_UP -> "music/paddle_speedup.wav";
+            case BALL_MULTIPLY_TEN -> "music/ball_multiplyten.wav";
+        };
+
+        try {
+            utils.AudioManager.playOnce(path, null);
+        } catch (Throwable e) {
+
+        }
+    }
+
 
     public void resetAll() {
         synchronized (active) {
@@ -118,4 +172,15 @@ public class PowerUpManager {
             return new ArrayList<>(active);
         }
     }
+    public boolean isActive(PowerUp.Type type) {
+        synchronized (active) {
+            for (PowerUp p : active) {
+                if (p.getType() == type) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
 }

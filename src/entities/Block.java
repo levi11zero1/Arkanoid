@@ -20,6 +20,16 @@ public class Block implements GameObject {
     // cho tới lần va chạm tiếp theo.
     private boolean showBroken = false;
     private int brokenTier = 0; // 2 hoặc 3; 0 = không broken
+    private boolean powerUpSpawned = false;
+
+    public boolean isPowerUpSpawned() {
+        return powerUpSpawned;
+    }
+
+    public void setPowerUpSpawned(boolean spawned) {
+        this.powerUpSpawned = spawned;
+    }
+
 
 
     /**
@@ -159,7 +169,7 @@ public class Block implements GameObject {
                     int prevTier = hitsRemaining;
                     hitsRemaining = 1;
                     showBroken = true;
-                    brokenTier = prevTier; // 3
+                    brokenTier = 3; // 3
                 } else {
                     // Gạch cấp 1 hoặc 2 → vỡ ngay lập tức
                     destroyed = true;

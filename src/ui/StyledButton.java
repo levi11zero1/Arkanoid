@@ -28,10 +28,12 @@ public class StyledButton extends JButton {
         setContentAreaFilled(false);
         setBorderPainted(false);
         setFocusPainted(false);
-        setForeground(fg);
-        setFont(getFont().deriveFont(Font.BOLD, 24f));
-        setCursor(new Cursor(Cursor.HAND_CURSOR));
-        setMargin(new Insets(10, 20, 10, 20));
+    setForeground(fg);
+    // Giảm cỡ chữ mặc định để tránh bị tràn chữ trên các nút nhỏ (nhất là trong màn hình chơi)
+    setFont(getFont().deriveFont(Font.BOLD, 18f));
+    setCursor(new Cursor(Cursor.HAND_CURSOR));
+    // Khoảng đệm nhỏ hơn để vừa với các nút kích thước nhỏ
+    setMargin(new Insets(6, 12, 6, 12));
 
         addMouseListener(new MouseAdapter() {
             @Override
