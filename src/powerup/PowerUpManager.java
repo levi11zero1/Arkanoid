@@ -89,13 +89,10 @@ public class PowerUpManager {
 
     private void applyEffect(PowerUp p, Paddle paddle, EntityManager entityManager) {
         // ✅ Phát âm thanh khi nhặt Power-Up
-        try {
-            utils.AudioManager.playOnce("music/get_powerup.wav", null);
-        } catch (Throwable ignored) {
-            // bỏ qua nếu không tìm thấy file hoặc lỗi audio
-        }
 
         PowerUp.Type type = p.getType();
+
+        playPowerUpSound(type);
 
         if (type == PowerUp.Type.PADDLE_EXPAND || type == PowerUp.Type.PADDLE_SHRINK || type == PowerUp.Type.PADDLE_SPEED_UP) {
             paddle.applyPowerUp(type);
@@ -142,6 +139,25 @@ public class PowerUpManager {
         }
 
     }
+
+    private void playPowerUpSound(PowerUp.Type type) {
+        String path = switch (type) {
+            case PADDLE_EXPAND -> "music/paddle_expand.wav";
+            case PADDLE_SHRINK -> "music/paddle_shrink.wav";
+            case BALL_EXPAND -> "music/ball_expand.wav";
+            case BALL_SHRINK -> "music/ball_shrink.wav";
+            case BALL_SLOW -> "music/ball_slow.wav";
+            case PADDLE_SPEED_UP -> "music/paddle_speedup.wav";
+            case BALL_MULTIPLY_TEN -> "music/ball_multiplyten.wav";
+        };
+
+        try {
+            utils.AudioManager.playOnce(path, null);
+        } catch (Throwable e) {
+            System.err.println("⚠️ Không thể phát âm thanh cho: " + type + " (" + e.getMessage() + ")");
+        }
+    }
+
 
     public void resetAll() {
         synchronized (active) {
