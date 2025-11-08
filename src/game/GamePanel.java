@@ -330,7 +330,7 @@ public class GamePanel extends JPanel implements KeyListener {
             for (Block block : blocks) {
                 if (block.isDestroyed() && !block.isPowerUpSpawned()) {
                     block.setPowerUpSpawned(true);
-                    double spawnChance = 0.15; // 15% tỉ lệ rơi power-up
+                    double spawnChance = 0.25; // 25% tỉ lệ rơi power-up
                     if (Math.random() < spawnChance) {
                         PowerUp.Type type = getRandomAvailablePowerUpType();
                         if (type != null && powerUpManager != null) {
