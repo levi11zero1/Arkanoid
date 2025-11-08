@@ -91,17 +91,10 @@ final class BallSkin {
 
     private static Skin resolveSelection(String token) {
         if (token == null || token.isBlank() || DEFAULT_TOKEN.equalsIgnoreCase(token)) {
-            Skin skin = tryLoad(DEFAULT_SKIN_PATH);
-            if (skin != null) {
-                return skin;
-            }
-            return null;
+            return tryLoad(DEFAULT_SKIN_PATH);
         }
         Skin skin = tryLoad(token);
-        if (skin != null) {
-            return skin;
-        }
-        return tryLoad(DEFAULT_SKIN_PATH);
+        return skin != null ? skin : tryLoad(DEFAULT_SKIN_PATH);
     }
 
     private static String readSelectionToken() {
@@ -158,12 +151,6 @@ final class BallSkin {
     }
 
     private static boolean equalsIgnoreCase(String a, String b) {
-        if (a == null && b == null) {
-            return true;
-        }
-        if (a == null || b == null) {
-            return false;
-        }
-        return a.equalsIgnoreCase(b);
+        return a == b || (a != null && a.equalsIgnoreCase(b));
     }
 }

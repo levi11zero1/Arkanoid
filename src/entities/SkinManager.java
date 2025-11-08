@@ -32,9 +32,9 @@ public final class SkinManager {
             "Đã lưu skin paddle",
             PADDLE_CONFIG_PATH,
             List.of(
-                    SkinEntry.defaultEntry("SkinPaddle 1 (mặc định)", PaddleSkin.getDefaultSkinPath()),
-                    SkinEntry.of("SkinPaddle 2", IMAGES_DIR.resolve("skinPaddle2.png").toString()),
-                    SkinEntry.of("SkinPaddle 3", IMAGES_DIR.resolve("skinPaddle3.png").toString())
+                    SkinEntry.defaultEntry("mặc định", PaddleSkin.getDefaultSkinPath()),
+                    SkinEntry.of("Tề thiên võ thần", IMAGES_DIR.resolve("skinPaddle2.png").toString()),
+                    SkinEntry.of("Phù thủy thời không", IMAGES_DIR.resolve("skinPaddle3.png").toString())
             ),
             PaddleSkin::clearCache
     );
@@ -45,9 +45,9 @@ public final class SkinManager {
             "Đã lưu skin bóng",
             BALL_CONFIG_PATH,
             List.of(
-                    SkinEntry.defaultEntry("SkinBall 1 (mặc định)", BallSkin.getDefaultSkinPath()),
-                    SkinEntry.of("SkinBall 2", IMAGES_DIR.resolve("SkinBall2.png").toString()),
-                    SkinEntry.of("SkinBall 3", IMAGES_DIR.resolve("Skinball3.png").toString())
+                    SkinEntry.defaultEntry("mặc định", BallSkin.getDefaultSkinPath()),
+                    SkinEntry.of("Ice Cream", IMAGES_DIR.resolve("SkinBall2.png").toString()),
+                    SkinEntry.of("My country", IMAGES_DIR.resolve("Skinball3.png").toString())
             ),
             BallSkin::clearCache
     );

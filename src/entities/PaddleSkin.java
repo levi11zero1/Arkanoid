@@ -101,21 +101,10 @@ final class PaddleSkin {
 
     private static Skin resolveSelection(String token) {
         if (token == null || token.isBlank() || DEFAULT_TOKEN.equalsIgnoreCase(token)) {
-            Skin fallback = tryLoad(DEFAULT_SKIN_PATH);
-            if (fallback != null) {
-                return fallback;
-            }
-            return null;
+            return tryLoad(DEFAULT_SKIN_PATH);
         }
         Skin skin = tryLoad(token);
-        if (skin != null) {
-            return skin;
-        }
-        Skin fallback = tryLoad(DEFAULT_SKIN_PATH);
-        if (fallback != null) {
-            return fallback;
-        }
-        return null;
+        return skin != null ? skin : tryLoad(DEFAULT_SKIN_PATH);
     }
 
     private static String readSelectionToken() {
@@ -177,12 +166,6 @@ final class PaddleSkin {
     }
 
     private static boolean equalsIgnoreCase(String a, String b) {
-        if (a == null && b == null) {
-            return true;
-        }
-        if (a == null || b == null) {
-            return false;
-        }
-        return a.equalsIgnoreCase(b);
+        return a == b || (a != null && a.equalsIgnoreCase(b));
     }
 }
