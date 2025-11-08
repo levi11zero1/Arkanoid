@@ -14,7 +14,7 @@ import utils.GameConfig;
 public class Renderer implements IRenderer {
     @Override
     public void render(Graphics2D g, List<Ball> balls, Paddle paddle, List<Block> blocks, List<PowerUp> powerUps, LevelManager levelManager) {
-        
+
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 16));
         g.drawString("Level: " + levelManager.getCurrentLevel(), 10, 25);
@@ -34,8 +34,6 @@ public class Renderer implements IRenderer {
             }
         }
 
-    
-        
         if (powerUps != null) {
             for (PowerUp p : powerUps) {
                 g.setColor(p.getColor());

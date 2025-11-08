@@ -134,30 +134,37 @@ public class EntityManager {
         if (desiredTotal < balls.size()) {
             return;
         }
+
         int needed = desiredTotal - balls.size();
         double baseX = primaryBall.getPreciseX();
         double baseY = primaryBall.getPreciseY();
         Velocity baseVelocity = primaryBall.getVelocity();
+
         double baseSpeed = (baseVelocity != null) ? baseVelocity.getMagnitude() : 0;
         if (baseSpeed <= 0) {
             baseSpeed = GameConfig.BALL_DEFAULT_SPEED;
         }
-        double baselineAngle = Math.toDegrees(Math.atan2(baseVelocity != null ? baseVelocity.getDy() : -GameConfig.BALL_DEFAULT_SPEED,
-                baseVelocity != null ? baseVelocity.getDx() : 0));
-        if (Double.isNaN(baselineAngle) || Double.isInfinite(baselineAngle)) {
-            baselineAngle = -90;
-        }
+
+        // 🔹 Giới hạn góc chỉ trong vùng hướng lên (-150° đến -30°)
+        double minAngle = -150;
+        double maxAngle = -30;
+        double spread = (maxAngle - minAngle) / Math.max(1, needed - 1);
 
         for (int i = 0; i < needed; i++) {
-            double spread = 360.0 / desiredTotal;
-            double angle = baselineAngle + spread * (i + 1);
-            angle += rng.nextDouble() * (spread / 3.0) - (spread / 6.0);
+            double angle = minAngle + spread * i;
+
+            // Thêm một chút ngẫu nhiên để nhìn tự nhiên hơn
+            angle += rng.nextDouble() * 10 - 5;
+
             Velocity vel = Velocity.fromAngle(angle, baseSpeed);
-            Ball clone = new Ball((int) Math.round(baseX), (int) Math.round(baseY), new Velocity(vel.getDx(), vel.getDy()));
+            Ball clone = new Ball((int) Math.round(baseX), (int) Math.round(baseY),
+                    new Velocity(vel.getDx(), vel.getDy()));
             clone.detachFromPaddle();
+
             balls.add(clone);
         }
     }
+
 
     public void resetAllBallSpeeds() {
         for (Ball b : balls) {
