@@ -100,31 +100,31 @@ public class MenuPanel extends JPanel {
         vbox.add(Box.createVerticalStrut(16));
         vbox.add(rankingButton);
         vbox.add(Box.createVerticalStrut(16));
-    vbox.add(instructionsButton);
+        vbox.add(instructionsButton);
 
 
-    skinButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-    skinButton.setPreferredSize(btnSize);
-    skinButton.setCornerRadius(20);
-    vbox.add(Box.createVerticalStrut(12));
-    vbox.add(skinButton);
+        skinButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        skinButton.setPreferredSize(btnSize);
+        skinButton.setCornerRadius(20);
+        vbox.add(Box.createVerticalStrut(12));
+        vbox.add(skinButton);
 
 
-    skinOptionsPanel.setOpaque(false);
-    skinOptionsPanel.setLayout(new BoxLayout(skinOptionsPanel, BoxLayout.Y_AXIS));
-    chooseBallSkinButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-    choosePaddleSkinButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-    chooseBallSkinButton.setPreferredSize(new Dimension(180, 36));
-    choosePaddleSkinButton.setPreferredSize(new Dimension(180, 36));
-    chooseBallSkinButton.setCornerRadius(14);
-    choosePaddleSkinButton.setCornerRadius(14);
+        skinOptionsPanel.setOpaque(false);
+        skinOptionsPanel.setLayout(new BoxLayout(skinOptionsPanel, BoxLayout.Y_AXIS));
+        chooseBallSkinButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        choosePaddleSkinButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        chooseBallSkinButton.setPreferredSize(new Dimension(180, 36));
+        choosePaddleSkinButton.setPreferredSize(new Dimension(180, 36));
+        chooseBallSkinButton.setCornerRadius(14);
+        choosePaddleSkinButton.setCornerRadius(14);
 
-    skinOptionsPanel.add(Box.createVerticalStrut(8));
-    skinOptionsPanel.add(chooseBallSkinButton);
-    skinOptionsPanel.add(Box.createVerticalStrut(6));
-    skinOptionsPanel.add(choosePaddleSkinButton);
-    skinOptionsPanel.setVisible(false);
-    vbox.add(skinOptionsPanel);
+        skinOptionsPanel.add(Box.createVerticalStrut(8));
+        skinOptionsPanel.add(chooseBallSkinButton);
+        skinOptionsPanel.add(Box.createVerticalStrut(6));
+        skinOptionsPanel.add(choosePaddleSkinButton);
+        skinOptionsPanel.setVisible(false);
+        vbox.add(skinOptionsPanel);
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;

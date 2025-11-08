@@ -7,7 +7,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /**
- * Quản lý số mạng của người chơi thông qua một file cấu hình đơn giản.
+ * Quản lý số mạng của người chơi.
  */
 public final class LifeManager {
     private static final Path LIFE_FILE = Paths.get("saves", "lives.cfg");

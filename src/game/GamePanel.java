@@ -60,7 +60,6 @@ public class GamePanel extends JPanel implements KeyListener {
     private int levelsCompleted = 0; // số màn đã hoàn thành
     private int totalBlocksDestroyed = 0; // tổng số block phá được qua các màn
     private int lastDestroyedCountThisLevel = 0; // baseline để tính delta mỗi tick
-    private int totalScore = 0; // tổng điểm (mặc định 10 điểm = 1 block)
     private boolean gameStarted = false;
 
     public GamePanel() {
@@ -261,8 +260,6 @@ public class GamePanel extends JPanel implements KeyListener {
         if (curDestroyed > lastDestroyedCountThisLevel) {
             int newly = (curDestroyed - lastDestroyedCountThisLevel);
             totalBlocksDestroyed += newly;
-            // mỗi block = 10 điểm
-            totalScore += newly * 10;
             lastDestroyedCountThisLevel = curDestroyed;
         }
 
@@ -271,7 +268,6 @@ public class GamePanel extends JPanel implements KeyListener {
             gameSession.setElapsedMs(elapsedMsAccum);
             gameSession.setLevelsCompleted(levelsCompleted);
             gameSession.setTotalBlocksDestroyed(totalBlocksDestroyed);
-            gameSession.setTotalScore(totalScore);
         }
 
         // delegate power-up updates to manager
@@ -428,12 +424,10 @@ public class GamePanel extends JPanel implements KeyListener {
         elapsedMsAccum = 0;
         levelsCompleted = 0;
         totalBlocksDestroyed = 0;
-        totalScore = 0;
         if (gameSession != null) {
             gameSession.setElapsedMs(0);
             gameSession.setLevelsCompleted(0);
             gameSession.setTotalBlocksDestroyed(0);
-            gameSession.setTotalScore(0);
             gameSession.resetSubmitted();
         }
     }
