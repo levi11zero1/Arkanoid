@@ -368,8 +368,10 @@ public class GamePanel extends JPanel implements KeyListener {
     }
 
     private void checkGameState() {
-        boolean allBlocksDestroyed = blocks.stream().allMatch(Block::isDestroyed);
-        if (allBlocksDestroyed) {
+        boolean allDestructiblesGone = blocks.stream()
+                .filter(b -> b.getHitsRemaining() != GameConfig.UNDESTRUCTABLE_BLOCK)
+                .allMatch(Block::isDestroyed);
+        if (allDestructiblesGone) {
             gameController.handleLevelComplete();
         }
     }
