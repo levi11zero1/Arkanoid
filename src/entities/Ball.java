@@ -21,8 +21,8 @@ public class Ball implements GameObject {
     private boolean attachedToPaddle;
 
     private boolean slowed = false;
-    private static final double SLOW_MULTIPLIER = 0.6;
-
+    private static final double SLOW_MULTIPLIER = 0.7;
+    private double baseSpeed = GameConfig.BALL_DEFAULT_SPEED;
     private double speedMultiplier = 1.0;
 
 
@@ -139,11 +139,11 @@ public class Ball implements GameObject {
     }
 
     private void clampSpeed() {
-        double speed = velocity.getMagnitude();
-        if (speed > 0 && speed < GameConfig.BALL_MIN_SPEED) {
-            velocity = velocity.scale(GameConfig.BALL_MIN_SPEED / speed);
-        } else if (speed > GameConfig.BALL_MAX_SPEED) {
-            velocity = velocity.scale(GameConfig.BALL_MAX_SPEED / speed);
+        double currentSpeed = velocity.getMagnitude();
+        double targetSpeed = baseSpeed * speedMultiplier;
+
+        if (Math.abs(currentSpeed - targetSpeed) / targetSpeed > 0.05) {
+            velocity = velocity.scale(targetSpeed / currentSpeed);
         }
     }
 
@@ -197,6 +197,11 @@ public class Ball implements GameObject {
         }
     }
 
+    private void updateVelocityMagnitude() {
+        double angle = Math.atan2(velocity.getDy(), velocity.getDx());
+        velocity.setDx(Math.cos(angle) * baseSpeed * speedMultiplier);
+        velocity.setDy(Math.sin(angle) * baseSpeed * speedMultiplier);
+    }
 
     public void centerOnPaddle(Paddle paddle) {
         if (paddle == null) {
@@ -231,7 +236,7 @@ public class Ball implements GameObject {
             GameConfig.BALL_SIZE = (int) Math.max(4, Math.round(GameConfig.BALL_SIZE / 1.5));
             this.x = cx - GameConfig.BALL_SIZE / 2.0;
             this.y = cy - GameConfig.BALL_SIZE / 2.0;
-            setSpeedMultiplier(1.5);
+            setSpeedMultiplier(1.2);
         } else if (type == PowerUp.Type.BALL_SLOW) {
             slowDown(); // ✅ Gọi hàm mới để giảm tốc độ bóng
             return;
@@ -244,16 +249,16 @@ public class Ball implements GameObject {
 
     private void slowDown() {
         if (slowed) return;
-
         slowed = true;
         setSpeedMultiplier(SLOW_MULTIPLIER);
 
-        javax.swing.Timer slowTimer = new javax.swing.Timer(10000, e -> {
-            setSpeedMultiplier(1.0); // khôi phục tốc độ bình thường
+        new Thread(() -> {
+            try {
+                Thread.sleep(7000);
+            } catch (InterruptedException ignored) {}
+            setSpeedMultiplier(1.0);
             slowed = false;
-        });
-        slowTimer.setRepeats(false);
-        slowTimer.start();
+        }).start();
     }
 
 
@@ -301,37 +306,33 @@ public class Ball implements GameObject {
         velocity.setDy(Math.sin(angle) * GameConfig.BALL_DEFAULT_SPEED);
     }
 
-
-    @Override
-    public Rectangle getBounds() {
-        return new Rectangle(getX(), getY(), GameConfig.BALL_SIZE, GameConfig.BALL_SIZE);
-    }
-
     public void applySlowEffect() {
         if (slowed) return; // Nếu đã bị chậm thì bỏ qua
         slowed = true;
 
         // Giảm tốc độ xuống còn 60%
-        velocity.setDx(velocity.getDx() * 0.6);
-        velocity.setDy(velocity.getDy() * 0.6);
+        velocity.setDx(velocity.getDx() * 0.7);
+        velocity.setDy(velocity.getDy() * 0.7);
 
         // Sau 10s thì trả lại tốc độ ban đầu
         javax.swing.Timer slowTimer = new javax.swing.Timer(10000, e -> {
             if (e != null) { /* tránh cảnh báo biến chưa dùng */ }
-            velocity.setDx(velocity.getDx() / 0.6);
-            velocity.setDy(velocity.getDy() / 0.6);
+            velocity.setDx(velocity.getDx() / 0.7);
+            velocity.setDy(velocity.getDy() / 0.7);
             slowed = false;
         });
         slowTimer.setRepeats(false);
         slowTimer.start();
     }
 
-    private void setSpeedMultiplier(double newMultiplier) {
-        if (newMultiplier <= 0) return;
-        double ratio = newMultiplier / speedMultiplier;
-        velocity.setDx(velocity.getDx() * ratio);
-        velocity.setDy(velocity.getDy() * ratio);
-        speedMultiplier = newMultiplier;
+    @Override
+    public Rectangle getBounds() {
+        return new Rectangle(getX(), getY(), GameConfig.BALL_SIZE, GameConfig.BALL_SIZE);
     }
 
+    private void setSpeedMultiplier(double newMultiplier) {
+        if (newMultiplier <= 0) return;
+        speedMultiplier = newMultiplier;
+        updateVelocityMagnitude();
+    }
 }

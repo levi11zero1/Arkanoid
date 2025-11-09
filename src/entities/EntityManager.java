@@ -127,43 +127,39 @@ public class EntityManager {
         collisionManager.resetCooldown();
     }
 
-    public void multiplyBallsTo(int desiredTotal) {
-        if (primaryBall == null || desiredTotal <= 1) {
-            return;
-        }
-        if (desiredTotal < balls.size()) {
-            return;
-        }
+    public void multiplyBallsTo(int multiplier) {
+        if (primaryBall == null) return;
 
-        int needed = desiredTotal - balls.size();
+        int currentCount = balls.size();
+        int desiredTotal = Math.min(currentCount * multiplier, 10);
+
+        if (desiredTotal <= currentCount) return;
+
+        int needed = desiredTotal - currentCount;
         double baseX = primaryBall.getPreciseX();
         double baseY = primaryBall.getPreciseY();
         Velocity baseVelocity = primaryBall.getVelocity();
 
-        double baseSpeed = (baseVelocity != null) ? baseVelocity.getMagnitude() : 0;
-        if (baseSpeed <= 0) {
-            baseSpeed = GameConfig.BALL_DEFAULT_SPEED;
-        }
+        double baseSpeed = (baseVelocity != null) ? baseVelocity.getMagnitude() : GameConfig.BALL_DEFAULT_SPEED;
+        if (baseSpeed <= 0) baseSpeed = GameConfig.BALL_DEFAULT_SPEED;
 
-        // 🔹 Giới hạn góc chỉ trong vùng hướng lên (-150° đến -30°)
-        double minAngle = -150;
-        double maxAngle = -30;
-        double spread = (maxAngle - minAngle) / Math.max(1, needed - 1);
+        double baselineAngle = Math.toDegrees(Math.atan2(
+                baseVelocity != null ? baseVelocity.getDy() : -GameConfig.BALL_DEFAULT_SPEED,
+                baseVelocity != null ? baseVelocity.getDx() : 0));
+        if (Double.isNaN(baselineAngle) || Double.isInfinite(baselineAngle)) baselineAngle = -90;
 
         for (int i = 0; i < needed; i++) {
-            double angle = minAngle + spread * i;
-
-            // Thêm một chút ngẫu nhiên để nhìn tự nhiên hơn
-            angle += rng.nextDouble() * 10 - 5;
-
+            double spread = 120.0 / multiplier;
+            double angle = baselineAngle - 60 + spread * i;
+            if (angle > -30) angle = -30;
             Velocity vel = Velocity.fromAngle(angle, baseSpeed);
-            Ball clone = new Ball((int) Math.round(baseX), (int) Math.round(baseY),
-                    new Velocity(vel.getDx(), vel.getDy()));
-            clone.detachFromPaddle();
 
+            Ball clone = new Ball((int) baseX, (int) baseY, vel);
+            clone.detachFromPaddle();
             balls.add(clone);
         }
     }
+
 
 
     public void resetAllBallSpeeds() {

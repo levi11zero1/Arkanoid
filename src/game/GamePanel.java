@@ -326,7 +326,7 @@ public class GamePanel extends JPanel implements KeyListener {
             for (Block block : blocks) {
                 if (block.isDestroyed() && !block.isPowerUpSpawned()) {
                     block.setPowerUpSpawned(true);
-                    double spawnChance = 0.15; // 15% tỉ lệ rơi power-up
+                    double spawnChance = 0.25; // 25% tỉ lệ rơi power-up
                     if (Math.random() < spawnChance) {
                         PowerUp.Type type = getRandomAvailablePowerUpType();
                         if (type != null && powerUpManager != null) {
@@ -506,21 +506,9 @@ public class GamePanel extends JPanel implements KeyListener {
     }
 
     private void showLevelMap() {
-        // Delegate to LevelBuilder which now provides a reusable preview dialog
-    String input = uiManager.promptInput(this, "Xem Map Level", "Nhập số level (0-" + GameConfig.MAX_LEVELS + "):");
-        if (input == null)
-            return;
-        try {
-            int levelNum = Integer.parseInt(input.trim());
-            if (levelNum < 0 || levelNum > GameConfig.MAX_LEVELS) {
-                uiManager.showMessage(this, "Lỗi", "Level phải từ 0 đến " + GameConfig.MAX_LEVELS,
-                        JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            levels.LevelPreview.show(this, levelNum);
-        } catch (NumberFormatException ex) {
-            uiManager.showMessage(this, "Lỗi", "Vui lòng nhập số hợp lệ!", JOptionPane.ERROR_MESSAGE);
-        }
+        // Level preview removed: previously prompted user for a level number and showed
+        // a modal preview dialog. This functionality was removed to simplify the build
+        // and avoid shipping development-only tools in the game runtime.
     }
 
     @Override
@@ -594,7 +582,7 @@ public class GamePanel extends JPanel implements KeyListener {
     }
 
     public void showLevelMapDialog() {
-        showLevelMap();
+        // No-op: level preview feature intentionally disabled.
     }
 
     public void incrementLevelsCompleted() {

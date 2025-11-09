@@ -22,9 +22,7 @@ public class InputHandler {
                 int choice = panel.confirm("Quit Game", "Are you sure you want to quit?", javax.swing.JOptionPane.YES_NO_OPTION);
                 if (choice == javax.swing.JOptionPane.YES_OPTION) System.exit(0);
             }
-            case KeyEvent.VK_M -> {
-                panel.showLevelMapDialog();
-            }
+            // 'M' key (level map preview) removed - no-op to avoid dev-only UI in runtime
         }
     }
 
