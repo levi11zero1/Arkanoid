@@ -166,7 +166,6 @@ public class Block implements GameObject {
             if (GameConfig.BALL_SIZE > GameConfig.DEFAULT_BALL_SIZE) {
                 if (hitsRemaining == 3) {
                     // Gạch cấp 3 → giảm xuống cấp 1, nhưng hiển thị Brick3_broken
-                    int prevTier = hitsRemaining;
                     hitsRemaining = 1;
                     showBroken = true;
                     brokenTier = 2; // 3

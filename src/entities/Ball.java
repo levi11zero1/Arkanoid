@@ -29,7 +29,6 @@ public class Ball implements GameObject {
     public Ball(int x, int y) {
         this.x = x;
         this.y = y;
-        double angle = -60 + Math.random() * 120;
         this.velocity = new Velocity(GameConfig.BALL_DEFAULT_SPEED, -GameConfig.BALL_DEFAULT_SPEED);
         this.attachedToPaddle = false;
     }
