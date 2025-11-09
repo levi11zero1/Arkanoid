@@ -21,6 +21,7 @@ import levels.LevelManager;
 import powerup.PowerUp;
 import powerup.PowerUpManager;
 import ui.UIManager;
+import utils.AudioManager;
 import utils.GameConfig;
 
 public class GamePanel extends JPanel implements KeyListener {
@@ -581,6 +582,14 @@ public class GamePanel extends JPanel implements KeyListener {
     public void startIfNotRunning() {
         if (gameLoop != null && !gameLoop.isRunning())
             gameLoop.start();
+    }
+
+    public void playSkillMusic() {
+        try {
+            AudioManager.playOnce("music/SkillMusic.mp3");
+        } catch (Throwable t) {
+            System.err.println("GamePanel: cannot play skill music: " + t.getMessage());
+        }
     }
 
     public int confirm(String title, String message, int optionType) {
