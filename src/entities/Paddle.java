@@ -18,6 +18,8 @@ public class Paddle implements GameObject {
     private int height;
     private int normalWidth;
     private double normalSpeed;
+    // facingLeft cho biết hình ảnh paddle có nên được vẽ lật ngang hay không
+    private boolean facingLeft = false;
 
     public Paddle(double x, int y) {
         this(x, y, true);
@@ -48,6 +50,13 @@ public class Paddle implements GameObject {
 
         x += velocity * dt;
 
+        // Cập nhật hướng paddle: ưu tiên phím được nhấn; nếu cả hai phím đều nhấn, giữ hướng trước đó
+        if (leftPressed && !rightPressed) {
+            facingLeft = true;
+        } else if (rightPressed && !leftPressed) {
+            facingLeft = false;
+        }
+
         if (x < 0) {
             x = 0;
         }
@@ -66,7 +75,12 @@ public class Paddle implements GameObject {
                 int skinWidth = skin.width();
                 int skinHeight = skin.height();
                 if (skinWidth > 0 && skinHeight > 0) {
-                    g.drawImage(image, drawX, y, width, height, null);
+                    if (facingLeft) {
+                        // vẽ lật ngang bằng cách vẽ với chiều rộng âm
+                        g.drawImage(image, drawX + width, y, -width, height, null);
+                    } else {
+                        g.drawImage(image, drawX, y, width, height, null);
+                    }
                     return;
                 }
             }
@@ -188,5 +202,10 @@ public class Paddle implements GameObject {
         }
 
         x = centerX - width / 2.0;
+    }
+
+    // Hỗ trợ PaddleCloneManager đặt vị trí X cho clone mà không thay đổi logic update()
+    public void setXForClone(double newX) {
+        this.x = newX;
     }
 }

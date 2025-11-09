@@ -1,6 +1,7 @@
 import game.GamePanel;
 import game.MultiplayerPanel;
 import ui.MenuPanel;
+import function.RankingManager;
 import ui.StyledButton;
 import ui.InstructionsPanel;
 import ui.SaveListPanel;
@@ -37,17 +38,16 @@ public class ArkanoidGame {
             menu.setSideMargins(500, 12);
             menu.moveUp(230);
             cards.add(menu, CARD_MENU);
-            // refresh inline ranking on menu at startup
 
-            // Tạo panel hướng dẫn (ban đầu tạo sẵn để điều hướng)
+            // Tạo panel hướng dẫn 
             InstructionsPanel instructionsPanel = new InstructionsPanel();
             cards.add(instructionsPanel, CARD_INSTRUCTIONS);
 
-            // Ranking panel
+            // Bảng xếp hạng
             RankingPanel rankingPanel = new RankingPanel();
             cards.add(rankingPanel, CARD_RANKING);
 
-            // Lắng nghe nút Chơi: mở overlay chọn chế độ (split screen) từ MenuPanel
+            // Nút Chơi: mở overlay chọn chế độ chơi
             menu.getPlayButton().addActionListener(e -> { if (e != null) { /* satisfy linter */ } menu.showModeSelection(); });
 
             // Xử lý lựa chọn chế độ từ overlay
@@ -156,7 +156,7 @@ public class ArkanoidGame {
                     } catch (Exception ex) {
                         JOptionPane.showMessageDialog(frame, "Không thể xóa: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
                     }
-                    // refresh list
+                    
                     try {
                         java.util.List<java.nio.file.Path> saves2 = function.SaveController.listSaves();
                         java.util.List<java.nio.file.Path> top2 = saves2.size() > 10 ? saves2.subList(0, 10) : saves2;
@@ -327,6 +327,21 @@ public class ArkanoidGame {
             if (text == null || text.isEmpty()) {
                 tf.requestFocusInWindow();
                 return;
+            }
+            // Nếu tên đã tồn tại trong bảng xếp hạng, yêu cầu nhập lại
+            try {
+                java.util.List<function.RankingManager.Entry> existing = RankingManager.getSorted(0);
+                boolean duplicate = false;
+                for (function.RankingManager.Entry en : existing) {
+                    if (en.player != null && en.player.equalsIgnoreCase(text)) { duplicate = true; break; }
+                }
+                if (duplicate) {
+                    JOptionPane.showMessageDialog(dialog, "Tên này đã tồn tại . Vui lòng nhập tên khác.", "Trùng tên", JOptionPane.WARNING_MESSAGE);
+                    tf.requestFocusInWindow();
+                    return;
+                }
+            } catch (Throwable ignored) {
+                // Nếu có lỗi khi load ranking, tiếp tục cho phép tên (không block người chơi)
             }
             result[0] = text;
             dialog.dispose();

@@ -57,8 +57,8 @@ public class UIManager {
         int boxWidth = iconAreaWidth + LIFE_ICON_SPACING + labelWidth + 16;
         int boxHeight = LIFE_ICON_SIZE + 16;
 
-    int boxX = Math.max(0, panel.getWidth() - boxWidth - HUD_MARGIN);
-    int boxY = Math.max(0, panel.getHeight() - boxHeight - HUD_MARGIN);
+        int boxX = Math.max(0, panel.getWidth() - boxWidth - HUD_MARGIN);
+        int boxY = Math.max(0, panel.getHeight() - boxHeight - HUD_MARGIN);
 
         Color bg = new Color(0, 0, 0, 150);
         Color border = new Color(255, 255, 255, 110);

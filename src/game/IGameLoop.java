@@ -11,7 +11,7 @@ public interface IGameLoop {
     void resume();
     void setTargetFps(int fps);
     boolean isRunning();
-    /** Set a listener to be called every tick with delta seconds. */
+
     void setTickListener(TickListener listener);
 
     interface TickListener {

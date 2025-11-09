@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.Random;
 import game.CollisionManager;
 import utils.GameConfig;
 import utils.Velocity;
@@ -20,7 +19,6 @@ public class EntityManager {
     private List<Block> blocks = new ArrayList<>();
     private final CollisionManager collisionManager = new CollisionManager();
     private boolean launchQueued;
-    private final Random rng = new Random();
 
     public EntityManager() { }
 

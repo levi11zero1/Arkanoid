@@ -27,3 +27,20 @@ Trò chơi Arkanoid viết bằng Java.
 - Power-ups
 - Lưu/xếp hạng điểm
 - Hỗ trợ âm thanh nền và hiệu ứng
+
+## Hướng dẫn chơi
+
+⬅️ / A: Di chuyển paddle sang trái
+➡️ / D: Di chuyển paddle sang phải
+Space: Bắt đầu game hoặc phóng bóng nếu đang gắn vào paddle
+P: Tạm dừng / Tiếp tục
+Esc: Thoát game (có hộp thoại xác nhận)
+
+### Chế độ 2 người
+Người chơi Trên: A, D để di chuyển
+Người chơi Dưới: Mũi tên Trái, Phải để di chuyển
+P: Tạm dừng chung cho cả hai
+
+Mục tiêu: Dùng gậy Như Ý đánh bóng phá hết gạch mà không để bóng rơi khỏi màn hình.
+
+Ghi chú: Các phím thử nghiệm như R (phát nhạc) và hiển thị preview level đã bị loại bỏ để gameplay rõ ràng hơn.

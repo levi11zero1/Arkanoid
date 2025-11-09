@@ -18,7 +18,10 @@ public class Renderer implements IRenderer {
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 16));
         g.drawString("Level: " + levelManager.getCurrentLevel(), 10, 25);
-        long remainingBlocks = blocks.stream().filter(block -> !block.isDestroyed()).count();
+    long remainingBlocks = blocks.stream()
+        .filter(block -> block.getHitsRemaining() != utils.GameConfig.UNDESTRUCTABLE_BLOCK)
+        .filter(block -> !block.isDestroyed())
+        .count();
         g.drawString("Blocks: " + remainingBlocks, GameConfig.SCREEN_WIDTH - 100, 25);
         if (balls != null) {
             for (Ball b : balls) {
