@@ -12,10 +12,8 @@ public class Pause {
 
 	private static final Pause INSTANCE = new Pause();
 
-	// volatile để các phép đọc an toàn giữa các luồng
 	private volatile boolean paused = false;
 
-	// đối tượng khóa cho vòng lặp chạy trên luồng để chờ khi tạm dừng
 	private final Object lock = new Object();
 
 	// hook listener tùy chọn cho các thành phần UI/âm thanh

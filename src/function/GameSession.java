@@ -1,5 +1,7 @@
 package function;
-
+/* 
+ * Phien choi trò chơi hiện tại, lưu trữ thông tin tạm thời trong bộ nhớ.
+ */
 public class GameSession {
     private String playerName;
     private long elapsedMs;
