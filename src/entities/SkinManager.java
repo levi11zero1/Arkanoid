@@ -32,8 +32,8 @@ public final class SkinManager {
             "Đã lưu skin paddle",
             PADDLE_CONFIG_PATH,
             List.of(
-                    SkinEntry.defaultEntry("mặc định", PaddleSkin.getDefaultSkinPath()),
-                    SkinEntry.of("Tề thiên võ thần", IMAGES_DIR.resolve("skinPaddle2.png").toString()),
+                    SkinEntry.defaultEntry("Tề thiên võ thần", PaddleSkin.getDefaultSkinPath()),
+                    SkinEntry.of("Mặc định", IMAGES_DIR.resolve("skinPaddle1.png").toString()),
                     SkinEntry.of("Phù thủy thời không", IMAGES_DIR.resolve("skinPaddle3.png").toString())
             ),
             PaddleSkin::clearCache

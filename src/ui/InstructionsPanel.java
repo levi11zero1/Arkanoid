@@ -17,21 +17,39 @@ public class InstructionsPanel extends JPanel {
         area.setOpaque(false);
         area.setForeground(Color.WHITE);
         area.setFont(area.getFont().deriveFont(Font.PLAIN, 16f));
+        // Mỗi ý một dòng: tắt tự động xuống dòng
+        area.setLineWrap(false);
 
         area.setText(
-                "HƯỚNG DẪN CHƠI\n\n" +
-                "- Phím MŨI TÊN TRÁI/PHẢI hoặc A/D: di chuyển paddle.\n" +
-                "- Phím SPACE: khởi động lại game timer.\n" +
-                "- Phím ESC: thoát game.\n" +
-                "- Nhiệm vụ: đỡ bóng và phá hết các viên gạch qua nhiều level.\n\n" +
-                "Bấm 'Quay lại' để trở về Menu."
+            "HƯỚNG DẪN CHƠI\n" +
+            "⬅️ / A: Di chuyển sang trái\n" +
+            "➡️ / D: Di chuyển sang phải\n" +
+            "Space: Bắt đầu hoặc phóng bóng\n" +
+            "P: Tạm dừng / Tiếp tục\n" +
+            "R: Phân thân paddle thành 3 (15s)\n" +
+            "Esc: Thoát game\n" +
+            "\n" +
+            "CHẾ ĐỘ 2 NGƯỜI\n" +
+            "Người chơi Trên: A, D\n" +
+            "Người chơi Dưới: Mũi tên Trái, Phải\n" +
+            "(P: Tạm dừng chung)\n" +
+            "\n" +
+            "Mục tiêu: Dùng gậy Như Ý đánh bóng phá hết gạch mà không để bóng rơi.\n" +
+            "Bấm 'Quay lại' để trở về Menu."
         );
 
-        JPanel content = new JPanel(new GridBagLayout());
-        content.setOpaque(false);
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0; gbc.gridy = 0; gbc.insets = new Insets(12,12,12,12);
-        content.add(area, gbc);
+    JPanel content = new JPanel(new GridBagLayout());
+    content.setOpaque(false);
+    GridBagConstraints gbc = new GridBagConstraints();
+    gbc.gridx = 0; gbc.gridy = 0; gbc.insets = new Insets(12,12,12,12);
+    // Bọc trong scroll để nếu text dài vẫn không bị tự wrap
+    JScrollPane sp = new JScrollPane(area,
+        ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+        ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+    sp.setBorder(null);
+    sp.setOpaque(false);
+    sp.getViewport().setOpaque(false);
+    content.add(sp, gbc);
 
         JPanel bottom = new JPanel();
         bottom.setOpaque(false);
