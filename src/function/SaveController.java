@@ -19,21 +19,19 @@ import javax.swing.SwingUtilities;
 import ui.StyledButton;
 
 /**
- * UI and orchestration helpers for saving and loading games.
- * Keeps GamePanel thin by moving dialogs and calls to SaveManager here.
+ * Bộ điều khiển lưu/truy xuất game.
  */
 public final class SaveController {
     private SaveController() {}
 
     /**
-     * Prompt the user for a save name and save the given panel's state.
-     * Returns true if a save was performed, false if cancelled.
+     * Hiển thị hộp thoại yêu cầu người dùng nhập tên bản lưu và lưu trạng thái của panel.
+     * Trả về true nếu đã lưu thành công, false nếu bị hủy.
      */
     public static boolean promptAndSave(Component parent, GamePanel panel) {
         if (panel == null) return false;
         final String[] result = { null };
 
-        // Build a custom modal dialog with nicer styled buttons
         java.awt.Window owner = SwingUtilities.getWindowAncestor(parent);
         JDialog dialog;
         if (owner instanceof java.awt.Frame) {
@@ -70,13 +68,11 @@ public final class SaveController {
         content.add(center, BorderLayout.CENTER);
         content.add(bottom, BorderLayout.SOUTH);
 
-        // Actions
         saveExit.addActionListener(ev -> {
             String name = tf.getText();
             if (name == null) name = "";
             name = name.trim();
             if (name.isEmpty()) {
-                // simple inline feedback: focus field
                 tf.requestFocusInWindow();
                 return;
             }
@@ -106,16 +102,15 @@ public final class SaveController {
 
         return result[0] != null;
     }
-
     /**
-     * List available save files. Delegates to SaveManager.
+     * Liệt kê tất cả các file bản lưu hiện có.
      */
     public static List<Path> listSaves() throws IOException {
         return SaveManager.listSaves();
     }
 
     /**
-     * Delete the given save file. Returns true if deleted or false otherwise.
+     * Xóa file bản lưu đã cho. Trả về true nếu xóa thành công, false nếu không.
      */
     public static boolean deleteSave(Path file) throws IOException {
         if (file == null) return false;
@@ -123,7 +118,7 @@ public final class SaveController {
     }
 
     /**
-     * Load the specified save file and apply it to the given panel. Shows dialogs on error.
+     * Tải file bản lưu đã cho và áp dụng nó vào panel. Hiển thị hộp thoại khi có lỗi.
      */
     public static void loadAndApply(Component parent, GamePanel panel, Path file) {
         if (panel == null || file == null) return;
@@ -137,11 +132,9 @@ public final class SaveController {
             if (meta != null) {
                 panel.setPlayerRunInfo(meta.player, meta.elapsedMs, meta.levelsCompleted, meta.blocksDestroyed);
             }
-            // The selected save is meant as a one-time resume; delete it after successful load
             try {
                 Files.deleteIfExists(file);
             } catch (Exception ignored) {
-                // ignore deletion failures (won't block resume)
             }
         } catch (IOException ex) {
             JOptionPane.showMessageDialog(parent, "Không thể tải bản lưu: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);

@@ -43,7 +43,6 @@ public class RankingManager {
             w.write(line);
             w.newLine();
         }
-        // After appending, prune to top 100 best runs
         try {
             pruneToTop(100);
         } catch (Exception ignored) {}
@@ -95,7 +94,6 @@ public class RankingManager {
         if (all.size() <= keep) return;
         all.sort(bestComparator());
         List<Entry> top = new ArrayList<>(all.subList(0, keep));
-        // overwrite file
         Path file = Path.of(SAVE_DIR).resolve(RANK_FILE);
         try (BufferedWriter w = Files.newBufferedWriter(file, StandardCharsets.UTF_8, java.nio.file.StandardOpenOption.TRUNCATE_EXISTING, java.nio.file.StandardOpenOption.CREATE)) {
             for (Entry e : top) {
@@ -113,7 +111,6 @@ public class RankingManager {
         return t;
     }
 
-    // very small CSV utilities (only handles commas and quotes for one field)
     private static String escape(String s) {
         if (s.contains(",") || s.contains("\"")) {
             return '"' + s.replace("\"", "\"\"") + '"';
