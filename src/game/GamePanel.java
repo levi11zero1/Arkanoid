@@ -38,6 +38,7 @@ public class GamePanel extends JPanel implements KeyListener {
     private PowerUpManager powerUpManager;
     private UIManager uiManager;
     private GameController gameController;
+    private PaddleCloneManager paddleCloneManager;
 
     // Ranking/session
     private ScoreManager scoreManager;
@@ -75,9 +76,10 @@ public class GamePanel extends JPanel implements KeyListener {
         this.entityManager = new EntityManager();
         this.inputHandler = new InputHandler();
         this.powerUpManager = new PowerUpManager();
-        this.uiManager = new UIManager();
+    this.uiManager = new UIManager();
         this.scoreManager = new ScoreManager();
         this.gameSession = new GameSession(playerName, elapsedMsAccum, levelsCompleted, totalBlocksDestroyed);
+    this.paddleCloneManager = new PaddleCloneManager();
 
         // wire game loop để tick
         this.gameLoop.setTickListener(delta -> onTick(delta));
@@ -151,6 +153,9 @@ public class GamePanel extends JPanel implements KeyListener {
             powerUpManager.resetAll();
             powerUpManager.stopSpawning();
         }
+        if (paddleCloneManager != null) {
+            paddleCloneManager.reset();
+        }
         gameStarted = false;
     }
 
@@ -195,14 +200,15 @@ public class GamePanel extends JPanel implements KeyListener {
             ball.detachFromPaddle();
         }
 
-        // 4) Cập nhật lại nền theo level hiện tại
+    // 4) Cập nhật lại nền theo level hiện tại
         this.levelBackground = LevelBackgrounds.getForLevel(levelManager.getCurrentLevel());
 
         // 5) baseline destroyed count for this level (avoid recounting
         // already-destroyed blocks)
         lastDestroyedCountThisLevel = countDestroyedDestructable();
 
-        // 6) Vẽ lại
+        // 6) Reset clone manager theo state mới và vẽ lại
+        if (paddleCloneManager != null) paddleCloneManager.reset();
         if (entityManager != null)
             entityManager.setEntities(ball, paddle, blocks);
         repaint();
@@ -228,6 +234,10 @@ public class GamePanel extends JPanel implements KeyListener {
                     renderBalls = java.util.Collections.emptyList();
                 }
                 renderer.render(g2d, renderBalls, paddle, blocks, powerUpManager.snapshot(), levelManager);
+                // vẽ paddle clones (nếu có)
+                if (paddleCloneManager != null) {
+                    try { paddleCloneManager.render(g2d); } catch (Throwable ignored) {}
+                }
             } catch (Throwable t) {
 
             }
@@ -325,6 +335,13 @@ public class GamePanel extends JPanel implements KeyListener {
                     }
                 }
             }
+            // cập nhật và va chạm với paddle clones
+            if (paddleCloneManager != null) {
+                try {
+                    paddleCloneManager.update(paddle);
+                    paddleCloneManager.handleCollisions(entityManager.getBalls());
+                } catch (Throwable ignored) {}
+            }
         } else {
             if (ball != null) {
                 if (ball.isAttachedToPaddle()) {
@@ -340,13 +357,19 @@ public class GamePanel extends JPanel implements KeyListener {
             if (ball != null && ball.isAttachedToPaddle()) {
                 ball.centerOnPaddle(paddle);
             }
+            // cập nhật clones ở nhánh legacy
+            if (paddleCloneManager != null) {
+                try { paddleCloneManager.update(paddle); } catch (Throwable ignored) {}
+            }
         }
 
     }
 
     private void checkGameState() {
-        boolean allBlocksDestroyed = blocks.stream().allMatch(Block::isDestroyed);
-        if (allBlocksDestroyed) {
+        boolean allDestructiblesGone = blocks.stream()
+                .filter(b -> b.getHitsRemaining() != GameConfig.UNDESTRUCTABLE_BLOCK)
+                .allMatch(Block::isDestroyed);
+        if (allDestructiblesGone) {
             gameController.handleLevelComplete();
         }
     }
@@ -470,6 +493,8 @@ public class GamePanel extends JPanel implements KeyListener {
             gameLoop.start();
     }
 
+    // playSkillMusic() removed (feature deprecated)
+
     public int confirm(String title, String message, int optionType) {
         return uiManager.showConfirm(this, title, message, optionType);
     }
@@ -478,6 +503,13 @@ public class GamePanel extends JPanel implements KeyListener {
         this.levelsCompleted++;
         if (this.gameSession != null) {
             this.gameSession.setLevelsCompleted(this.levelsCompleted);
+        }
+    }
+
+    // Toggle phân thân paddle (gọi từ InputHandler qua phím R)
+    public void togglePaddleClones() {
+        if (paddleCloneManager != null) {
+            paddleCloneManager.toggle(paddle);
         }
     }
 

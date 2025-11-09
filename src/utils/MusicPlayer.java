@@ -4,6 +4,7 @@ import java.io.File;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
+import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.LineEvent;
 
@@ -28,10 +29,12 @@ public class MusicPlayer {
 
         try {
             File f = new File(filePath);
-            AudioInputStream ais = AudioSystem.getAudioInputStream(f);
-            DataLine.Info info = new DataLine.Info(Clip.class, ais.getFormat());
+            AudioInputStream sourceStream = AudioSystem.getAudioInputStream(f);
+            AudioInputStream playbackStream = convertToPlayableStream(sourceStream);
+            AudioFormat playFormat = playbackStream.getFormat();
+            DataLine.Info info = new DataLine.Info(Clip.class, playFormat);
             Clip clip = (Clip) AudioSystem.getLine(info);
-            clip.open(ais);
+            clip.open(playbackStream);
             clip.loop(Clip.LOOP_CONTINUOUSLY);
             currentClip = clip;
         } catch (Throwable t) {
@@ -47,10 +50,12 @@ public class MusicPlayer {
         if (filePath == null) return;
         try {
             File f = new File(filePath);
-            AudioInputStream ais = AudioSystem.getAudioInputStream(f);
-            DataLine.Info info = new DataLine.Info(Clip.class, ais.getFormat());
+            AudioInputStream sourceStream = AudioSystem.getAudioInputStream(f);
+            AudioInputStream playbackStream = convertToPlayableStream(sourceStream);
+            AudioFormat playFormat = playbackStream.getFormat();
+            DataLine.Info info = new DataLine.Info(Clip.class, playFormat);
             Clip clip = (Clip) AudioSystem.getLine(info);
-            clip.open(ais);
+            clip.open(playbackStream);
             clip.addLineListener(ev -> {
                 if (ev.getType() == LineEvent.Type.STOP || ev.getType() == LineEvent.Type.CLOSE) {
                     try { clip.close(); } catch (Throwable ignored) {}
@@ -75,6 +80,30 @@ public class MusicPlayer {
         } finally {
             currentClip = null;
         }
+    }
+
+    private static AudioInputStream convertToPlayableStream(AudioInputStream source)
+            throws java.io.IOException, javax.sound.sampled.UnsupportedAudioFileException {
+        AudioFormat baseFormat = source.getFormat();
+        if (baseFormat.getEncoding() == AudioFormat.Encoding.PCM_SIGNED) {
+            return source;
+        }
+
+        AudioFormat targetFormat = new AudioFormat(
+                AudioFormat.Encoding.PCM_SIGNED,
+                baseFormat.getSampleRate(),
+                16,
+                baseFormat.getChannels(),
+                baseFormat.getChannels() * 2,
+                baseFormat.getSampleRate(),
+                false // little-endian
+        );
+
+        if (!AudioSystem.isConversionSupported(targetFormat, baseFormat)) {
+            return source;
+        }
+
+        return AudioSystem.getAudioInputStream(targetFormat, source);
     }
 }
 

@@ -10,14 +10,13 @@ import javax.swing.*;
  * Nút tùy biến: bo góc, màu chủ đạo, hiệu ứng hover/nhấn, con trỏ tay.
  */
 public class StyledButton extends JButton {
-    private Color bg = new Color(0x282B88);        // màu nền mặc định (primary)
+    private Color bg = new Color(0x282B88);        // màu nền mặc định 
     private Color fg = Color.BLACK;                // màu chữ
     private Color bgHover = new Color(0x3793F0);   // khi hover
     private Color bgPress = new Color(0x2576C4);   // khi nhấn
     private Color border = new Color(0x282B88);    // viền
     private int cornerRadius = 18;
-    // old boolean hovered kept for compatibility removed; animation uses hoverProgress
-    // animated hover progress 0..1 for smooth scale/shadow effect
+    // hoverProgress chạy từ 0..1 để tạo hiệu ứng scale và shadow mượt mà
     private float hoverProgress = 0f;
     private javax.swing.Timer hoverTimer;
     private float hoverTarget = 0f;
@@ -28,12 +27,12 @@ public class StyledButton extends JButton {
         setContentAreaFilled(false);
         setBorderPainted(false);
         setFocusPainted(false);
-    setForeground(fg);
-    // Giảm cỡ chữ mặc định để tránh bị tràn chữ trên các nút nhỏ (nhất là trong màn hình chơi)
-    setFont(getFont().deriveFont(Font.BOLD, 18f));
-    setCursor(new Cursor(Cursor.HAND_CURSOR));
-    // Khoảng đệm nhỏ hơn để vừa với các nút kích thước nhỏ
-    setMargin(new Insets(6, 12, 6, 12));
+        setForeground(fg);
+        // Giảm cỡ chữ mặc định để tránh bị tràn chữ trên các nút nhỏ 
+        setFont(getFont().deriveFont(Font.BOLD, 18f));
+        setCursor(new Cursor(Cursor.HAND_CURSOR));
+        // Khoảng đệm nhỏ hơn để vừa với các nút kích thước nhỏ
+        setMargin(new Insets(6, 12, 6, 12));
 
         addMouseListener(new MouseAdapter() {
             @Override
@@ -52,7 +51,7 @@ public class StyledButton extends JButton {
         hoverTarget = target;
         if (hoverTimer != null && hoverTimer.isRunning()) hoverTimer.stop();
         hoverTimer = new javax.swing.Timer(16, e -> {
-            float step = 0.12f; // animation speed
+            float step = 0.12f; // tốc độ animation
             if (hoverProgress < hoverTarget) {
                 hoverProgress = Math.min(hoverTarget, hoverProgress + step);
             } else if (hoverProgress > hoverTarget) {
@@ -75,7 +74,7 @@ public class StyledButton extends JButton {
         int w = getWidth();
         int h = getHeight();
 
-        // animated scale (subtle)
+        // Phóng to nhẹ khi hover 
         float scale = 1f + 0.04f * hoverProgress;
         int cx = w / 2;
         int cy = h / 2;
@@ -83,7 +82,7 @@ public class StyledButton extends JButton {
         g2.scale(scale, scale);
         g2.translate(-cx, -cy);
 
-        // Chọn màu nền dựa trên trạng thái (pressed overrides hover)
+        // Chọn màu nền dựa trên trạng thái 
         Color currentBg;
         ButtonModel m = getModel();
         if (m.isPressed()) {
@@ -95,7 +94,7 @@ public class StyledButton extends JButton {
             currentBg = bg;
         }
 
-        // Drop shadow (subtle, scales with hover)
+        // Bóng đổ nhẹ (độ mờ tăng theo trạng thái hover)
         float shadowAlpha = 0.18f * hoverProgress;
         if (shadowAlpha > 0f) {
             g2.setColor(new Color(0f,0f,0f, shadowAlpha));
@@ -111,7 +110,7 @@ public class StyledButton extends JButton {
         g2.setStroke(new BasicStroke(2f));
         g2.draw(new RoundRectangle2D.Float(1, 1, w - 2, h - 2, cornerRadius, cornerRadius));
 
-        // Draw the text using transformed graphics so it scales with the button
+        // Vẽ chữ dùng Graphics đã được biến đổi để chữ cũng phóng to/thu nhỏ cùng nút
         super.paintComponent(g2);
         g2.dispose();
     }
@@ -127,7 +126,7 @@ public class StyledButton extends JButton {
         return new Color(r, g, bl, al);
     }
 
-    // === GETTERS / SETTERS ===
+    // === PHƯƠNG THỨC LẤY / THIẾT LẬP ===
     public void setBackgroundColor(Color bg) {
         this.bg = bg;
         repaint();

@@ -1,6 +1,7 @@
 import game.GamePanel;
 import game.MultiplayerPanel;
 import ui.MenuPanel;
+import function.RankingManager;
 import ui.StyledButton;
 import ui.InstructionsPanel;
 import ui.SaveListPanel;
@@ -42,11 +43,11 @@ public class ArkanoidGame {
             InstructionsPanel instructionsPanel = new InstructionsPanel();
             cards.add(instructionsPanel, CARD_INSTRUCTIONS);
 
-            // Ranking panel
+            // Bảng xếp hạng
             RankingPanel rankingPanel = new RankingPanel();
             cards.add(rankingPanel, CARD_RANKING);
 
-            // Lắng nghe nút Chơi: mở overlay chọn chế độ (split screen) từ MenuPanel
+            // Nút Chơi: mở overlay chọn chế độ chơi
             menu.getPlayButton().addActionListener(e -> { if (e != null) { /* satisfy linter */ } menu.showModeSelection(); });
 
             // Xử lý lựa chọn chế độ từ overlay
@@ -320,6 +321,21 @@ public class ArkanoidGame {
             if (text == null || text.isEmpty()) {
                 tf.requestFocusInWindow();
                 return;
+            }
+            // Nếu tên đã tồn tại trong bảng xếp hạng, yêu cầu nhập lại
+            try {
+                java.util.List<function.RankingManager.Entry> existing = RankingManager.getSorted(0);
+                boolean duplicate = false;
+                for (function.RankingManager.Entry en : existing) {
+                    if (en.player != null && en.player.equalsIgnoreCase(text)) { duplicate = true; break; }
+                }
+                if (duplicate) {
+                    JOptionPane.showMessageDialog(dialog, "Tên này đã tồn tại . Vui lòng nhập tên khác.", "Trùng tên", JOptionPane.WARNING_MESSAGE);
+                    tf.requestFocusInWindow();
+                    return;
+                }
+            } catch (Throwable ignored) {
+                // Nếu có lỗi khi load ranking, tiếp tục cho phép tên (không block người chơi)
             }
             result[0] = text;
             dialog.dispose();
