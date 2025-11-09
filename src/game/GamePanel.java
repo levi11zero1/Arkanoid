@@ -154,7 +154,7 @@ public class GamePanel extends JPanel implements KeyListener {
             powerUpManager.stopSpawning(); 
         }
         if (paddleCloneManager != null) {
-            paddleCloneManager.resetForNewLevel();
+            paddleCloneManager.reset();
         }
         gameStarted = false;
     }
@@ -207,8 +207,8 @@ public class GamePanel extends JPanel implements KeyListener {
         // already-destroyed blocks)
         lastDestroyedCountThisLevel = countDestroyedDestructable();
 
-    // 6) Reset clone manager theo state mới và vẽ lại
-    if (paddleCloneManager != null) paddleCloneManager.resetForNewLevel();
+        // 6) Reset clone manager theo state mới và vẽ lại
+        if (paddleCloneManager != null) paddleCloneManager.reset();
         if (entityManager != null)
             entityManager.setEntities(ball, paddle, blocks);
         repaint();

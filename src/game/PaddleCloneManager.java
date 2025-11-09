@@ -14,8 +14,6 @@ public class PaddleCloneManager {
     private Paddle leftClone;
     private Paddle rightClone;
     private long expireAt = 0L; // epoch millis
-    // whether the clone skill has been used in the current level
-    private boolean usedThisLevel = false;
 
     // cấu hình
     private final int gap = 40;         // khoảng cách từ mép paddle chính
@@ -23,9 +21,6 @@ public class PaddleCloneManager {
 
     public boolean isActive() { return active; }
 
-    /**
-     * Reset only the active clones (do not clear per-level usage flag).
-     */
     public void reset() {
         active = false;
         leftClone = null;
@@ -33,29 +28,18 @@ public class PaddleCloneManager {
         expireAt = 0L;
     }
 
-    /**
-     * Reset state for a new level: allow using the clone skill again.
-     */
-    public void resetForNewLevel() {
-        usedThisLevel = false;
-        reset();
-    }
-
     public void toggle(Paddle main) {
         if (active) { reset(); return; }
-        // If already used in this level, disallow another activation
-        if (usedThisLevel) return;
         if (main == null) return;
         active = true;
-        usedThisLevel = true;
         leftClone = new Paddle(Math.max(0, main.getX() - main.getWidth() - gap), main.getY(), true);
         rightClone = new Paddle(Math.min(GameConfig.SCREEN_WIDTH - main.getWidth(), main.getX() + main.getWidth() + gap), main.getY(), true);
         expireAt = System.currentTimeMillis() + durationMs;
     }
 
     public void update(Paddle main) {
-    if (!active) return;
-    if (System.currentTimeMillis() > expireAt || main == null) { reset(); return; }
+        if (!active) return;
+        if (System.currentTimeMillis() > expireAt || main == null) { reset(); return; }
         if (leftClone != null) {
             double nx = main.getX() - main.getWidth() - gap;
             if (nx < 0) nx = 0;
