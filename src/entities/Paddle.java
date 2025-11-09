@@ -18,6 +18,8 @@ public class Paddle implements GameObject {
     private int height;
     private int normalWidth;
     private double normalSpeed;
+    // facingLeft indicates whether the paddle image should be drawn flipped
+    private boolean facingLeft = false;
 
     public Paddle(double x, int y) {
         this(x, y, true);
@@ -48,6 +50,13 @@ public class Paddle implements GameObject {
 
         x += velocity * dt;
 
+        // update facing direction: prefer the explicit key press; if both pressed, keep previous
+        if (leftPressed && !rightPressed) {
+            facingLeft = true;
+        } else if (rightPressed && !leftPressed) {
+            facingLeft = false;
+        }
+
         if (x < 0) {
             x = 0;
         }
@@ -66,7 +75,12 @@ public class Paddle implements GameObject {
                 int skinWidth = skin.width();
                 int skinHeight = skin.height();
                 if (skinWidth > 0 && skinHeight > 0) {
-                    g.drawImage(image, drawX, y, width, height, null);
+                    if (facingLeft) {
+                        // draw flipped horizontally by drawing with negative width
+                        g.drawImage(image, drawX + width, y, -width, height, null);
+                    } else {
+                        g.drawImage(image, drawX, y, width, height, null);
+                    }
                     return;
                 }
             }
