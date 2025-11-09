@@ -13,18 +13,24 @@ import javax.swing.ImageIcon;
 
 final class PaddleSkin {
     static final class Skin {
-        private final Image image;
+        private final Image[] frames;
         private final int width;
         private final int height;
+        private final int frameDurationMs;
 
-        Skin(Image image, int width, int height) {
-            this.image = image;
+        Skin(Image[] frames, int width, int height, int frameDurationMs) {
+            this.frames = frames;
             this.width = width;
             this.height = height;
+            this.frameDurationMs = Math.max(1, frameDurationMs);
         }
 
         Image image() {
-            return image;
+            // return current animation frame (or sole image)
+            if (frames == null || frames.length == 0) return null;
+            if (frames.length == 1) return frames[0];
+            long idx = (System.currentTimeMillis() / frameDurationMs) % frames.length;
+            return frames[(int) idx];
         }
 
         int width() {
@@ -128,6 +134,7 @@ final class PaddleSkin {
             return null;
         }
         try {
+            // First try single-image load (resource or file)
             Image source = null;
             int srcWidth = -1;
             int srcHeight = -1;
@@ -157,7 +164,51 @@ final class PaddleSkin {
                 int scaledW = Math.max(1, (int) Math.round(srcWidth * scale));
                 int scaledH = Math.max(1, (int) Math.round(srcHeight * scale * heightBoost));
                 Image scaled = source.getScaledInstance(scaledW, scaledH, Image.SCALE_SMOOTH);
-                return new Skin(scaled, scaledW, scaledH);
+                return new Skin(new Image[] { scaled }, scaledW, scaledH, 100);
+            }
+
+            // If single image not found, try a sequence a1..a6 based on the provided path as a prefix
+            // Strip extension if present
+            String base = path;
+            int dot = base.lastIndexOf('.');
+            if (dot > 0) base = base.substring(0, dot);
+            java.util.List<Image> frames = new java.util.ArrayList<>();
+            int maxFrames = 6; // try a1..a6
+            int frameW = -1, frameH = -1;
+            for (int i = 1; i <= maxFrames; i++) {
+                String tryPath = base + i + ".png";
+                Image src = null;
+                URL res = PaddleSkin.class.getClassLoader().getResource(tryPath);
+                if (res != null) {
+                    ImageIcon icon = new ImageIcon(res);
+                    src = icon.getImage();
+                    if (frameW <= 0) {
+                        frameW = icon.getIconWidth();
+                        frameH = icon.getIconHeight();
+                    }
+                } else {
+                    File f = new File(tryPath);
+                    if (f.exists()) {
+                        src = ImageIO.read(f);
+                        if (src != null && frameW <= 0) {
+                            frameW = src.getWidth(null);
+                            frameH = src.getHeight(null);
+                        }
+                    }
+                }
+                if (src != null) {
+                    // scale each frame same as single-image logic
+                    double scale = 0.2;
+                    double heightBoost = 1.15;
+                    int scaledW = Math.max(1, (int) Math.round(frameW * scale));
+                    int scaledH = Math.max(1, (int) Math.round(frameH * scale * heightBoost));
+                    Image scaled = src.getScaledInstance(scaledW, scaledH, Image.SCALE_SMOOTH);
+                    frames.add(scaled);
+                }
+            }
+            if (!frames.isEmpty()) {
+                Image[] arr = frames.toArray(new Image[0]);
+                return new Skin(arr, arr[0].getWidth(null), arr[0].getHeight(null), 100);
             }
         } catch (IOException | SecurityException ignored) {
             // Ignore and continue with fallbacks
