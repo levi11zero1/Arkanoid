@@ -134,12 +134,26 @@ final class PaddleSkin {
             return null;
         }
         try {
+            // Support optional frame duration: path may be "basePath,frameMs"
+            String pathBase = path;
+            int frameDuration = 100;
+            int comma = path.indexOf(',');
+            if (comma >= 0) {
+                pathBase = path.substring(0, comma).trim();
+                String dur = path.substring(comma + 1).trim();
+                try {
+                    frameDuration = Integer.parseInt(dur);
+                    if (frameDuration <= 0) frameDuration = 100;
+                } catch (NumberFormatException ignored) {
+                    // fallback to default
+                    frameDuration = 100;
+                }
+            }
             // First try single-image load (resource or file)
             Image source = null;
             int srcWidth = -1;
             int srcHeight = -1;
-
-            URL resource = PaddleSkin.class.getClassLoader().getResource(path);
+            URL resource = PaddleSkin.class.getClassLoader().getResource(pathBase);
             if (resource != null) {
                 ImageIcon icon = new ImageIcon(resource);
                 srcWidth = icon.getIconWidth();
@@ -148,7 +162,7 @@ final class PaddleSkin {
             }
 
             if (source == null) {
-                File file = new File(path);
+                File file = new File(pathBase);
                 if (file.exists()) {
                     source = ImageIO.read(file);
                     if (source != null) {
@@ -164,7 +178,7 @@ final class PaddleSkin {
                 int scaledW = Math.max(1, (int) Math.round(srcWidth * scale));
                 int scaledH = Math.max(1, (int) Math.round(srcHeight * scale * heightBoost));
                 Image scaled = source.getScaledInstance(scaledW, scaledH, Image.SCALE_SMOOTH);
-                return new Skin(new Image[] { scaled }, scaledW, scaledH, 100);
+                return new Skin(new Image[] { scaled }, scaledW, scaledH, frameDuration);
             }
 
             // If single image not found, try a sequence a1..a6 based on the provided path as a prefix
@@ -208,7 +222,7 @@ final class PaddleSkin {
             }
             if (!frames.isEmpty()) {
                 Image[] arr = frames.toArray(new Image[0]);
-                return new Skin(arr, arr[0].getWidth(null), arr[0].getHeight(null), 100);
+                return new Skin(arr, arr[0].getWidth(null), arr[0].getHeight(null), frameDuration);
             }
         } catch (IOException | SecurityException ignored) {
             // Ignore and continue with fallbacks
