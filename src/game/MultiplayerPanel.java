@@ -13,6 +13,7 @@ import utils.GameConfig;
 import utils.AudioManager;
 
 public class MultiplayerPanel extends JPanel implements ActionListener, KeyListener {
+    private static final long serialVersionUID = 1L;
     private Ball ball;
     private Paddle paddleTop;
     private Paddle paddleBottom;

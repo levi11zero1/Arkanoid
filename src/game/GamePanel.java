@@ -24,6 +24,7 @@ import ui.UIManager;
 import utils.GameConfig;
 
 public class GamePanel extends JPanel implements KeyListener {
+    private static final long serialVersionUID = 1L;
     private Ball ball;
     private Paddle paddle;
     private List<Block> blocks;
