@@ -132,12 +132,6 @@ public class RankingPanel extends JPanel {
         revalidate();
     }
 
-    private static String truncate(String s, int n) {
-        if (s == null) return "";
-        if (s.length() <= n) return s;
-        return s.substring(0, n-1) + "…";
-    }
-
 
     private static String formatDuration(long ms) {
         long totalSec = ms / 1000;

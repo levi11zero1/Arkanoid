@@ -6,7 +6,7 @@ package function;
  * Cách sử dụng:
  * - Vòng lặp chạy trên luồng: gọi Pause.getInstance().getLock() và chờ khi đang tạm dừng.
  * - Swing Timer: dừng timer trong pause(), khởi động lại trong resume().
- * - Giao diện: gọi Pause.getInstance().toggle() từ bàn phím (ví dụ KeyEvent.VK_P).
+ * - Giao diện: gọi Pause.getInstance().toggle() từ bàn phím.
  */
 public class Pause {
 
@@ -64,9 +64,6 @@ public class Pause {
 		if (isPaused()) resume(); else pause();
 	}
 
-	/**
-	 * Đối tượng khóa dùng cho các vòng lặp chạy trên luồng. 
-	 */
 	public Object getLock() {
 		return lock;
 	}
