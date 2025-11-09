@@ -42,11 +42,11 @@ public class ArkanoidGame {
             InstructionsPanel instructionsPanel = new InstructionsPanel();
             cards.add(instructionsPanel, CARD_INSTRUCTIONS);
 
-            // Ranking panel
+            // Bảng xếp hạng
             RankingPanel rankingPanel = new RankingPanel();
             cards.add(rankingPanel, CARD_RANKING);
 
-            // Lắng nghe nút Chơi: mở overlay chọn chế độ (split screen) từ MenuPanel
+            // Nút Chơi: mở overlay chọn chế độ chơi
             menu.getPlayButton().addActionListener(e -> { if (e != null) { /* satisfy linter */ } menu.showModeSelection(); });
 
             // Xử lý lựa chọn chế độ từ overlay
