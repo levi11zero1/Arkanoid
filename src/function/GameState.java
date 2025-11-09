@@ -5,18 +5,18 @@ import java.util.List;
 
 /* Trạng thái game (snapshot).
  * 
- */
+*/
 
 public class GameState {
-    public final int level;           // Màn hiện tại
-    public final double ballX;        // Toạ độ X bóng (double để chính xác)
-    public final double ballY;        // Toạ độ Y bóng
-    public final double ballDx;       // Vận tốc X bóng
-    public final double ballDy;       // Vận tốc Y bóng
-    public final double paddleX;      // Toạ độ X của paddle (double để khớp nội bộ)
-    public final int paddleY;         // Toạ độ Y của paddle (thường cố định theo cấu hình)
+    public final int level;               // Màn hiện tại
+    public final double ballX;            // Toạ độ X bóng (double để chính xác)
+    public final double ballY;            // Toạ độ Y bóng
+    public final double ballDx;           // Vận tốc X bóng
+    public final double ballDy;           // Vận tốc Y bóng
+    public final double paddleX;          // Toạ độ X của paddle (double để khớp nội bộ)
+    public final int paddleY;             // Toạ độ Y của paddle (thường cố định theo cấu hình)
     public final List<BlockState> blocks; // Danh sách trạng thái block (vị trí, số lần chịu đòn còn lại, đã phá chưa)
-    public final boolean ballAttached; // Bóng đang dính vào paddle?
+    public final boolean ballAttached;    // Bóng đang dính vào paddle?
 
     public GameState(int level,
                      double ballX, double ballY,

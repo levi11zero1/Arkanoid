@@ -4,7 +4,8 @@ import java.awt.Graphics;
 import java.awt.Rectangle;
 
 /**
- * Common contract for drawable game entities that expose simple bounds metadata.
+ * Giao ước chung cho các thực thể game có thể vẽ được và cung cấp thông tin
+ * về vùng biên (bounds) đơn giản.
  */
 public interface GameObject {
     void draw(Graphics g);
