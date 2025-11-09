@@ -8,6 +8,23 @@ package function;
  */
 public final class LifeManager {
     private static final int DEFAULT_LIVES = 3;
+    // Current lives kept in memory (tests and game use this)
+    private static int currentLives = DEFAULT_LIVES;
+
+    // Timestamp (ms since epoch) when a life was last lost. 0 if never.
+    private static volatile long lastLifeLostAtMs = 0L;
+    // Duration (ms) that renderers should show the life-lost message.
+    private static final int LIFE_LOST_MESSAGE_DURATION_MS = 2000;
+
+    // Candidate messages to show when a life is lost. Picked at random.
+    private static final String[] LIFE_LOST_MESSAGES = new String[] {
+        "Giận quá mất khôn.",
+        "Đứng dậy coi.",
+        "Mạnh mỗi cái miệng.",
+        "Yếu quá, để anh lo."
+    };
+    // The last message selected for display (or null if none).
+    private static volatile String lastLifeLostMessage = null;
 
     private LifeManager() {}
 
@@ -23,7 +40,18 @@ public final class LifeManager {
     public static int decrementLife() {
         int lives = loadLives();
         lives = Math.max(0, lives - 1);
-        writeLives(lives);
+        // persist in-memory
+        currentLives = lives;
+        // record event and choose random taunt message
+        lastLifeLostAtMs = System.currentTimeMillis();
+        try {
+            int idx = (int) (Math.random() * LIFE_LOST_MESSAGES.length);
+            if (idx < 0) idx = 0;
+            if (idx >= LIFE_LOST_MESSAGES.length) idx = LIFE_LOST_MESSAGES.length - 1;
+            lastLifeLostMessage = LIFE_LOST_MESSAGES[idx];
+        } catch (Throwable t) {
+            lastLifeLostMessage = LIFE_LOST_MESSAGES[0];
+        }
         return lives;
     }
 
