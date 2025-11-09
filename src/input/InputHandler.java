@@ -16,10 +16,12 @@ public class InputHandler {
                 panel.togglePauseAction();
             }
             case KeyEvent.VK_SPACE -> panel.startIfNotRunning();
-            case KeyEvent.VK_R -> panel.playSkillMusic();
             case KeyEvent.VK_ESCAPE -> {
                 int choice = panel.confirm("Quit Game", "Are you sure you want to quit?", javax.swing.JOptionPane.YES_NO_OPTION);
                 if (choice == javax.swing.JOptionPane.YES_OPTION) System.exit(0);
+            }
+            case KeyEvent.VK_R -> {
+                panel.togglePaddleClones();
             }
             // 'M' key (level map preview) removed - no-op to avoid dev-only UI in runtime
         }

@@ -203,4 +203,9 @@ public class Paddle implements GameObject {
 
         x = centerX - width / 2.0;
     }
+
+    // Hỗ trợ PaddleCloneManager đặt vị trí X cho clone mà không thay đổi logic update()
+    public void setXForClone(double newX) {
+        this.x = newX;
+    }
 }
