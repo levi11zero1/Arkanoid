@@ -311,7 +311,6 @@ public class GamePanel extends JPanel implements KeyListener {
     }
 
     private void updateGame(double deltaTime) {
-        // Delegate entity updates to EntityManager
         if (entityManager != null) {
             entityManager.updateAll(deltaTime, getWidth(), getHeight(), leftPressed, rightPressed);
             entityManager.removeOutOfBoundsBalls(getHeight());
@@ -371,73 +370,10 @@ public class GamePanel extends JPanel implements KeyListener {
     private void checkGameState() {
         boolean allBlocksDestroyed = blocks.stream().allMatch(Block::isDestroyed);
         if (allBlocksDestroyed) {
-            if (gameController != null)
-                gameController.handleLevelComplete();
-            else
-                handleLevelComplete();
-        }
-    }
-
-    private void handleLevelComplete() {
-        // Delegate to GameController if present
-        if (gameController != null) {
             gameController.handleLevelComplete();
-            return;
-        }
-
-        // Fallback behaviour (legacy)
-        resetAllPowerUps();
-        // hoàn thành 1 màn
-        levelsCompleted++;
-        if (levelManager.isFinalLevel()) {
-            gameLoop.stop();
-            showGameComplete();
-        } else {
-            gameLoop.stop();
-            showLevelComplete();
         }
     }
 
-    private void handleGameOver() {
-        // Cho delegate lên GameController nếu có
-        if (gameController != null) {
-            gameController.handleGameOver();
-            return;
-        }
-
-        // Fallback legacy behaviour
-        resetAllPowerUps();
-        if (gameLoop != null)
-            gameLoop.stop();
-
-        if (scoreManager != null && gameSession != null)
-            scoreManager.submitIfNotSubmitted(gameSession);
-        if (eventsListener != null) {
-            eventsListener.onGameOver();
-            return;
-        }
-        showGameOverDialogAndHandleChoice();
-    }
-
-    // Centralized dialog used when there's no external event listener to handle
-    // game-over
-    private void showGameOverDialogAndHandleChoice() {
-        int choice = uiManager.showConfirm(this, "Game Over",
-                "Game Over! You reached Level " + levelManager.getCurrentLevel() +
-                        "\\n\\nWould you like to play again?",
-                JOptionPane.YES_NO_OPTION);
-
-        if (choice == JOptionPane.YES_OPTION) {
-            restartGame();
-        } else {
-            System.exit(0);
-        }
-    }
-
-    private void showLevelComplete() {
-        // Hiển thị overlay text trong 3 giây rồi tự động chuyển sang level tiếp theo
-        showLevelCompleteOverlayAndAdvance(3000);
-    }
 
     private void showGameComplete() {
         // Cập nhật Ranking (thắng toàn bộ)
@@ -449,7 +385,7 @@ public class GamePanel extends JPanel implements KeyListener {
                 JOptionPane.YES_NO_OPTION);
 
         if (choice == JOptionPane.YES_OPTION) {
-            restartGame();
+            gameController.restartGame();
         } else {
             System.exit(0);
         }
@@ -486,29 +422,6 @@ public class GamePanel extends JPanel implements KeyListener {
         t.start();
     }
 
-    private void restartGame() {
-        // Cho delegate lên GameController nếu có
-        if (gameController != null) {
-            gameController.restartGame();
-            return;
-        }
-
-        resetLivesForNewSession();
-        levelManager.reset();
-        initializeLevel();
-        if (gameLoop != null)
-            gameLoop.start();
-        // reset run stats for a new session (used in local replay flow)
-        elapsedMsAccum = 0;
-        levelsCompleted = 0;
-        totalBlocksDestroyed = 0;
-        if (gameSession != null) {
-            gameSession.setElapsedMs(0);
-            gameSession.setLevelsCompleted(0);
-            gameSession.setTotalBlocksDestroyed(0);
-            gameSession.resetSubmitted();
-        }
-    }
 
     private int countDestroyedDestructable() {
         int c = 0;
@@ -552,13 +465,11 @@ public class GamePanel extends JPanel implements KeyListener {
         } catch (Throwable ignore) {
         }
     }
-    // PowerUp spawn/update logic moved to PowerUpManager
 
     @Override
     public void keyTyped(KeyEvent e) {
     }
 
-    // Cho phép ArkanoidGame đăng ký lắng nghe sự kiện trong game
     public void setEventsListener(GameEvents listener) {
         this.eventsListener = listener;
     }
@@ -567,7 +478,6 @@ public class GamePanel extends JPanel implements KeyListener {
         return this.eventsListener;
     }
 
-    // Các phương thức hỗ trợ InputHandler
     public void setLeftPressed(boolean v) {
         this.leftPressed = v;
     }
@@ -589,10 +499,6 @@ public class GamePanel extends JPanel implements KeyListener {
 
     public int confirm(String title, String message, int optionType) {
         return uiManager.showConfirm(this, title, message, optionType);
-    }
-
-    public void showLevelMapDialog() {
-        // No-op: level preview feature intentionally disabled.
     }
 
     public void incrementLevelsCompleted() {
@@ -681,12 +587,7 @@ public class GamePanel extends JPanel implements KeyListener {
         if (lives > 0) {
             return;
         }
-
-        if (gameController != null) {
-            gameController.handleGameOver();
-        } else {
-            handleGameOver();
-        }
+        gameController.handleGameOver();
     }
 
     public void resetLivesForNewSession() {
@@ -708,7 +609,7 @@ public class GamePanel extends JPanel implements KeyListener {
         if (paddle != null) {
             paddle.resetSize();
         }
-        // 3️⃣ Delegate reset to PowerUpManager (clears list and stops spawning)
+        // 3️⃣ reset tất cả Power-Up đang active
         if (powerUpManager != null) {
             powerUpManager.resetAll();
         }
