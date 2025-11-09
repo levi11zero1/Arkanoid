@@ -38,6 +38,7 @@ public class GamePanel extends JPanel implements KeyListener {
     private PowerUpManager powerUpManager;
     private UIManager uiManager;
     private GameController gameController;
+    private PaddleCloneManager paddleCloneManager;
 
     // Ranking/session
     private ScoreManager scoreManager;
@@ -56,15 +57,12 @@ public class GamePanel extends JPanel implements KeyListener {
 
     private int lives;
 
-    // Save button is created by UIManager; GamePanel does not keep a reference
-
     // ==== RUN STATS ====
     private String playerName = "Player";
     private long elapsedMsAccum = 0; // tích lũy thời gian chơi (không tính Pause vì timer dừng)
     private int levelsCompleted = 0; // số màn đã hoàn thành
     private int totalBlocksDestroyed = 0; // tổng số block phá được qua các màn
-    private int lastDestroyedCountThisLevel = 0; // baseline để tính delta mỗi tick
-    private int totalScore = 0; // tổng điểm (mặc định 10 điểm = 1 block)
+    private int lastDestroyedCountThisLevel = 0; 
     private boolean gameStarted = false;
 
     public GamePanel() {
@@ -78,9 +76,10 @@ public class GamePanel extends JPanel implements KeyListener {
         this.entityManager = new EntityManager();
         this.inputHandler = new InputHandler();
         this.powerUpManager = new PowerUpManager();
-        this.uiManager = new UIManager();
+    this.uiManager = new UIManager();
         this.scoreManager = new ScoreManager();
         this.gameSession = new GameSession(playerName, elapsedMsAccum, levelsCompleted, totalBlocksDestroyed);
+    this.paddleCloneManager = new PaddleCloneManager();
 
         // wire game loop để tick
         this.gameLoop.setTickListener(delta -> onTick(delta));
@@ -92,9 +91,6 @@ public class GamePanel extends JPanel implements KeyListener {
 
         // cung cấp thực thể cho EntityManager
         this.entityManager.setEntities(ball, paddle, blocks);
-
-        // start power-up spawning via manager
-        // powerUpManager.startSpawning(this);
 
         // Đăng ký Pause: dừng timer khi pause, chạy lại khi resume
         Pause.getInstance().setListener(new Pause.PauseListener() {
@@ -116,18 +112,17 @@ public class GamePanel extends JPanel implements KeyListener {
         setFocusable(true);
         addKeyListener(this);
         setBackground(Color.BLACK);
-
-        // Absolute layout to freely position overlay button
         setLayout(null);
+
         uiManager.createSaveButton(this, saved -> {
             if (!saved)
-                return; // cancelled or failed
+                return; 
             Toolkit.getDefaultToolkit().beep();
-            // Stop timers to prevent further gameplay
+            
             if (gameLoop != null)
                 gameLoop.stop();
             powerUpManager.stopSpawning();
-            // Inform container to go back to menu
+            
             if (eventsListener != null) {
                 eventsListener.onGameOver();
             } else {
@@ -138,17 +133,16 @@ public class GamePanel extends JPanel implements KeyListener {
     }
 
     public void initializeLevel() {
-    ball = new Ball(GameConfig.SCREEN_WIDTH / 2, GameConfig.SCREEN_HEIGHT / 2);
+        ball = new Ball(GameConfig.SCREEN_WIDTH / 2, GameConfig.SCREEN_HEIGHT / 2);
         paddle = new Paddle(
-        GameConfig.SCREEN_WIDTH / 2 - GameConfig.DEFAULT_PADDLE_WIDTH / 2,
-        GameConfig.SCREEN_HEIGHT - GameConfig.PADDLE_BOTTOM_MARGIN - GameConfig.PADDLE_EXTRA_RAISE_PIXELS);
-    ball.attachToPaddle(paddle);
+                GameConfig.SCREEN_WIDTH / 2 - GameConfig.DEFAULT_PADDLE_WIDTH / 2,
+                GameConfig.SCREEN_HEIGHT - GameConfig.PADDLE_BOTTOM_MARGIN - GameConfig.PADDLE_EXTRA_RAISE_PIXELS);
+        ball.attachToPaddle(paddle);
 
         // Tạo block
-    int currentLevel = levelManager.getCurrentLevel();
-    blocks = LevelBuilder.createLevel(currentLevel);
-    levelBackground = LevelBackgrounds.getForLevel(currentLevel);
-        // baseline destroyed count for this level
+        int currentLevel = levelManager.getCurrentLevel();
+        blocks = LevelBuilder.createLevel(currentLevel);
+        levelBackground = LevelBackgrounds.getForLevel(currentLevel);
         lastDestroyedCountThisLevel = countDestroyedDestructable();
 
         // Cho biết EntityManager về các thực thể mới
@@ -157,22 +151,21 @@ public class GamePanel extends JPanel implements KeyListener {
 
         if (powerUpManager != null) {
             powerUpManager.resetAll();
-            powerUpManager.stopSpawning(); // bắt đầu spawn lại
+            powerUpManager.stopSpawning(); 
+        }
+        if (paddleCloneManager != null) {
+            paddleCloneManager.reset();
         }
         gameStarted = false;
     }
 
-    // ================== LƯU/LOAD (PHỤC VỤ NÚT "TIẾP TỤC" Ở MENU)
-    // ==================
-    // Tạo ảnh chụp trạng thái hiện tại để ghi xuống file save.
-    // Bao gồm: level đang chơi, vị trí/tốc độ bóng, vị trí thanh đỡ, và danh sách
-    // block còn lại.
+    // Chuyển trạng thái hiện tại của game panel này thành một GameState để lưu.
     public GameState toGameState() {
         ArrayList<GameState.BlockState> bs = new ArrayList<>();
         for (Block b : blocks) {
             bs.add(new GameState.BlockState(b.getX(), b.getY(), b.getHitsRemaining(), b.isDestroyed()));
         }
-    return new GameState(
+        return new GameState(
                 levelManager.getCurrentLevel(),
                 ball.getPreciseX(), ball.getPreciseY(),
                 ball.getVelocity().getDx(), ball.getVelocity().getDy(),
@@ -194,7 +187,7 @@ public class GamePanel extends JPanel implements KeyListener {
         }
         this.blocks = newBlocks;
 
-    lives = LifeManager.loadLives();
+        lives = LifeManager.loadLives();
 
         // 3) Khôi phục bóng và thanh đỡ
         ball.setPosition(state.ballX, state.ballY);
@@ -207,14 +200,15 @@ public class GamePanel extends JPanel implements KeyListener {
             ball.detachFromPaddle();
         }
 
-        // 4) Cập nhật lại nền theo level hiện tại
+    // 4) Cập nhật lại nền theo level hiện tại
         this.levelBackground = LevelBackgrounds.getForLevel(levelManager.getCurrentLevel());
 
         // 5) baseline destroyed count for this level (avoid recounting
         // already-destroyed blocks)
         lastDestroyedCountThisLevel = countDestroyedDestructable();
 
-        // 6) Vẽ lại
+        // 6) Reset clone manager theo state mới và vẽ lại
+        if (paddleCloneManager != null) paddleCloneManager.reset();
         if (entityManager != null)
             entityManager.setEntities(ball, paddle, blocks);
         repaint();
@@ -240,16 +234,20 @@ public class GamePanel extends JPanel implements KeyListener {
                     renderBalls = java.util.Collections.emptyList();
                 }
                 renderer.render(g2d, renderBalls, paddle, blocks, powerUpManager.snapshot(), levelManager);
+                // vẽ paddle clones (nếu có)
+                if (paddleCloneManager != null) {
+                    try { paddleCloneManager.render(g2d); } catch (Throwable ignored) {}
+                }
             } catch (Throwable t) {
-                // keep paint resilient during refactor
+
             }
         }
-        // Render UI overlay using UIManager (non-invasive call)
+
         if (g instanceof Graphics2D) {
             try {
                 uiManager.renderOverlay((Graphics2D) g, this);
             } catch (Throwable t) {
-                // keep rendering resilient during incremental refactor
+
             }
         }
 
@@ -259,23 +257,25 @@ public class GamePanel extends JPanel implements KeyListener {
                 Graphics2D g2 = (Graphics2D) g;
                 // nền mờ
                 Composite old = g2.getComposite();
-                g2.setColor(new Color(0,0,0,160));
-                g2.fillRect(0,0,getWidth(), getHeight());
+                g2.setColor(new Color(0, 0, 0, 160));
+                g2.fillRect(0, 0, getWidth(), getHeight());
 
-                String text = levelCompleteText != null ? levelCompleteText : ("Level " + levelManager.getCurrentLevel() + " Complete!");
+                String text = levelCompleteText != null ? levelCompleteText
+                        : ("Level " + levelManager.getCurrentLevel() + " Complete!");
                 Font font = new Font("SansSerif", Font.BOLD, Math.max(28, getWidth() / 16));
                 g2.setFont(font);
                 FontMetrics fm = g2.getFontMetrics(font);
                 int tx = (getWidth() - fm.stringWidth(text)) / 2;
                 int ty = (getHeight() - fm.getHeight()) / 2 + fm.getAscent();
                 // shadow
-                g2.setColor(new Color(0,0,0,200));
-                g2.drawString(text, tx+3, ty+3);
+                g2.setColor(new Color(0, 0, 0, 200));
+                g2.drawString(text, tx + 3, ty + 3);
                 // main
                 g2.setColor(new Color(255, 215, 64));
                 g2.drawString(text, tx, ty);
                 g2.setComposite(old);
-            } catch (Throwable ignored) {}
+            } catch (Throwable ignored) {
+            }
         }
 
         for (PowerUp p : powerUpManager.snapshot()) {
@@ -284,7 +284,6 @@ public class GamePanel extends JPanel implements KeyListener {
 
     }
 
-    // Called by GameLoop every tick
     private void onTick(double deltaTime) {
         updateGame(deltaTime);
         checkGameState();
@@ -295,21 +294,18 @@ public class GamePanel extends JPanel implements KeyListener {
         if (curDestroyed > lastDestroyedCountThisLevel) {
             int newly = (curDestroyed - lastDestroyedCountThisLevel);
             totalBlocksDestroyed += newly;
-            // mỗi block = 10 điểm
-            totalScore += newly * 10;
             lastDestroyedCountThisLevel = curDestroyed;
         }
 
-        // keep session in sync
+
         if (gameSession != null) {
             gameSession.setElapsedMs(elapsedMsAccum);
             gameSession.setLevelsCompleted(levelsCompleted);
             gameSession.setTotalBlocksDestroyed(totalBlocksDestroyed);
-            gameSession.setTotalScore(totalScore);
         }
 
-        // delegate power-up updates to manager
-    powerUpManager.updateAll(getHeight(), paddle, entityManager);
+
+        powerUpManager.updateAll(getHeight(), paddle, entityManager);
 
         repaint();
     }
@@ -342,6 +338,13 @@ public class GamePanel extends JPanel implements KeyListener {
                     }
                 }
             }
+            // cập nhật và va chạm với paddle clones
+            if (paddleCloneManager != null) {
+                try {
+                    paddleCloneManager.update(paddle);
+                    paddleCloneManager.handleCollisions(entityManager.getBalls());
+                } catch (Throwable ignored) {}
+            }
         } else {
             if (ball != null) {
                 if (ball.isAttachedToPaddle()) {
@@ -356,6 +359,10 @@ public class GamePanel extends JPanel implements KeyListener {
             }
             if (ball != null && ball.isAttachedToPaddle()) {
                 ball.centerOnPaddle(paddle);
+            }
+            // cập nhật clones ở nhánh legacy
+            if (paddleCloneManager != null) {
+                try { paddleCloneManager.update(paddle); } catch (Throwable ignored) {}
             }
         }
 
@@ -453,7 +460,8 @@ public class GamePanel extends JPanel implements KeyListener {
      * sau đó tự động advance level và resume game.
      */
     public void showLevelCompleteOverlayAndAdvance(int delayMs) {
-        if (showingLevelCompleteOverlay) return;
+        if (showingLevelCompleteOverlay)
+            return;
         showingLevelCompleteOverlay = true;
         levelCompleteText = "Bạn đã hoàn thành Level " + levelManager.getCurrentLevel() + "!";
         repaint();
@@ -462,8 +470,10 @@ public class GamePanel extends JPanel implements KeyListener {
             try {
                 levelManager.advanceLevel();
                 initializeLevel();
-                if (powerUpManager != null) powerUpManager.startSpawning(this);
-                if (gameLoop != null) gameLoop.start();
+                if (powerUpManager != null)
+                    powerUpManager.startSpawning(this);
+                if (gameLoop != null)
+                    gameLoop.start();
             } catch (Throwable ignored) {
             } finally {
                 showingLevelCompleteOverlay = false;
@@ -492,12 +502,10 @@ public class GamePanel extends JPanel implements KeyListener {
         elapsedMsAccum = 0;
         levelsCompleted = 0;
         totalBlocksDestroyed = 0;
-        totalScore = 0;
         if (gameSession != null) {
             gameSession.setElapsedMs(0);
             gameSession.setLevelsCompleted(0);
             gameSession.setTotalBlocksDestroyed(0);
-            gameSession.setTotalScore(0);
             gameSession.resetSubmitted();
         }
     }
@@ -509,12 +517,6 @@ public class GamePanel extends JPanel implements KeyListener {
                 c++;
         }
         return c;
-    }
-
-    private void showLevelMap() {
-        // Level preview removed: previously prompted user for a level number and showed
-        // a modal preview dialog. This functionality was removed to simplify the build
-        // and avoid shipping development-only tools in the game runtime.
     }
 
     @Override
@@ -583,6 +585,8 @@ public class GamePanel extends JPanel implements KeyListener {
             gameLoop.start();
     }
 
+    // playSkillMusic() removed (feature deprecated)
+
     public int confirm(String title, String message, int optionType) {
         return uiManager.showConfirm(this, title, message, optionType);
     }
@@ -595,6 +599,13 @@ public class GamePanel extends JPanel implements KeyListener {
         this.levelsCompleted++;
         if (this.gameSession != null) {
             this.gameSession.setLevelsCompleted(this.levelsCompleted);
+        }
+    }
+
+    // Toggle phân thân paddle (gọi từ InputHandler qua phím R)
+    public void togglePaddleClones() {
+        if (paddleCloneManager != null) {
+            paddleCloneManager.toggle(paddle);
         }
     }
 
@@ -703,19 +714,19 @@ public class GamePanel extends JPanel implements KeyListener {
         }
     }
 
-        private PowerUp.Type getRandomAvailablePowerUpType() {
-            PowerUp.Type[] all = PowerUp.Type.values();
-            List<PowerUp.Type> available = new ArrayList<>();
+    private PowerUp.Type getRandomAvailablePowerUpType() {
+        PowerUp.Type[] all = PowerUp.Type.values();
+        List<PowerUp.Type> available = new ArrayList<>();
 
-            for (PowerUp.Type t : all) {
-                if (!powerUpManager.isActive(t)) {
-                    available.add(t);
-                }
+        for (PowerUp.Type t : all) {
+            if (!powerUpManager.isActive(t)) {
+                available.add(t);
             }
-
-            if (available.isEmpty()) return null;
-            return available.get(new java.util.Random().nextInt(available.size()));
         }
 
-
+        if (available.isEmpty())
+            return null;
+        return available.get(new java.util.Random().nextInt(available.size()));
     }
+
+}

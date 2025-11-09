@@ -37,7 +37,6 @@ public class ArkanoidGame {
             menu.setSideMargins(500, 12);
             menu.moveUp(230);
             cards.add(menu, CARD_MENU);
-            // refresh inline ranking on menu at startup
 
             // Tạo panel hướng dẫn 
             InstructionsPanel instructionsPanel = new InstructionsPanel();
@@ -156,7 +155,7 @@ public class ArkanoidGame {
                     } catch (Exception ex) {
                         JOptionPane.showMessageDialog(frame, "Không thể xóa: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
                     }
-                    // refresh list
+                    
                     try {
                         java.util.List<java.nio.file.Path> saves2 = function.SaveController.listSaves();
                         java.util.List<java.nio.file.Path> top2 = saves2.size() > 10 ? saves2.subList(0, 10) : saves2;

@@ -8,7 +8,6 @@ public class LevelBuilder {
     public static List<Block> buildFromMapDirect(String[] mapLines) {
         List<Block> blocks = new ArrayList<>();
         int[][] grid = parseHitMask(java.util.Arrays.asList(mapLines));
-        int rows = grid.length;
         int cols = grid[0].length;
         int totalWidth = cols * GameConfig.BLOCK_SPACING - (GameConfig.BLOCK_SPACING - GameConfig.BLOCK_WIDTH);
         int startX = (GameConfig.SCREEN_WIDTH - totalWidth) / 2;

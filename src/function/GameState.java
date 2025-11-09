@@ -3,12 +3,10 @@ package function;
 import java.util.ArrayList;
 import java.util.List;
 
-// Trạng thái game (snapshot)
-//
-// Vai trò:
-// - Đóng gói toàn bộ dữ liệu cần thiết để khôi phục lại màn chơi đúng tại thời điểm lưu.
-// - Được tạo bởi GamePanel.toGameState() và áp dụng vào game bằng GamePanel.applyGameState(...).
-// - Được ghi/đọc bởi SaveManager theo định dạng văn bản.
+/* Trạng thái game (snapshot).
+ * 
+ */
+
 public class GameState {
     public final int level;           // Màn hiện tại
     public final double ballX;        // Toạ độ X bóng (double để chính xác)
@@ -18,7 +16,7 @@ public class GameState {
     public final double paddleX;      // Toạ độ X của paddle (double để khớp nội bộ)
     public final int paddleY;         // Toạ độ Y của paddle (thường cố định theo cấu hình)
     public final List<BlockState> blocks; // Danh sách trạng thái block (vị trí, số lần chịu đòn còn lại, đã phá chưa)
-    public final boolean ballAttached; // whether the ball was attached to the paddle when saved
+    public final boolean ballAttached; // Bóng đang dính vào paddle?
 
     public GameState(int level,
                      double ballX, double ballY,
@@ -37,9 +35,9 @@ public class GameState {
         this.ballAttached = ballAttached;
     }
 
-    // Ảnh chụp một viên gạch trong game
+    // Snapshot một viên gạch trong game
     public static class BlockState {
-        public final int x;               // vị trí X của block (theo lưới)
+        public final int x;               // vị trí X của block 
         public final int y;               // vị trí Y của block
         public final int hitsRemaining;   // số lần đập còn lại trước khi vỡ (>=1)
         public final boolean destroyed;   // true nếu block đã bị phá (bỏ qua vẽ/va chạm)
