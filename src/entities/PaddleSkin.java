@@ -48,10 +48,10 @@ final class PaddleSkin {
 
     private static final Path CONFIG_PATH = Paths.get("saves", "paddle_skin.cfg");
     private static final String DEFAULT_TOKEN = "DEFAULT";
-    // Default paddle skin (restore original default). Wukong animation remains
-    // available via saves/paddle_skin.cfg (e.g. images/WukongAnimation/a,80).
+    // Default paddle skin now set to skinPaddle2 animation (a1..a6). If you prefer
+    // the static skin, change this to images/skinPaddle1.png.
     private static final String DEFAULT_SKIN_PATH =
-        Paths.get("images", "skinPaddle1.png").toString().replace('\\', '/');
+        Paths.get("images", "skinPaddle2", "a").toString().replace('\\', '/');
 
     private static boolean attempted;
     private static Skin cached;
