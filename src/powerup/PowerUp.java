@@ -46,16 +46,27 @@ public class PowerUp {
     public int getHeight() { return height; }
 
     public void draw(Graphics g) {
+        Graphics2D g2d = (Graphics2D) g.create();
+
+        // Bật khử răng cưa + blend alpha
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g2d.setComposite(java.awt.AlphaComposite.SrcOver);
+
+
         if (image != null) {
-            g.drawImage(image, x, y, width, height, null);
+            g2d.drawImage(image, x, y, width, height, null);
         } else {
-            // debug nếu không
-            g.setColor(Color.WHITE);
-            g.fillRect(x, y, width, height);
-            g.setColor(Color.BLACK);
-            g.drawRect(x, y, width, height);
+            // fallback: ô vuông nếu thiếu ảnh
+            g2d.setColor(Color.WHITE);
+            g2d.fillRect(x, y, width, height);
+            g2d.setColor(Color.BLACK);
+            g2d.drawRect(x, y, width, height);
         }
+
+        g2d.dispose();
     }
+
 
     private void loadImage() {
         try {
@@ -71,11 +82,9 @@ public class PowerUp {
 
             File file = new File(path);
             image = ImageIO.read(file);
-
         } catch (IOException e) {
             e.printStackTrace();
             image = null;
         }
     }
-
 }
