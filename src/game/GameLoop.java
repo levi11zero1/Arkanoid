@@ -22,7 +22,7 @@ public class GameLoop implements IGameLoop {
             try {
                 if (listener != null) listener.onTick(delta);
             } catch (Throwable t) {
-                // swallow to keep loop running
+
             }
         });
         timer.setRepeats(true);
