@@ -123,8 +123,8 @@ public class PowerUpManager {
                 }).start();
             }
 
-            case BALL_MULTIPLY_TEN -> {
-                entityManager.multiplyBallsTo(10);
+            case BALL_MULTIPLY_THREE -> {
+                entityManager.multiplyBallsTo(3);
                 // ✅ Bảo đảm nếu đang trong trạng thái "chậm" thì bóng mới sinh ra cũng chậm theo
                 if (entityManager.isBallSlowed()) {
                     for (Ball b : entityManager.getBalls()) {
@@ -148,7 +148,7 @@ public class PowerUpManager {
             case BALL_SHRINK -> "music/ball_shrink.wav";
             case BALL_SLOW -> "music/ball_slow.wav";
             case PADDLE_SPEED_UP -> "music/paddle_speedup.wav";
-            case BALL_MULTIPLY_TEN -> "music/ball_multiplyten.wav";
+            case BALL_MULTIPLY_THREE -> "music/ball_multiplyten.wav";
         };
 
         try {

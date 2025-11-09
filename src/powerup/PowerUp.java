@@ -14,13 +14,13 @@ public class PowerUp {
     BALL_SHRINK,     // Giảm kích thước bóng
     BALL_SLOW,       // Giảm tốc độ bóng
     PADDLE_SPEED_UP, // Tăng tốc độ thanh paddle
-    BALL_MULTIPLY_TEN // Nhân bóng lên 10 quả
+    BALL_MULTIPLY_THREE // Nhân bóng lên 3 quả
     }
 
     private Type type;
     private Color color;
     private int x, y;
-    private int width = 25, height = 25;// kích thước của power up
+    private int width = 46, height = 18;// kích thước của power up
     private double fallSpeed = 3.6; // tốc độ power up rơi xuống
     private BufferedImage image;
 
@@ -30,27 +30,6 @@ public class PowerUp {
         this.y = startY;
 
         loadImage();
-    }
-
-    private void loadImage() {
-        try {
-            String path = switch (type) {
-                case PADDLE_EXPAND -> "images/paddle_expand.png";
-                case PADDLE_SHRINK -> "images/paddle_shrink.png";
-                case BALL_EXPAND -> "images/ball_expand.png";
-                case BALL_SHRINK -> "images/ball_shrink.png";
-                case BALL_SLOW -> "images/ball_slow.png";
-                case PADDLE_SPEED_UP -> "images/paddle_speed_up.png";
-                case BALL_MULTIPLY_TEN -> "images/ball_multiply_ten.png";
-            };
-
-            File file = new File(path);
-            image = ImageIO.read(file);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-            image = null;
-        }
     }
 
     public void updatePosition() { y += fallSpeed; }
@@ -77,4 +56,26 @@ public class PowerUp {
             g.drawRect(x, y, width, height);
         }
     }
+
+    private void loadImage() {
+        try {
+            String path = switch (type) {
+                case PADDLE_EXPAND -> "images/paddle_expand.png";
+                case PADDLE_SHRINK -> "images/paddle_shrink.png";
+                case BALL_EXPAND -> "images/ball_expand.png";
+                case BALL_SHRINK -> "images/ball_shrink.png";
+                case BALL_SLOW -> "images/ball__slow.png";
+                case PADDLE_SPEED_UP -> "images/paddle_speedup.png";
+                case BALL_MULTIPLY_THREE -> "images/ball_multiply_three.png";
+            };
+
+            File file = new File(path);
+            image = ImageIO.read(file);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            image = null;
+        }
+    }
+
 }
