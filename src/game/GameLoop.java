@@ -4,7 +4,7 @@ package game;
  * Tạon một vòng lặp game đơn giản sử dụng javax.swing.Timer.
  */
 public class GameLoop implements IGameLoop {
-    private int targetFps = 60;
+    private double targetFps = 60;
     private volatile boolean running = false;
     private javax.swing.Timer timer;
     private IGameLoop.TickListener listener;
@@ -13,9 +13,9 @@ public class GameLoop implements IGameLoop {
     @Override
     public void start() {
         if (running) return;
-        int delayMs = Math.max(1, 1000 / targetFps);
+        double delayMs = Math.max(1, 1000 / targetFps);
         lastNanos = System.nanoTime();
-        timer = new javax.swing.Timer(delayMs, e -> {
+        timer = new javax.swing.Timer((int)delayMs, e -> {
             long now = System.nanoTime();
             double delta = (now - lastNanos) / 1_000_000_000.0;
             lastNanos = now;
