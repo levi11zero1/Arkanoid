@@ -237,7 +237,7 @@ public class Ball implements GameObject {
             this.y = cy - GameConfig.BALL_SIZE / 2.0;
             setSpeedMultiplier(1.2);
         } else if (type == PowerUp.Type.BALL_SLOW) {
-            slowDown(); // ✅ Gọi hàm mới để giảm tốc độ bóng
+            slowDown(); // Gọi hàm mới để giảm tốc độ bóng
             return;
         }
     // thời gian hiệu lực của power up
