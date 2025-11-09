@@ -14,11 +14,14 @@ import utils.GameConfig;
 public class Renderer implements IRenderer {
     @Override
     public void render(Graphics2D g, List<Ball> balls, Paddle paddle, List<Block> blocks, List<PowerUp> powerUps, LevelManager levelManager) {
-        
+
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 16));
         g.drawString("Level: " + levelManager.getCurrentLevel(), 10, 25);
-        long remainingBlocks = blocks.stream().filter(block -> !block.isDestroyed()).count();
+    long remainingBlocks = blocks.stream()
+        .filter(block -> block.getHitsRemaining() != utils.GameConfig.UNDESTRUCTABLE_BLOCK)
+        .filter(block -> !block.isDestroyed())
+        .count();
         g.drawString("Blocks: " + remainingBlocks, GameConfig.SCREEN_WIDTH - 100, 25);
         if (balls != null) {
             for (Ball b : balls) {
@@ -34,8 +37,6 @@ public class Renderer implements IRenderer {
             }
         }
 
-    
-        
         if (powerUps != null) {
             for (PowerUp p : powerUps) {
                 g.setColor(p.getColor());

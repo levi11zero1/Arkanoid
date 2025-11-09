@@ -11,7 +11,7 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * Quản lý bảng xếp hạng (ranking) đơn giản bằng file CSV.
+ * Quản lý bảng xếp hạng (ranking) bằng file CSV.
  * Sắp xếp: số màn (desc) -> số block phá (desc) -> thời gian (asc) -> thời điểm ghi (asc).
  */
 public class RankingManager {
@@ -87,7 +87,7 @@ public class RankingManager {
     }
 
     /**
-     * Keep only top 'keep' best runs in the ranking file.
+     * Chỉ giữ top player.
      */
     public static void pruneToTop(int keep) throws IOException {
         if (keep <= 0) keep = 1;

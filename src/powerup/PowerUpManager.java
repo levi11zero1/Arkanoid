@@ -6,7 +6,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import javax.swing.Timer;
-import javax.swing.SwingUtilities;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -66,8 +65,8 @@ public class PowerUpManager {
 
 
     /**
-     * Update powerups position and detect collection/out-of-bounds.
-     * If collected, apply directly to provided paddle/ball.
+     * Cập nhật vị trí power up.
+     * nếu đã thu thập, áp dụng theo tính năng.
      */
     public void updateAll(int panelHeight, Paddle paddle, EntityManager entityManager) {
         synchronized (active) {
@@ -123,8 +122,8 @@ public class PowerUpManager {
                 }).start();
             }
 
-            case BALL_MULTIPLY_TEN -> {
-                entityManager.multiplyBallsTo(10);
+            case BALL_MULTIPLY_THREE -> {
+                entityManager.multiplyBallsTo(3);
                 // ✅ Bảo đảm nếu đang trong trạng thái "chậm" thì bóng mới sinh ra cũng chậm theo
                 if (entityManager.isBallSlowed()) {
                     for (Ball b : entityManager.getBalls()) {
@@ -148,13 +147,13 @@ public class PowerUpManager {
             case BALL_SHRINK -> "music/ball_shrink.wav";
             case BALL_SLOW -> "music/ball_slow.wav";
             case PADDLE_SPEED_UP -> "music/paddle_speedup.wav";
-            case BALL_MULTIPLY_TEN -> "music/ball_multiplyten.wav";
+            case BALL_MULTIPLY_THREE -> "music/ball_multiplyten.wav";
         };
 
         try {
             utils.AudioManager.playOnce(path, null);
         } catch (Throwable e) {
-            System.err.println("⚠️ Không thể phát âm thanh cho: " + type + " (" + e.getMessage() + ")");
+
         }
     }
 

@@ -19,26 +19,32 @@ public class CollisionManager {
     }
 
     public void handleCollisions(Ball ball, Paddle paddle, List<Block> blocks) {
+        handleCollisions(ball, paddle, blocks, false);
+    }
+
+    public void handleCollisions(Ball ball, Paddle paddle, List<Block> blocks, boolean paddleIsTop) {
         if (ball == null || paddle == null || blocks == null) return;
 
-        // Paddle collision
+
         if (paddle.isHit(ball.getX(), ball.getY(), GameConfig.BALL_SIZE)) {
-            ball.bounceOffPaddle(paddle.getX(), paddle.getWidth());
-            // Prevent multiple hits in a row by nudging the ball above the paddle
-            ball.setPosition(ball.getPreciseX(), paddle.getY() - GameConfig.BALL_SIZE - 1);
-            collisionCooldown = 2;
-            // Play paddle hit sound once (WAV)
-            try {
-                AudioManager.playOnce("music/padle.wav", null);
-            } catch (Throwable ignored) {
-                // ignore sound errors
+            if (paddleIsTop) {
+                ball.bounceOffPaddle(paddle.getX(), paddle.getWidth());
+                if (ball.getVelocity().getDy() < 0) {
+                    ball.bounceY();
+                }
+                ball.setPosition(ball.getPreciseX(), paddle.getY() + paddle.getHeight() + 1);
+            } else {
+                ball.bounceOffPaddle(paddle.getX(), paddle.getWidth());
+                ball.setPosition(ball.getPreciseX(), paddle.getY() - GameConfig.BALL_SIZE - 1);
             }
+            collisionCooldown = 2;
+            try { AudioManager.playOnce("music/padle.wav", null); } catch (Throwable ignored) {}
         }
 
+        // Block collisions
         if (collisionCooldown == 0) {
             for (Block block : blocks) {
                 if (block.isHit(ball.getX(), ball.getY(), GameConfig.BALL_SIZE)) {
-                    // Determine collision side consistently using previous position
                     double prevX = ball.getPrevX();
                     double prevY = ball.getPrevY();
                     double size = ball.getPrevSize();
@@ -48,22 +54,21 @@ public class CollisionManager {
 
                     String collisionSide;
                     if (prevX + size <= bx) {
-                        collisionSide = "left";    // came from left
+                        collisionSide = "left";
                     } else if (prevX >= bx + bw) {
-                        collisionSide = "right";   // came from right
+                        collisionSide = "right";
                     } else if (prevY + size <= by) {
-                        collisionSide = "top";     // came from top
+                        collisionSide = "top";
                     } else {
-                        collisionSide = "bottom";  // came from bottom
+                        collisionSide = "bottom";
                     }
 
                     double ballX = ball.getPreciseX();
                     double ballY = ball.getPreciseY();
-
                     switch (collisionSide) {
                         case "left" -> {
                             ball.bounceX();
-                            int nx = block.getX() - GameConfig.BALL_SIZE - 1; // integer-safe gap
+                            int nx = block.getX() - GameConfig.BALL_SIZE - 1;
                             int ny = (int) Math.round(ballY);
                             ball.setPosition(nx, ny);
                         }
@@ -87,13 +92,8 @@ public class CollisionManager {
                         }
                     }
 
-                    collisionCooldown = 2; // handle 1 collision per frame
-                    // Play brick hit sound once
-                    try {
-                        AudioManager.playOnce("music/brick.wav", null);
-                    } catch (Throwable ignored) {
-                        // ignore
-                    }
+                    collisionCooldown = 2;
+                    try { AudioManager.playOnce("music/brick.wav", null); } catch (Throwable ignored) {}
                     break;
                 }
             }

@@ -19,7 +19,7 @@ public class Block implements GameObject {
     // Hiệu ứng gạch nứt: sau khi bị đập, hiển thị sprite "broken" của cấp hiện tại
     // cho tới lần va chạm tiếp theo.
     private boolean showBroken = false;
-    private int brokenTier = 0; // 2 hoặc 3; 0 = không broken
+    private int brokenTier = 0;
     private boolean powerUpSpawned = false;
 
     public boolean isPowerUpSpawned() {
@@ -71,7 +71,7 @@ public class Block implements GameObject {
             // custom color: still draw colored rect
             img = null;
         } else if (hitsRemaining == GameConfig.UNDESTRUCTABLE_BLOCK) {
-            img = brick9_4;
+            img = brickX;
         } else if (showBroken && brokenTier >= 2) {
             // Ưu tiên hiển thị sprite broken nếu có
             img = switch (brokenTier) {
@@ -82,17 +82,17 @@ public class Block implements GameObject {
             if (img == null) {
                 // Fallback nếu thiếu ảnh broken
                 img = switch (hitsRemaining) {
-                    case 3 -> brick3_4;
-                    case 2 -> brick2_4;
-                    default -> brick1_4;
+                    case 3 -> brick3;
+                    case 2 -> brick2;
+                    default -> brick1;
                 };
             }
         } else if (hitsRemaining == 3) {
-            img = brick3_4;
+            img = brick3;
         } else if (hitsRemaining == 2) {
-            img = brick2_4;
+            img = brick2;
         } else {
-            img = brick1_4;
+            img = brick1;
         }
 
         if (img != null) {
@@ -115,11 +115,10 @@ public class Block implements GameObject {
         }
     }
 
-    // --- Brick images (loaded lazily) ---
-    private static Image brick1_4;
-    private static Image brick2_4;
-    private static Image brick3_4;
-    private static Image brick9_4;
+    private static Image brick1;
+    private static Image brick2;
+    private static Image brick3;
+    private static Image brickX;
     private static Image brick2_broken;
     private static Image brick3_broken;
     private static boolean brickImagesInitialized = false;
@@ -127,10 +126,10 @@ public class Block implements GameObject {
     private static void ensureBrickImagesLoaded() {
         if (brickImagesInitialized) return;
         brickImagesInitialized = true;
-        brick1_4 = loadImage("images/Brick1.png");
-        brick2_4 = loadImage("images/Brick2.png");
-        brick3_4 = loadImage("images/Brick3.png");
-        brick9_4 = loadImage("images/BrickX.png");
+        brick1 = loadImage("images/Brick1.png");
+        brick2 = loadImage("images/Brick2.png");
+        brick3 = loadImage("images/Brick3.png");
+        brickX = loadImage("images/BrickX.png");
         // Ảnh gạch nứt
         brick2_broken = loadImage("images/Brick2_broken.png");
         brick3_broken = loadImage("images/Brick3_broken.png");
@@ -162,14 +161,18 @@ public class Block implements GameObject {
                 ballX + ballSize > x && ballX < x + GameConfig.BLOCK_WIDTH &&
                 ballY + ballSize > y && ballY < y + GameConfig.BLOCK_HEIGHT) {
 
-            // ✅ Nếu bóng đang to hơn kích thước mặc định (20 là size gốc)
+            // Gạch không thể phá: không thay đổi trạng thái (chỉ trả về true để bóng nảy)
+            if (hitsRemaining == GameConfig.UNDESTRUCTABLE_BLOCK) {
+                return true;
+            }
+
+            // Nếu bóng đang to hơn kích thước mặc định (20 là size gốc)
             if (GameConfig.BALL_SIZE > GameConfig.DEFAULT_BALL_SIZE) {
                 if (hitsRemaining == 3) {
                     // Gạch cấp 3 → giảm xuống cấp 1, nhưng hiển thị Brick3_broken
-                    int prevTier = hitsRemaining;
                     hitsRemaining = 1;
                     showBroken = true;
-                    brokenTier = prevTier; // 3
+                    brokenTier = 2; // 3
                 } else {
                     // Gạch cấp 1 hoặc 2 → vỡ ngay lập tức
                     destroyed = true;
@@ -177,7 +180,7 @@ public class Block implements GameObject {
                     brokenTier = 0;
                 }
             } else {
-                // ✅ Bóng bình thường: giảm độ bền như thường lệ
+                // Bóng bình thường: giảm độ bền như thường lệ
                 int prevTier = hitsRemaining;
                 hitsRemaining--;
                 if (hitsRemaining <= 0) {

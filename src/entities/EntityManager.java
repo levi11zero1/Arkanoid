@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.Random;
 import game.CollisionManager;
 import utils.GameConfig;
 import utils.Velocity;
@@ -20,7 +19,6 @@ public class EntityManager {
     private List<Block> blocks = new ArrayList<>();
     private final CollisionManager collisionManager = new CollisionManager();
     private boolean launchQueued;
-    private final Random rng = new Random();
 
     public EntityManager() { }
 
@@ -127,37 +125,40 @@ public class EntityManager {
         collisionManager.resetCooldown();
     }
 
-    public void multiplyBallsTo(int desiredTotal) {
-        if (primaryBall == null || desiredTotal <= 1) {
-            return;
-        }
-        if (desiredTotal < balls.size()) {
-            return;
-        }
-        int needed = desiredTotal - balls.size();
+    public void multiplyBallsTo(int multiplier) {
+        if (primaryBall == null) return;
+
+        int currentCount = balls.size();
+        int desiredTotal = Math.min(currentCount * multiplier, 10);
+
+        if (desiredTotal <= currentCount) return;
+
+        int needed = desiredTotal - currentCount;
         double baseX = primaryBall.getPreciseX();
         double baseY = primaryBall.getPreciseY();
         Velocity baseVelocity = primaryBall.getVelocity();
-        double baseSpeed = (baseVelocity != null) ? baseVelocity.getMagnitude() : 0;
-        if (baseSpeed <= 0) {
-            baseSpeed = GameConfig.BALL_DEFAULT_SPEED;
-        }
-        double baselineAngle = Math.toDegrees(Math.atan2(baseVelocity != null ? baseVelocity.getDy() : -GameConfig.BALL_DEFAULT_SPEED,
+
+        double baseSpeed = (baseVelocity != null) ? baseVelocity.getMagnitude() : GameConfig.BALL_DEFAULT_SPEED;
+        if (baseSpeed <= 0) baseSpeed = GameConfig.BALL_DEFAULT_SPEED;
+
+        double baselineAngle = Math.toDegrees(Math.atan2(
+                baseVelocity != null ? baseVelocity.getDy() : -GameConfig.BALL_DEFAULT_SPEED,
                 baseVelocity != null ? baseVelocity.getDx() : 0));
-        if (Double.isNaN(baselineAngle) || Double.isInfinite(baselineAngle)) {
-            baselineAngle = -90;
-        }
+        if (Double.isNaN(baselineAngle) || Double.isInfinite(baselineAngle)) baselineAngle = -90;
 
         for (int i = 0; i < needed; i++) {
-            double spread = 360.0 / desiredTotal;
-            double angle = baselineAngle + spread * (i + 1);
-            angle += rng.nextDouble() * (spread / 3.0) - (spread / 6.0);
+            double spread = 120.0 / multiplier;
+            double angle = baselineAngle - 60 + spread * i;
+            if (angle > -30) angle = -30;
             Velocity vel = Velocity.fromAngle(angle, baseSpeed);
-            Ball clone = new Ball((int) Math.round(baseX), (int) Math.round(baseY), new Velocity(vel.getDx(), vel.getDy()));
+
+            Ball clone = new Ball((int) baseX, (int) baseY, vel);
             clone.detachFromPaddle();
             balls.add(clone);
         }
     }
+
+
 
     public void resetAllBallSpeeds() {
         for (Ball b : balls) {

@@ -18,7 +18,7 @@ public class Paddle implements GameObject {
     private int height;
     private int normalWidth;
     private double normalSpeed;
-    // facingLeft indicates whether the paddle image should be drawn flipped
+    // facingLeft cho biết hình ảnh paddle có nên được vẽ lật ngang hay không
     private boolean facingLeft = false;
 
     public Paddle(double x, int y) {
@@ -50,7 +50,7 @@ public class Paddle implements GameObject {
 
         x += velocity * dt;
 
-        // update facing direction: prefer the explicit key press; if both pressed, keep previous
+        // Cập nhật hướng paddle: ưu tiên phím được nhấn; nếu cả hai phím đều nhấn, giữ hướng trước đó
         if (leftPressed && !rightPressed) {
             facingLeft = true;
         } else if (rightPressed && !leftPressed) {
@@ -76,7 +76,7 @@ public class Paddle implements GameObject {
                 int skinHeight = skin.height();
                 if (skinWidth > 0 && skinHeight > 0) {
                     if (facingLeft) {
-                        // draw flipped horizontally by drawing with negative width
+                        // vẽ lật ngang bằng cách vẽ với chiều rộng âm
                         g.drawImage(image, drawX + width, y, -width, height, null);
                     } else {
                         g.drawImage(image, drawX, y, width, height, null);
