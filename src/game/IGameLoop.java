@@ -1,8 +1,7 @@
 package game;
 
 /**
- * Interface for the game loop controller.
- * Minimal contract used by GamePanel to control timing.
+ * Interface của game loop controller.
  */
 public interface IGameLoop {
     void start();
