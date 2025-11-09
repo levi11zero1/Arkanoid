@@ -586,7 +586,7 @@ public class GamePanel extends JPanel implements KeyListener {
 
     public void playSkillMusic() {
         try {
-            AudioManager.playOnce("music/SkillMusic.mp3");
+            AudioManager.playOnce("music/SkillMusic.wav");
         } catch (Throwable t) {
             System.err.println("GamePanel: cannot play skill music: " + t.getMessage());
         }
