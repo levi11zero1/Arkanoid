@@ -5,6 +5,6 @@ public final class Level0 {
     }
 
     public static final String[] MAP = new String[]{
-        "111111100003211111"
+        "111123X0X321111"
     };
 }
