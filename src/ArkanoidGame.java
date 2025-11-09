@@ -1,6 +1,7 @@
 import game.GamePanel;
 import game.MultiplayerPanel;
 import ui.MenuPanel;
+import function.RankingManager;
 import ui.StyledButton;
 import ui.InstructionsPanel;
 import ui.SaveListPanel;
@@ -326,6 +327,21 @@ public class ArkanoidGame {
             if (text == null || text.isEmpty()) {
                 tf.requestFocusInWindow();
                 return;
+            }
+            // Nếu tên đã tồn tại trong bảng xếp hạng, yêu cầu nhập lại
+            try {
+                java.util.List<function.RankingManager.Entry> existing = RankingManager.getSorted(0);
+                boolean duplicate = false;
+                for (function.RankingManager.Entry en : existing) {
+                    if (en.player != null && en.player.equalsIgnoreCase(text)) { duplicate = true; break; }
+                }
+                if (duplicate) {
+                    JOptionPane.showMessageDialog(dialog, "Tên này đã tồn tại . Vui lòng nhập tên khác.", "Trùng tên", JOptionPane.WARNING_MESSAGE);
+                    tf.requestFocusInWindow();
+                    return;
+                }
+            } catch (Throwable ignored) {
+                // Nếu có lỗi khi load ranking, tiếp tục cho phép tên (không block người chơi)
             }
             result[0] = text;
             dialog.dispose();
