@@ -5,6 +5,10 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.awt.image.BufferedImage;
+import java.awt.Graphics2D;
+import java.awt.Color;
+import utils.GameConfig;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -44,8 +48,9 @@ final class PaddleSkin {
 
     private static final Path CONFIG_PATH = Paths.get("saves", "paddle_skin.cfg");
     private static final String DEFAULT_TOKEN = "DEFAULT";
+    // Default now points to the Wukong animation base (will load a1..a6)
     private static final String DEFAULT_SKIN_PATH =
-        Paths.get("images", "skinPaddle1.png").toString().replace('\\', '/');
+        Paths.get("images", "WukongAnimation", "a").toString().replace('\\', '/');
 
     private static boolean attempted;
     private static Skin cached;
@@ -220,10 +225,35 @@ final class PaddleSkin {
                     frames.add(scaled);
                 }
             }
-            if (!frames.isEmpty()) {
-                Image[] arr = frames.toArray(new Image[0]);
-                return new Skin(arr, arr[0].getWidth(null), arr[0].getHeight(null), frameDuration);
-            }
+                if (!frames.isEmpty()) {
+                    Image[] arr = frames.toArray(new Image[0]);
+                    return new Skin(arr, arr[0].getWidth(null), arr[0].getHeight(null), frameDuration);
+                }
+
+                // If no external frames found, generate placeholder animated frames so user
+                // immediately sees animation while they upload real assets.
+                try {
+                    int pw = Math.max(16, GameConfig.DEFAULT_PADDLE_WIDTH);
+                    int ph = Math.max(8, GameConfig.PADDLE_HEIGHT);
+                    Image[] placeholder = new Image[6];
+                    Color[] colors = new Color[] { Color.RED, Color.ORANGE, Color.YELLOW, Color.GREEN, Color.CYAN, Color.MAGENTA };
+                    for (int i = 0; i < 6; i++) {
+                        BufferedImage bi = new BufferedImage(pw, ph, BufferedImage.TYPE_INT_ARGB);
+                        Graphics2D g2 = bi.createGraphics();
+                        try {
+                            g2.setColor(colors[i % colors.length]);
+                            g2.fillRect(0, 0, pw, ph);
+                            g2.setColor(Color.BLACK);
+                            g2.drawRect(0, 0, pw - 1, ph - 1);
+                        } finally {
+                            g2.dispose();
+                        }
+                        placeholder[i] = bi;
+                    }
+                    return new Skin(placeholder, pw, ph, frameDuration);
+                } catch (Throwable t) {
+                    // ignore and fall through to null
+                }
         } catch (IOException | SecurityException ignored) {
             // Ignore and continue with fallbacks
         }
