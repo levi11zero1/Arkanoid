@@ -116,7 +116,7 @@ public class SaveListPanel extends JPanel {
             }
         });
 
-        // mouse motion listener để cập nhật chỉ số hover
+        // lấy chuyển động chuột để tạo hiệu ứng hover
         list.addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
             @Override
             public void mouseMoved(java.awt.event.MouseEvent e) {
