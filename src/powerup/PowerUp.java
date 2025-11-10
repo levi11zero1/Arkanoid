@@ -8,13 +8,13 @@ import java.io.File;
 
 public class PowerUp {
     public enum Type {
-    PADDLE_EXPAND,   // Tăng kích thước paddle
-    PADDLE_SHRINK,   // Giảm kích thước paddle
-    BALL_EXPAND,     // Tăng kích thước bóng
-    BALL_SHRINK,     // Giảm kích thước bóng
-    BALL_SLOW,       // Giảm tốc độ bóng
-    PADDLE_SPEED_UP, // Tăng tốc độ thanh paddle
-    BALL_MULTIPLY_THREE // Nhân bóng lên 3 quả
+        PADDLE_EXPAND,   // Tăng kích thước paddle
+        PADDLE_SHRINK,   // Giảm kích thước paddle
+        BALL_EXPAND,     // Tăng kích thước bóng
+        BALL_SHRINK,     // Giảm kích thước bóng
+        BALL_SLOW,       // Giảm tốc độ bóng
+        PADDLE_SPEED_UP, // Tăng tốc độ thanh paddle
+        BALL_MULTIPLY_THREE // Nhân bóng lên 3 quả
     }
 
     private Type type;
@@ -66,8 +66,6 @@ public class PowerUp {
 
         g2d.dispose();
     }
-
-
     private void loadImage() {
         try {
             String path = switch (type) {
@@ -81,10 +79,22 @@ public class PowerUp {
             };
 
             File file = new File(path);
-            image = ImageIO.read(file);
+            BufferedImage raw = ImageIO.read(file);
+            image = toARGB(raw); // gọi hàm này
+
         } catch (IOException e) {
             e.printStackTrace();
             image = null;
         }
+    }
+
+    private BufferedImage toARGB(BufferedImage src) {
+        if (src.getType() == BufferedImage.TYPE_INT_ARGB)
+            return src;
+        BufferedImage argb = new BufferedImage(src.getWidth(), src.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = argb.createGraphics();
+        g2d.drawImage(src, 0, 0, null);
+        g2d.dispose();
+        return argb;
     }
 }
