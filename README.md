@@ -7,7 +7,7 @@
 ![Build](https://img.shields.io/badge/Build-VS%20Code%20Tasks-1e90ff?logo=visualstudiocode)
 ![PRs](https://img.shields.io/badge/PRs-welcome-brightgreen)
 
-![alt text](src/image.png)
+![alt text](images/README/image.png)
 
 ## 🎮 Tóm tắt
 
@@ -23,7 +23,7 @@ Arkanoid là game đập gạch cổ điển: điều khiển paddle để đán
 - Âm thanh nền và hiệu ứng (nhạc, va chạm paddle/brick)
 - Chế độ 1 người chơi và 2 người (trên/dưới)
 
-![alt text](src/image-1.png)
+![alt text](images/README/image-1.png)
 
 
 ## ⌨️ Điều khiển
@@ -33,7 +33,7 @@ Arkanoid là game đập gạch cổ điển: điều khiển paddle để đán
 - P: Tạm dừng / Tiếp tục
 - Esc: Thoát game (có hộp thoại xác nhận)
 
-![alt text](src/image-3.png)
+![alt text](images/README/image-3.png)
 
 ### Chế độ 2 người
 - Người chơi Trên: A, D để di chuyển
@@ -42,7 +42,7 @@ Arkanoid là game đập gạch cổ điển: điều khiển paddle để đán
 
 Mục tiêu: giữ bóng không rơi khỏi màn hình và phá hết các khối gạch.
 
-![alt text](src/image-4.png)
+![alt text](images/README/image-4.png)
 
 ## 🔮 Power‑ups
 
@@ -76,7 +76,7 @@ Các power‑up rơi xuống khi phá gạch, nhặt bằng paddle để kích h
 - Gạch có độ cứng (1–3) và loại không thể phá; bóng to sẽ phá/làm yếu gạch nhanh hơn.
 - Tránh kẹt va chạm bằng “cooldown” trong `CollisionManager` và reposition ±1px sau phản xạ.
 
-![alt text](src/image-5.png)
+![alt text](images/README/image-5.png)
 
 
 ## ⚙️ Tùy chỉnh nhanh
@@ -90,5 +90,5 @@ Các power‑up rơi xuống khi phá gạch, nhặt bằng paddle để kích h
 - Điểm cao được lưu trong `saves/ranking.csv`.
 - Một số tùy chọn nhỏ lưu ở `saves/*.cfg`.
 
-![alt text](src/image-2.png)
+![alt text](images/README/image-2.png)
 

@@ -38,8 +38,9 @@ final class BallSkin {
 
     private static final Path CONFIG_PATH = Paths.get("saves", "ball_skin.cfg");
     private static final String DEFAULT_TOKEN = "DEFAULT";
+    private static final String SKIN_DIR = Paths.get("images", "skinBall").toString().replace('\\', '/');
     private static final String DEFAULT_SKIN_PATH =
-            Paths.get("images", "SkinBall1.png").toString().replace('\\', '/');
+        Paths.get("images", "skinBall", "SkinBall1.png").toString().replace('\\', '/');
 
     private static boolean attempted;
     private static Skin cached;
@@ -90,10 +91,21 @@ final class BallSkin {
     }
 
     private static Skin resolveSelection(String token) {
+        // Mặc định hoặc rỗng -> dùng skin mặc định trong images/skinBall
         if (token == null || token.isBlank() || DEFAULT_TOKEN.equalsIgnoreCase(token)) {
             return tryLoad(DEFAULT_SKIN_PATH);
         }
+
+        // 1) Thử load trực tiếp theo token (cho phép chỉ định đường dẫn đầy đủ)
         Skin skin = tryLoad(token);
+
+        // 2) Nếu chỉ cung cấp tên file (vd: "SkinBall2.png"), thử ghép với thư mục SKIN_DIR
+        if (skin == null && !token.contains("/") && !token.contains("\\")) {
+            String candidate = Paths.get(SKIN_DIR, token).toString().replace('\\', '/');
+            skin = tryLoad(candidate);
+        }
+
+        // 3) Fallback về skin mặc định
         return skin != null ? skin : tryLoad(DEFAULT_SKIN_PATH);
     }
 
