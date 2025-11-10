@@ -1,9 +1,5 @@
 package ui;
 
-import function.LifeManager;
-import function.Pause;
-import function.SaveController;
-import game.GamePanel;
 import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Component;
@@ -16,10 +12,16 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.function.Consumer;
+
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
+
+import function.LifeManager;
+import function.Pause;
+import function.SaveController;
+import game.GamePanel;
 
 public class UIManager {
     private static final String LIFE_ICON_PATH = "images/life.png";
@@ -47,7 +49,7 @@ public class UIManager {
 
         Image icon = getLifeIcon();
         if (icon == null) {
-            // draw fallback lives box
+            // vẽ fallback nếu không load được icon
             drawLivesFallback(g, lives, panel);
         } else {
             String label = "x " + lives;
@@ -93,7 +95,7 @@ public class UIManager {
             g.setFont(originalFont);
         }
 
-        // --- Draw life-lost message in bottom-left corner (non-overlapping) ---
+        // --- vẽ thông báo mất mạng nếu có ---
         try {
             long lastLost = LifeManager.getLastLifeLostAtMs();
             String msg = LifeManager.getLastLifeLostMessage();
@@ -193,8 +195,7 @@ public class UIManager {
     }
 
     /**
-     * Create and attach a Save button to the given GamePanel. The onSaved consumer
-     * is invoked with true when a save occurred, false when cancelled or failed.
+     * Tạo nút "Save" trên giao diện GamePanel.
      */
     public StyledButton createSaveButton(GamePanel panel, Consumer<Boolean> onSaved) {
     final StyledButton saveButton = new StyledButton("Save");
@@ -224,17 +225,14 @@ public class UIManager {
         saveButton.addActionListener(ev -> {
             boolean saved = false;
             try {
-                // Pause the game while the save dialog is open. If the user cancels
-                // we'll resume; if they choose "Lưu và thoát" we leave it paused so
-                // the caller can perform stop/exit behavior.
                 try { Pause.getInstance().pause(); } catch (Throwable ignored) {}
 
                 saved = SaveController.promptAndSave(panel, panel);
             } catch (Throwable t) {
-                // swallow: SaveController will show its own dialogs
+                // hiện thông báo lỗi
             } finally {
                 if (!saved) {
-                    // user cancelled or save failed -> resume gameplay
+                    // người dùng hủy hoặc lỗi xảy ra
                     try { Pause.getInstance().resume(); } catch (Throwable ignored) {}
                 }
             }

@@ -1,6 +1,16 @@
 package ui;
 
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GradientPaint;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GridBagLayout;
+import java.awt.Image;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -12,7 +22,20 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import javax.swing.*;
+
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.DefaultListModel;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.ListSelectionModel;
+import javax.swing.SwingConstants;
 
 /**
  * Panel hiển thị danh sách các bản save cho người dùng chọn.
@@ -31,18 +54,17 @@ public class SaveListPanel extends JPanel {
     private final StyledButton deleteButton = new StyledButton("Xóa");
     private Color textColor = Color.WHITE;
 
-    // underlying paths for each list entry (index-aligned)
     private final List<Path> paths = new ArrayList<>();
 
     private final DateTimeFormatter displayFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    // hover tracking
+    // hover 
     private int hoverIndex = -1;
 
     public SaveListPanel() {
         setLayout(new BorderLayout());
         setOpaque(false);
 
-        // Try to load background image from resources or file system
+        // Tải ảnh nền 
         String[] tryNames = new String[] {"images/bg_saves.png", "images/bg_saves.jpg", "images/bg_saves.jpeg"};
         for (String n : tryNames) {
             try {
@@ -73,7 +95,7 @@ public class SaveListPanel extends JPanel {
         list.setSelectionBackground(new Color(255,255,255,80));
         list.setSelectionForeground(Color.WHITE);
 
-        // custom renderer to show hover background
+        // custom renderer to hiển thị nền khi hover
         list.setCellRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> listComp, Object value, int index, boolean isSelected, boolean cellHasFocus) {
@@ -94,7 +116,7 @@ public class SaveListPanel extends JPanel {
             }
         });
 
-        // mouse motion listener to update hover index
+        // mouse motion listener để cập nhật chỉ số hover
         list.addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
             @Override
             public void mouseMoved(java.awt.event.MouseEvent e) {
@@ -106,7 +128,6 @@ public class SaveListPanel extends JPanel {
             }
         });
 
-        // clear hover when mouse exits list
         list.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseExited(java.awt.event.MouseEvent e) {
@@ -123,15 +144,14 @@ public class SaveListPanel extends JPanel {
     scroll.getVerticalScrollBar().setUnitIncrement(16);
         scroll.setBorder(BorderFactory.createEmptyBorder(8, 24, 8, 24));
 
-        // Constrain the scroll pane so the list box is short (show ~3 rows).
         int visibleRows = 3;
         int cellHeight = list.getFixedCellHeight() > 0 ? list.getFixedCellHeight() : 36;
-        int prefHeight = cellHeight * visibleRows + 8 * 2; // include small padding
-        int prefWidth = 500; // make box narrower
+        int prefHeight = cellHeight * visibleRows + 8 * 2; // padding
+        int prefWidth = 500; 
         scroll.setPreferredSize(new Dimension(prefWidth, prefHeight));
         scroll.setMaximumSize(new Dimension(prefWidth, prefHeight));
 
-    // Create a centered container: title above the short list box, centered on screen
+    // tạo panel trung tâm để chứa tiêu đề và danh sách
     JPanel centerPanel = new JPanel();
     centerPanel.setOpaque(false);
     centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
@@ -155,10 +175,8 @@ public class SaveListPanel extends JPanel {
         backButton.setPreferredSize(new Dimension(140, 44));
         deleteButton.setPreferredSize(new Dimension(100, 44));
 
-        // smaller corner for delete to look slightly different
         deleteButton.setCornerRadius(12);
 
-        // initially disabled until selection
         loadButton.setEnabled(false);
         deleteButton.setEnabled(false);
 
@@ -168,14 +186,12 @@ public class SaveListPanel extends JPanel {
 
         add(bottom, BorderLayout.SOUTH);
 
-        // enable buttons when selection changes
         list.addListSelectionListener(ev -> {
             boolean sel = list.getSelectedIndex() >= 0;
             loadButton.setEnabled(sel);
             deleteButton.setEnabled(sel);
         });
 
-        // double-click shortcut to load
         list.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -183,7 +199,6 @@ public class SaveListPanel extends JPanel {
                     int idx = list.locationToIndex(e.getPoint());
                     if (idx >= 0) {
                         list.setSelectedIndex(idx);
-                        // delegate to any registered listener by firing action event
                         for (ActionListener al : loadButton.getActionListeners()) {
                             al.actionPerformed(null);
                         }
@@ -199,7 +214,6 @@ public class SaveListPanel extends JPanel {
         Graphics2D g2 = (Graphics2D) g.create();
         if (backgroundImage != null) {
             g2.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
-            // dark overlay for readability
             g2.setColor(new Color(0,0,0,120));
             g2.fillRect(0,0,getWidth(), getHeight());
         } else {
@@ -210,9 +224,7 @@ public class SaveListPanel extends JPanel {
         g2.dispose();
     }
 
-    /**
-     * Populate the panel with the given save files. The UI will show their last-modified time as name.
-     */
+    
     public void setSaves(List<Path> saveFiles) {
         model.clear();
         paths.clear();
