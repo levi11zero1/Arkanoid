@@ -2,7 +2,12 @@
 
 > Một bản Arkanoid nhẹ, dễ mở rộng, viết bằng Java (JDK 21), có âm thanh, power‑ups, chọn skin và cả chế độ 2 người chơi.
 
-![alt text](image.png)
+![Java 21](https://img.shields.io/badge/Java-21-007396?logo=java)
+![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-4caf50)
+![Build](https://img.shields.io/badge/Build-VS%20Code%20Tasks-1e90ff?logo=visualstudiocode)
+![PRs](https://img.shields.io/badge/PRs-welcome-brightgreen)
+
+![alt text](images/README/image.png)
 
 ## 🎮 Tóm tắt
 
@@ -18,18 +23,17 @@ Arkanoid là game đập gạch cổ điển: điều khiển paddle để đán
 - Âm thanh nền và hiệu ứng (nhạc, va chạm paddle/brick)
 - Chế độ 1 người chơi và 2 người (trên/dưới)
 
-![alt text](image-1.png)
+![alt text](images/README/image-1.png)
 
 
 ## ⌨️ Điều khiển
-
 - ← / A: Di chuyển paddle sang trái
 - → / D: Di chuyển paddle sang phải
 - Space: Bắt đầu game hoặc phóng bóng nếu đang gắn vào paddle
 - P: Tạm dừng / Tiếp tục
 - Esc: Thoát game (có hộp thoại xác nhận)
 
-![alt text](image-3.png)
+![alt text](images/README/image-3.png)
 
 ### Chế độ 2 người
 - Người chơi Trên: A, D để di chuyển
@@ -38,7 +42,19 @@ Arkanoid là game đập gạch cổ điển: điều khiển paddle để đán
 
 Mục tiêu: giữ bóng không rơi khỏi màn hình và phá hết các khối gạch.
 
-![alt text](image-4.png)
+![alt text](images/README/image-4.png)
+
+## 🔮 Power‑ups
+
+Các power‑up rơi xuống khi phá gạch, nhặt bằng paddle để kích hoạt hiệu ứng trong thời gian có hạn:
+
+- PADDLE_EXPAND: Mở rộng chiều rộng paddle ~1.35× trong 10 giây (giúp đỡ hụt bóng).
+- PADDLE_SHRINK: Thu hẹp paddle ~1/1.3 trong 10 giây (tăng độ khó tạm thời).
+- BALL_EXPAND: Bóng to ~1.5× trong 8 giây, giữ nguyên tâm. Khi bóng to: gạch cấp 3 giảm thẳng xuống cấp 1 (hiện sprite "nứt"), gạch 1–2 vỡ ngay.
+- BALL_SHRINK: Bóng nhỏ trong 8 giây, giữ nguyên tâm (khó đánh trúng hơn nhưng góc len lỏi tốt hơn).
+- BALL_SLOW: Giảm tốc độ bóng xuống ~70% trong 10 giây, sau đó tự phục hồi.
+- PADDLE_SPEED_UP: Tăng tốc độ dịch chuyển của paddle ~1.5× trong 10 giây.
+- BALL_MULTIPLY_THREE: Nhân số bóng thành 3 quả để càn quét nhanh hơn.
 
 ## 🗂️ Cấu trúc dự án
 
@@ -60,7 +76,7 @@ Mục tiêu: giữ bóng không rơi khỏi màn hình và phá hết các khố
 - Gạch có độ cứng (1–3) và loại không thể phá; bóng to sẽ phá/làm yếu gạch nhanh hơn.
 - Tránh kẹt va chạm bằng “cooldown” trong `CollisionManager` và reposition ±1px sau phản xạ.
 
-![alt text](image-5.png)
+![alt text](images/README/image-5.png)
 
 
 ## ⚙️ Tùy chỉnh nhanh
@@ -74,6 +90,5 @@ Mục tiêu: giữ bóng không rơi khỏi màn hình và phá hết các khố
 - Điểm cao được lưu trong `saves/ranking.csv`.
 - Một số tùy chọn nhỏ lưu ở `saves/*.cfg`.
 
-![alt text](image-2.png)
-
+![alt text](images/README/image-2.png)
 
