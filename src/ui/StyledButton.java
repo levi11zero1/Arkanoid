@@ -1,10 +1,19 @@
 package ui;
 
-import java.awt.*;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Insets;
+import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.RoundRectangle2D;
-import javax.swing.*;
+
+import javax.swing.ButtonModel;
+import javax.swing.JButton;
 
 /**
  * Nút tùy biến: bo góc, màu chủ đạo, hiệu ứng hover/nhấn, con trỏ tay.
@@ -127,7 +136,7 @@ public class StyledButton extends JButton {
         return new Color(r, g, bl, al);
     }
 
-    // === PHƯƠNG THỨC LẤY / THIẾT LẬP ===
+    // getter / setter
     public void setBackgroundColor(Color bg) {
         this.bg = bg;
         repaint();

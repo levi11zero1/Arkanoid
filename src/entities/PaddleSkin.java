@@ -1,19 +1,21 @@
 package entities;
 
+import java.awt.Color;
+import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.awt.image.BufferedImage;
-import java.awt.Graphics2D;
-import java.awt.Color;
-import utils.GameConfig;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
+
+import utils.GameConfig;
 
 final class PaddleSkin {
     static final class Skin {
@@ -193,7 +195,7 @@ final class PaddleSkin {
             int dot = base.lastIndexOf('.');
             if (dot > 0) base = base.substring(0, dot);
             java.util.List<Image> frames = new java.util.ArrayList<>();
-            int maxFrames = 6; // try a1..a6
+            int maxFrames = 6; 
             int frameW = -1, frameH = -1;
             for (int i = 1; i <= maxFrames; i++) {
                 String tryPath = base + i + ".png";
