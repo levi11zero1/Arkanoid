@@ -1,4 +1,3 @@
-
 package powerup;
 
 import java.util.ArrayList;
@@ -21,12 +20,14 @@ public class PowerUpManager {
     private final Random random = new Random();
     private Timer spawnTimer;
 
-    // spawn interval in ms
+    // khoảng thời gian spawn power up
     private final int spawnIntervalMs = 10000;
 
     public PowerUpManager() {
     }
 
+    /** bộ đếm thời gian bắt đầu spawn.
+     */
     public void startSpawning(java.awt.Component parent) {
         if (spawnTimer != null && spawnTimer.isRunning()) return;
         spawnTimer = new Timer(spawnIntervalMs, new ActionListener() {
@@ -63,7 +64,6 @@ public class PowerUpManager {
         }
     }
 
-
     /**
      * Cập nhật vị trí power up.
      * nếu đã thu thập, áp dụng theo tính năng.
@@ -87,10 +87,7 @@ public class PowerUpManager {
     }
 
     private void applyEffect(PowerUp p, Paddle paddle, EntityManager entityManager) {
-        // ✅ Phát âm thanh khi nhặt Power-Up
-
         PowerUp.Type type = p.getType();
-
         playPowerUpSound(type);
 
         if (type == PowerUp.Type.PADDLE_EXPAND || type == PowerUp.Type.PADDLE_SHRINK || type == PowerUp.Type.PADDLE_SPEED_UP) {
@@ -124,7 +121,6 @@ public class PowerUpManager {
 
             case BALL_MULTIPLY_THREE -> {
                 entityManager.multiplyBallsTo(3);
-                // ✅ Bảo đảm nếu đang trong trạng thái "chậm" thì bóng mới sinh ra cũng chậm theo
                 if (entityManager.isBallSlowed()) {
                     for (Ball b : entityManager.getBalls()) {
                         b.applySlowEffect();
@@ -133,7 +129,7 @@ public class PowerUpManager {
             }
 
             default -> {
-                // no-op for unhandled types
+
             }
         }
 
@@ -157,7 +153,6 @@ public class PowerUpManager {
         }
     }
 
-
     public void resetAll() {
         synchronized (active) {
             active.clear();
@@ -165,7 +160,6 @@ public class PowerUpManager {
         stopSpawning();
     }
 
-    // For rendering purposes GamePanel can still access list via a snapshot
     public List<PowerUp> snapshot() {
         synchronized (active) {
             return new ArrayList<>(active);
@@ -181,5 +175,4 @@ public class PowerUpManager {
         }
         return false;
     }
-
 }

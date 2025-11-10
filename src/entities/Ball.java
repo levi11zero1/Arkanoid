@@ -151,7 +151,6 @@ public class Ball implements GameObject {
     }
 
     public void resetSize() {
-        // Giữ nguyên tâm bóng khi đổi kích thước để tránh cảm giác "nhảy" vị trí
         double cx = x + GameConfig.BALL_SIZE / 2.0;
         double cy = y + GameConfig.BALL_SIZE / 2.0;
         GameConfig.BALL_SIZE = GameConfig.DEFAULT_BALL_SIZE;
@@ -178,19 +177,16 @@ public class Ball implements GameObject {
     public void detachFromPaddle() {
         attachedToPaddle = false;
 
-        // Nếu bóng chưa có vận tốc, đặt hướng chéo lên
         if (velocity.getMagnitude() == 0) {
             velocity = Velocity.fromAngle(-75 + Math.random() * -30, GameConfig.BALL_DEFAULT_SPEED);
             return;
         }
 
-        // Dù có vận tốc, nếu gần như ngang thì ép bay lên
         if (Math.abs(velocity.getDy()) < 1) {
             double direction = (Math.random() < 0.5) ? -1 : 1; // ngẫu nhiên trái/phải
             velocity = Velocity.fromAngle(-70 * direction, GameConfig.BALL_DEFAULT_SPEED);
         }
 
-        // Đảm bảo bóng luôn bay lên trên
         if (velocity.getDy() > 0) {
             velocity.setDy(-Math.abs(velocity.getDy()));
         }
@@ -223,7 +219,6 @@ public class Ball implements GameObject {
             resetSize();
         }
         if (type == PowerUp.Type.BALL_EXPAND) {
-            // Giữ nguyên tâm bóng khi nở để tránh "nhảy" vị trí
             double cx = x + GameConfig.BALL_SIZE / 2.0;
             double cy = y + GameConfig.BALL_SIZE / 2.0;
             GameConfig.BALL_SIZE = (int) Math.round(GameConfig.BALL_SIZE * 1.5);
@@ -237,10 +232,10 @@ public class Ball implements GameObject {
             this.y = cy - GameConfig.BALL_SIZE / 2.0;
             setSpeedMultiplier(1.2);
         } else if (type == PowerUp.Type.BALL_SLOW) {
-            slowDown(); // Gọi hàm mới để giảm tốc độ bóng
+            slowDown();
             return;
         }
-    // thời gian hiệu lực của power up
+
     sizeTimer = new javax.swing.Timer(8000, e -> { if (e != null) { resetSize(); resetSpeed(); sizeTimer.stop(); } });
         sizeTimer.setRepeats(false);
         sizeTimer.start();
@@ -299,23 +294,21 @@ public class Ball implements GameObject {
     }
 
     public void resetSpeed() {
-        if (slowed) return; // Nếu đang chậm do power-up thì không reset
+        if (slowed) return;
         double angle = Math.atan2(velocity.getDy(), velocity.getDx());
         velocity.setDx(Math.cos(angle) * GameConfig.BALL_DEFAULT_SPEED);
         velocity.setDy(Math.sin(angle) * GameConfig.BALL_DEFAULT_SPEED);
     }
 
     public void applySlowEffect() {
-        if (slowed) return; // Nếu đã bị chậm thì bỏ qua
+        if (slowed) return;
         slowed = true;
 
-        // Giảm tốc độ xuống còn 60%
         velocity.setDx(velocity.getDx() * 0.7);
         velocity.setDy(velocity.getDy() * 0.7);
 
-        // Sau 10s thì trả lại tốc độ ban đầu
         javax.swing.Timer slowTimer = new javax.swing.Timer(10000, e -> {
-            if (e != null) { /* tránh cảnh báo biến chưa dùng */ }
+            if (e != null) {  }
             velocity.setDx(velocity.getDx() / 0.7);
             velocity.setDy(velocity.getDy() / 0.7);
             slowed = false;
