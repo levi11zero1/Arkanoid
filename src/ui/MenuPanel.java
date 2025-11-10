@@ -8,6 +8,7 @@ import javax.swing.*;
  * Màn hình menu chính với hình nền, nút Chơi và Hướng dẫn.
  */
 public class MenuPanel extends JPanel {
+    private static final long serialVersionUID = 1L;
 
     private final StyledButton playButton = new StyledButton("Chơi");
     private final StyledButton continueButton = new StyledButton("Tiếp tục");
@@ -152,6 +153,7 @@ public class MenuPanel extends JPanel {
     // Small helper panel that draws a background image and a translucent hover
     // overlay
     private class ModePanel extends JPanel {
+        private static final long serialVersionUID = 1L;
         private final Image bg;
         private boolean hovered = false;
 

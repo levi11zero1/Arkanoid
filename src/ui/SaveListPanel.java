@@ -20,6 +20,7 @@ import javax.swing.*;
  * Tên mỗi bản sẽ là thời gian (ngày giờ) của lần save đó.
  */
 public class SaveListPanel extends JPanel {
+    private static final long serialVersionUID = 1L;
     private Image backgroundImage;
     private final JLabel titleLabel;
     private final DefaultListModel<String> model = new DefaultListModel<>();
