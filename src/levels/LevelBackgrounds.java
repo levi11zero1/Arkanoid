@@ -4,6 +4,7 @@ import java.awt.Image;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 
@@ -27,6 +28,11 @@ public final class LevelBackgrounds {
         "images/level2.jpg"
     };
 
+    private static final String[] LEVEL3_PATHS = {
+        "images/SVHUST.png",
+
+    };
+
     private static Image level0Image;
     private static boolean level0Initialized;
 
@@ -35,6 +41,9 @@ public final class LevelBackgrounds {
 
     private static Image level2Image;
     private static boolean level2Initialized;
+
+    private static Image level3Image;
+    private static boolean level3Initialized;
 
     private LevelBackgrounds() {
     }
@@ -51,6 +60,10 @@ public final class LevelBackgrounds {
         if (level == 2) {
             ensureLevel2Loaded();
             return level2Image;
+        }
+        if (level == 3) {
+            ensureLevel3Loaded();
+            return level3Image;
         }
         return null;
     }
@@ -77,6 +90,14 @@ public final class LevelBackgrounds {
         }
         level2Initialized = true;
         level2Image = loadFirstAvailable(LEVEL2_PATHS);
+    }
+
+    private static void ensureLevel3Loaded() {
+        if (level3Initialized) {
+            return;
+        }
+        level3Initialized = true;
+        level3Image = loadFirstAvailable(LEVEL3_PATHS);
     }
 
     private static Image loadFirstAvailable(String[] paths) {
