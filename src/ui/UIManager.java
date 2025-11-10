@@ -104,11 +104,10 @@ public class UIManager {
                 long elapsed = System.currentTimeMillis() - lastLost;
                 if (elapsed <= duration) {
                     float t = Math.min(1.0f, Math.max(0f, (float) elapsed / (float) duration));
-                    // fade out: alpha goes from 1 -> 0
                     float alpha = 1.0f - t;
-                    alpha = Math.max(0.08f, alpha); // ensure visible minimum
+                    alpha = Math.max(0.08f, alpha); 
 
-                    java.awt.Font msgFont = originalFont.deriveFont(java.awt.Font.BOLD, Math.max(14f, panel.getWidth() / 48f));
+                    java.awt.Font msgFont = originalFont.deriveFont(java.awt.Font.BOLD, Math.max(40f, panel.getWidth() / 48f));
                     g.setFont(msgFont);
                     java.awt.FontMetrics fm = g.getFontMetrics(msgFont);
                     int textWidth = fm.stringWidth(msg);
@@ -116,23 +115,21 @@ public class UIManager {
 
                     int boxWidth = textWidth + 16;
                     int boxHeight = textHeight + 12;
-                    int boxX = HUD_MARGIN;
-                    int boxY = Math.max(0, panel.getHeight() - boxHeight - HUD_MARGIN);
+                    int boxX = Math.max(0, panel.getWidth() / 2 - boxWidth / 2);
+                    int boxY = Math.max(0, panel.getHeight() / 2 - boxHeight / 2);
 
                     java.awt.Composite old = g.getComposite();
                     g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
 
-                    // background
                     g.setColor(new Color(0, 0, 0, 160));
                     g.fillRoundRect(boxX, boxY, boxWidth, boxHeight, 12, 12);
-                    // border
+
                     g.setColor(new Color(255, 255, 255, 120));
                     g.drawRoundRect(boxX, boxY, boxWidth, boxHeight, 12, 12);
 
-                    // text
                     int tx = boxX + 8;
                     int ty = boxY + fm.getAscent() + (boxHeight - textHeight) / 2;
-                    // shadow
+
                     g.setColor(new Color(0, 0, 0, (int) (200 * alpha)));
                     g.drawString(msg, tx + 2, ty + 2);
                     g.setColor(new Color(255, 230, 120));
