@@ -8,13 +8,13 @@ import java.io.File;
 
 public class PowerUp {
     public enum Type {
-    PADDLE_EXPAND,   // Tăng kích thước paddle
-    PADDLE_SHRINK,   // Giảm kích thước paddle
-    BALL_EXPAND,     // Tăng kích thước bóng
-    BALL_SHRINK,     // Giảm kích thước bóng
-    BALL_SLOW,       // Giảm tốc độ bóng
-    PADDLE_SPEED_UP, // Tăng tốc độ thanh paddle
-    BALL_MULTIPLY_THREE // Nhân bóng lên 3 quả
+        PADDLE_EXPAND,   // Tăng kích thước paddle
+        PADDLE_SHRINK,   // Giảm kích thước paddle
+        BALL_EXPAND,     // Tăng kích thước bóng
+        BALL_SHRINK,     // Giảm kích thước bóng
+        BALL_SLOW,       // Giảm tốc độ bóng
+        PADDLE_SPEED_UP, // Tăng tốc độ thanh paddle
+        BALL_MULTIPLY_THREE // Nhân bóng lên 3 quả
     }
 
     private Type type;
@@ -46,17 +46,26 @@ public class PowerUp {
     public int getHeight() { return height; }
 
     public void draw(Graphics g) {
-        if (image != null) {
-            g.drawImage(image, x, y, width, height, null);
-        } else {
-            // debug nếu không
-            g.setColor(Color.WHITE);
-            g.fillRect(x, y, width, height);
-            g.setColor(Color.BLACK);
-            g.drawRect(x, y, width, height);
-        }
-    }
+        Graphics2D g2d = (Graphics2D) g.create();
 
+        // Bật khử răng cưa + blend alpha
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g2d.setComposite(java.awt.AlphaComposite.SrcOver);
+
+
+        if (image != null) {
+            g2d.drawImage(image, x, y, width, height, null);
+        } else {
+            // fallback: ô vuông nếu thiếu ảnh
+            g2d.setColor(Color.WHITE);
+            g2d.fillRect(x, y, width, height);
+            g2d.setColor(Color.BLACK);
+            g2d.drawRect(x, y, width, height);
+        }
+
+        g2d.dispose();
+    }
     private void loadImage() {
         try {
             String path = switch (type) {
@@ -70,7 +79,8 @@ public class PowerUp {
             };
 
             File file = new File(path);
-            image = ImageIO.read(file);
+            BufferedImage raw = ImageIO.read(file);
+            image = toARGB(raw); // gọi hàm này
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -78,4 +88,13 @@ public class PowerUp {
         }
     }
 
+    private BufferedImage toARGB(BufferedImage src) {
+        if (src.getType() == BufferedImage.TYPE_INT_ARGB)
+            return src;
+        BufferedImage argb = new BufferedImage(src.getWidth(), src.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = argb.createGraphics();
+        g2d.drawImage(src, 0, 0, null);
+        g2d.dispose();
+        return argb;
+    }
 }

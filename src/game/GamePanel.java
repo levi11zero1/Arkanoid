@@ -24,6 +24,7 @@ import ui.UIManager;
 import utils.GameConfig;
 
 public class GamePanel extends JPanel implements KeyListener {
+    private static final long serialVersionUID = 1L;
     private Ball ball;
     private Paddle paddle;
     private List<Block> blocks;
@@ -56,13 +57,15 @@ public class GamePanel extends JPanel implements KeyListener {
     private boolean rightPressed = false;
 
     private int lives;
+    // Track whether the per-level skill (paddle clones) has been used in the current level
+    private boolean skillUsedThisLevel = false;
 
     // ==== RUN STATS ====
     private String playerName = "Player";
     private long elapsedMsAccum = 0; // tích lũy thời gian chơi (không tính Pause vì timer dừng)
     private int levelsCompleted = 0; // số màn đã hoàn thành
     private int totalBlocksDestroyed = 0; // tổng số block phá được qua các màn
-    private int lastDestroyedCountThisLevel = 0; 
+    private int lastDestroyedCountThisLevel = 0;
     private boolean gameStarted = false;
 
     public GamePanel() {
@@ -116,13 +119,13 @@ public class GamePanel extends JPanel implements KeyListener {
 
         uiManager.createSaveButton(this, saved -> {
             if (!saved)
-                return; 
+                return;
             Toolkit.getDefaultToolkit().beep();
-            
+
             if (gameLoop != null)
                 gameLoop.stop();
             powerUpManager.stopSpawning();
-            
+
             if (eventsListener != null) {
                 eventsListener.onGameOver();
             } else {
@@ -151,12 +154,14 @@ public class GamePanel extends JPanel implements KeyListener {
 
         if (powerUpManager != null) {
             powerUpManager.resetAll();
-            powerUpManager.stopSpawning(); 
+            powerUpManager.stopSpawning();
         }
         if (paddleCloneManager != null) {
             paddleCloneManager.reset();
         }
         gameStarted = false;
+        // reset per-level skill usage allowance
+        skillUsedThisLevel = false;
     }
 
     // Chuyển trạng thái hiện tại của game panel này thành một GameState để lưu.
@@ -297,13 +302,11 @@ public class GamePanel extends JPanel implements KeyListener {
             lastDestroyedCountThisLevel = curDestroyed;
         }
 
-
         if (gameSession != null) {
             gameSession.setElapsedMs(elapsedMsAccum);
             gameSession.setLevelsCompleted(levelsCompleted);
             gameSession.setTotalBlocksDestroyed(totalBlocksDestroyed);
         }
-
 
         powerUpManager.updateAll(getHeight(), paddle, entityManager);
 
@@ -376,7 +379,6 @@ public class GamePanel extends JPanel implements KeyListener {
         }
     }
 
-
     private void showGameComplete() {
         // Cập nhật Ranking (thắng toàn bộ)
         if (scoreManager != null && gameSession != null)
@@ -423,7 +425,6 @@ public class GamePanel extends JPanel implements KeyListener {
         t.setRepeats(false);
         t.start();
     }
-
 
     private int countDestroyedDestructable() {
         int c = 0;
@@ -513,7 +514,12 @@ public class GamePanel extends JPanel implements KeyListener {
     // Toggle phân thân paddle (gọi từ InputHandler qua phím R)
     public void togglePaddleClones() {
         if (paddleCloneManager != null) {
+            if (skillUsedThisLevel) {
+                // already used this level; ignore further activations
+                return;
+            }
             paddleCloneManager.toggle(paddle);
+            skillUsedThisLevel = true;
         }
     }
 

@@ -194,7 +194,7 @@ public class ArkanoidGame {
                             } else {
                                 countdown.stop();
                                 dialog.dispose();
-                                // Stop menu music when resuming saved game
+
                                 AudioManager.stop();
 
                                 GamePanel gamePanel = new GamePanel();
@@ -209,7 +209,6 @@ public class ArkanoidGame {
                                         cards.remove(gamePanel);
                                         cardLayout.show(cards, CARD_MENU);
                                         menu.requestFocusInWindow();
-                                        // Resume menu music (GamePanel already played lose.wav)
                                         try { AudioManager.playLoop("music/screen.wav"); } catch (Throwable t) {}
                                     }
                                 });
@@ -265,11 +264,8 @@ public class ArkanoidGame {
             frame.setResizable(false);
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setLocationRelativeTo(null);
-            // Start background music (non-blocking). If JavaFX is not available,
-            // MusicPlayer will print an error but the game will continue to run.
             try {
                 AudioManager.init();
-                // Use WAV (Java Sound) which works without JavaFX; user converted file to WAV
                 AudioManager.playLoop("music/screen.wav");
             } catch (Throwable t) {
                 System.err.println("Could not start background music: " + t.getMessage());
@@ -282,7 +278,6 @@ public class ArkanoidGame {
         });
     }
 
-    // Custom modal dialog for entering player name with nicer styling
     private static String showPlayerNameDialog(JFrame parent) {
         final String[] result = { null };
         JDialog dialog = new JDialog(parent, "1 Player - Nhập tên", true);
@@ -308,7 +303,6 @@ public class ArkanoidGame {
         StyledButton cancel = new StyledButton("Hủy");
         ok.setPreferredSize(new Dimension(100, 36));
         cancel.setPreferredSize(new Dimension(100, 36));
-        // Reduce button label font size to better fit the dialog
         ok.setFont(ok.getFont().deriveFont(Font.PLAIN, 14f));
         cancel.setFont(cancel.getFont().deriveFont(Font.PLAIN, 14f));
 

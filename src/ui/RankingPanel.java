@@ -6,6 +6,7 @@ import java.util.List;
 import javax.swing.*;
 
 public class RankingPanel extends JPanel {
+    private static final long serialVersionUID = 1L;
     private final StyledButton backButton = new StyledButton("Quay lại");
     private final DefaultListModel<function.RankingManager.Entry> model = new DefaultListModel<>();
     private final JList<function.RankingManager.Entry> list = new JList<>(model);

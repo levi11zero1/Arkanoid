@@ -125,41 +125,48 @@ public class EntityManager {
         collisionManager.resetCooldown();
     }
 
+    /**
+     * hàm nhân bóng , xử lí power up x3.
+     * @param multiplier
+     */
     public void multiplyBallsTo(int multiplier) {
-        if (primaryBall == null) return;
+        if (primaryBall == null || multiplier <= 1) return;
 
         int currentCount = balls.size();
-        int desiredTotal = Math.min(currentCount * multiplier, 10);
+        int targetCount = currentCount * multiplier;
 
-        if (desiredTotal <= currentCount) return;
+        // ✅ Giới hạn không vượt quá 10 bóng
+        if (targetCount > 10) {
+            targetCount = 10;
+        }
 
-        int needed = desiredTotal - currentCount;
+        // Nếu đã đạt giới hạn rồi thì bỏ qua
+        if (currentCount >= targetCount) return;
+
+        int needed = targetCount - currentCount;
         double baseX = primaryBall.getPreciseX();
         double baseY = primaryBall.getPreciseY();
         Velocity baseVelocity = primaryBall.getVelocity();
-
         double baseSpeed = (baseVelocity != null) ? baseVelocity.getMagnitude() : GameConfig.BALL_DEFAULT_SPEED;
-        if (baseSpeed <= 0) baseSpeed = GameConfig.BALL_DEFAULT_SPEED;
 
-        double baselineAngle = Math.toDegrees(Math.atan2(
+        // Góc ban đầu của bóng chính
+        double baseAngle = Math.toDegrees(Math.atan2(
                 baseVelocity != null ? baseVelocity.getDy() : -GameConfig.BALL_DEFAULT_SPEED,
-                baseVelocity != null ? baseVelocity.getDx() : 0));
-        if (Double.isNaN(baselineAngle) || Double.isInfinite(baselineAngle)) baselineAngle = -90;
+                baseVelocity != null ? baseVelocity.getDx() : 0
+        ));
+        if (Double.isNaN(baseAngle)) baseAngle = -90;
 
         for (int i = 0; i < needed; i++) {
-            double spread = 120.0 / multiplier;
-            double angle = baselineAngle - 60 + spread * i;
-            if (angle > -30) angle = -30;
+            double angle = baseAngle + (i - needed / 2.0) * 15;
             Velocity vel = Velocity.fromAngle(angle, baseSpeed);
-
-            Ball clone = new Ball((int) baseX, (int) baseY, vel);
+            Ball clone = new Ball((int) Math.round(baseX), (int) Math.round(baseY), vel);
             clone.detachFromPaddle();
             balls.add(clone);
         }
     }
 
-
-
+    /** xử lí khi hết thời gian power up slow.
+     */
     public void resetAllBallSpeeds() {
         for (Ball b : balls) {
             b.resetSpeed();
