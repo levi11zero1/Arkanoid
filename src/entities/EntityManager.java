@@ -125,6 +125,10 @@ public class EntityManager {
         collisionManager.resetCooldown();
     }
 
+    /**
+     * hàm nhân bóng , xử lí power up x3.
+     * @param multiplier
+     */
     public void multiplyBallsTo(int multiplier) {
         if (primaryBall == null || multiplier <= 1) return;
 
@@ -153,7 +157,6 @@ public class EntityManager {
         if (Double.isNaN(baseAngle)) baseAngle = -90;
 
         for (int i = 0; i < needed; i++) {
-            // Mỗi bóng lệch góc một chút để tách hướng bay
             double angle = baseAngle + (i - needed / 2.0) * 15;
             Velocity vel = Velocity.fromAngle(angle, baseSpeed);
             Ball clone = new Ball((int) Math.round(baseX), (int) Math.round(baseY), vel);
@@ -162,6 +165,8 @@ public class EntityManager {
         }
     }
 
+    /** xử lí khi hết thời gian power up slow.
+     */
     public void resetAllBallSpeeds() {
         for (Ball b : balls) {
             b.resetSpeed();

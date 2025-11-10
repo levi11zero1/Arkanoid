@@ -127,6 +127,10 @@ public class Paddle implements GameObject {
         }
     }
 
+    /**
+     * hàm xử lí khi nhận được power-up liên quan đến paddle.
+     * @param type
+     */
     public void applyPowerUp(PowerUp.Type type) {
         if (type == PowerUp.Type.PADDLE_EXPAND || type == PowerUp.Type.PADDLE_SHRINK) {
             if (sizeTimer != null && sizeTimer.isRunning()) {

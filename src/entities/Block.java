@@ -166,13 +166,13 @@ public class Block implements GameObject {
                 return true;
             }
 
-            // Nếu bóng đang to hơn kích thước mặc định (20 là size gốc)
+            // Nếu bóng đang to hơn kích thước mặc định
             if (GameConfig.BALL_SIZE > GameConfig.DEFAULT_BALL_SIZE) {
                 if (hitsRemaining == 3) {
                     // Gạch cấp 3 → giảm xuống cấp 1, nhưng hiển thị Brick3_broken
                     hitsRemaining = 1;
                     showBroken = true;
-                    brokenTier = 2; // 3
+                    brokenTier = 2;
                 } else {
                     // Gạch cấp 1 hoặc 2 → vỡ ngay lập tức
                     destroyed = true;
