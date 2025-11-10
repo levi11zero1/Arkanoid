@@ -1,7 +1,20 @@
 package ui;
 
-import java.awt.*;
-import javax.swing.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.GradientPaint;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+
+import javax.swing.JButton;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.ScrollPaneConstants;
 
 /**
  * Màn hình hiển thị hướng dẫn điều khiển.
@@ -27,7 +40,7 @@ public class InstructionsPanel extends JPanel {
             "➡️ / D: Di chuyển sang phải\n" +
             "Space: Bắt đầu hoặc phóng bóng\n" +
             "P: Tạm dừng / Tiếp tục\n" +
-            "R: Phân thân paddle thành 3 (15s)\n" +
+            "R: Phân thân paddle thành 3 (15s, 1 lần/level)\n" +
             "Esc: Thoát game\n" +
             "\n" +
             "CHẾ ĐỘ 2 NGƯỜI\n" +

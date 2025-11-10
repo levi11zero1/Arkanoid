@@ -39,6 +39,7 @@ Arkanoid là game đập gạch cổ điển: điều khiển paddle để đán
 - Người chơi Trên: A, D để di chuyển
 - Người chơi Dưới: Mũi tên Trái, Phải để di chuyển
 - P: Tạm dừng chung cho cả hai
+- R: Phân thân paddle thành 3 (15s, 1 lần/level)
 
 Mục tiêu: giữ bóng không rơi khỏi màn hình và phá hết các khối gạch.
 
