@@ -93,7 +93,6 @@ public class UIManager {
             g.setFont(originalFont);
         }
 
-        // --- Draw life-lost message in bottom-left corner (non-overlapping) ---
         try {
             long lastLost = LifeManager.getLastLifeLostAtMs();
             String msg = LifeManager.getLastLifeLostMessage();
@@ -102,11 +101,10 @@ public class UIManager {
                 long elapsed = System.currentTimeMillis() - lastLost;
                 if (elapsed <= duration) {
                     float t = Math.min(1.0f, Math.max(0f, (float) elapsed / (float) duration));
-                    // fade out: alpha goes from 1 -> 0
                     float alpha = 1.0f - t;
-                    alpha = Math.max(0.08f, alpha); // ensure visible minimum
+                    alpha = Math.max(0.08f, alpha); 
 
-                    java.awt.Font msgFont = originalFont.deriveFont(java.awt.Font.BOLD, Math.max(14f, panel.getWidth() / 48f));
+                    java.awt.Font msgFont = originalFont.deriveFont(java.awt.Font.BOLD, Math.max(40f, panel.getWidth() / 48f));
                     g.setFont(msgFont);
                     java.awt.FontMetrics fm = g.getFontMetrics(msgFont);
                     int textWidth = fm.stringWidth(msg);
@@ -114,23 +112,21 @@ public class UIManager {
 
                     int boxWidth = textWidth + 16;
                     int boxHeight = textHeight + 12;
-                    int boxX = HUD_MARGIN;
-                    int boxY = Math.max(0, panel.getHeight() - boxHeight - HUD_MARGIN);
+                    int boxX = Math.max(0, panel.getWidth() / 2 - boxWidth / 2);
+                    int boxY = Math.max(0, panel.getHeight() / 2 - boxHeight / 2);
 
                     java.awt.Composite old = g.getComposite();
                     g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
 
-                    // background
                     g.setColor(new Color(0, 0, 0, 160));
                     g.fillRoundRect(boxX, boxY, boxWidth, boxHeight, 12, 12);
-                    // border
+
                     g.setColor(new Color(255, 255, 255, 120));
                     g.drawRoundRect(boxX, boxY, boxWidth, boxHeight, 12, 12);
 
-                    // text
                     int tx = boxX + 8;
                     int ty = boxY + fm.getAscent() + (boxHeight - textHeight) / 2;
-                    // shadow
+
                     g.setColor(new Color(0, 0, 0, (int) (200 * alpha)));
                     g.drawString(msg, tx + 2, ty + 2);
                     g.setColor(new Color(255, 230, 120));
@@ -192,10 +188,6 @@ public class UIManager {
         g.drawString(text, textX, textY);
     }
 
-    /**
-     * Create and attach a Save button to the given GamePanel. The onSaved consumer
-     * is invoked with true when a save occurred, false when cancelled or failed.
-     */
     public StyledButton createSaveButton(GamePanel panel, Consumer<Boolean> onSaved) {
     final StyledButton saveButton = new StyledButton("Save");
     // Nút Save nằm trên màn hình chơi — dùng cỡ chữ nhỏ hơn để tránh tràn
@@ -224,17 +216,12 @@ public class UIManager {
         saveButton.addActionListener(ev -> {
             boolean saved = false;
             try {
-                // Pause the game while the save dialog is open. If the user cancels
-                // we'll resume; if they choose "Lưu và thoát" we leave it paused so
-                // the caller can perform stop/exit behavior.
                 try { Pause.getInstance().pause(); } catch (Throwable ignored) {}
 
                 saved = SaveController.promptAndSave(panel, panel);
             } catch (Throwable t) {
-                // swallow: SaveController will show its own dialogs
             } finally {
                 if (!saved) {
-                    // user cancelled or save failed -> resume gameplay
                     try { Pause.getInstance().resume(); } catch (Throwable ignored) {}
                 }
             }

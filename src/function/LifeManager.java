@@ -3,27 +3,23 @@ package function;
 /**
  * Quản lý số mạng của người chơi (in-memory).
  *
- * Lý do: số mạng đã được lưu trong metadata của file save. Không cần thêm I/O riêng.
- * Vẫn giữ API cũ để tương thích với GamePanel/SaveController.
  */
 public final class LifeManager {
     private static final int DEFAULT_LIVES = 3;
-    // Current lives kept in memory (tests and game use this)
+
     private static int currentLives = DEFAULT_LIVES;
 
-    // Timestamp (ms since epoch) when a life was last lost. 0 if never.
     private static volatile long lastLifeLostAtMs = 0L;
-    // Duration (ms) that renderers should show the life-lost message.
+
     private static final int LIFE_LOST_MESSAGE_DURATION_MS = 2000;
 
-    // Candidate messages to show when a life is lost. Picked at random.
     private static final String[] LIFE_LOST_MESSAGES = new String[] {
         "Giận quá mất khôn.",
         "Đứng dậy coi.",
         "Mạnh mỗi cái miệng.",
         "Yếu quá, để anh lo."
     };
-    // The last message selected for display (or null if none).
+
     private static volatile String lastLifeLostMessage = null;
 
     private LifeManager() {}
@@ -40,9 +36,7 @@ public final class LifeManager {
     public static int decrementLife() {
         int lives = loadLives();
         lives = Math.max(0, lives - 1);
-        // persist in-memory
         currentLives = lives;
-        // record event and choose random taunt message
         lastLifeLostAtMs = System.currentTimeMillis();
         try {
             int idx = (int) (Math.random() * LIFE_LOST_MESSAGES.length);
@@ -55,23 +49,14 @@ public final class LifeManager {
         return lives;
     }
 
-    /**
-     * Returns the timestamp (ms since epoch) when a life was last lost, or 0 if never.
-     */
     public static long getLastLifeLostAtMs() {
         return lastLifeLostAtMs;
     }
 
-    /**
-     * Returns how long (ms) the life-lost message should be displayed.
-     */
     public static int getLifeLostMessageDurationMs() {
         return LIFE_LOST_MESSAGE_DURATION_MS;
     }
 
-    /**
-     * Returns the last selected life-lost message (may be null).
-     */
     public static String getLastLifeLostMessage() {
         return lastLifeLostMessage;
     }
