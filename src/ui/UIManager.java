@@ -1,9 +1,5 @@
 package ui;
 
-import function.LifeManager;
-import function.Pause;
-import function.SaveController;
-import game.GamePanel;
 import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Component;
@@ -16,10 +12,16 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.function.Consumer;
+
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
+
+import function.LifeManager;
+import function.Pause;
+import function.SaveController;
+import game.GamePanel;
 
 public class UIManager {
     private static final String LIFE_ICON_PATH = "images/life.png";
@@ -47,7 +49,7 @@ public class UIManager {
 
         Image icon = getLifeIcon();
         if (icon == null) {
-            // draw fallback lives box
+            // vẽ fallback nếu không load được icon
             drawLivesFallback(g, lives, panel);
         } else {
             String label = "x " + lives;
@@ -93,6 +95,7 @@ public class UIManager {
             g.setFont(originalFont);
         }
 
+        // --- vẽ thông báo mất mạng nếu có ---
         try {
             long lastLost = LifeManager.getLastLifeLostAtMs();
             String msg = LifeManager.getLastLifeLostMessage();
@@ -188,6 +191,9 @@ public class UIManager {
         g.drawString(text, textX, textY);
     }
 
+    /**
+     * Tạo nút "Save" trên giao diện GamePanel.
+     */
     public StyledButton createSaveButton(GamePanel panel, Consumer<Boolean> onSaved) {
     final StyledButton saveButton = new StyledButton("Save");
     // Nút Save nằm trên màn hình chơi — dùng cỡ chữ nhỏ hơn để tránh tràn
@@ -220,8 +226,10 @@ public class UIManager {
 
                 saved = SaveController.promptAndSave(panel, panel);
             } catch (Throwable t) {
+                // hiện thông báo lỗi
             } finally {
                 if (!saved) {
+                    // người dùng hủy hoặc lỗi xảy ra
                     try { Pause.getInstance().resume(); } catch (Throwable ignored) {}
                 }
             }
