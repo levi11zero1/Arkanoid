@@ -34,7 +34,7 @@ public class RankingPanel extends JPanel {
                 row.setBackground(isSelected ? new Color(255,255,255,110) : new Color(0,0,0,40));
                 row.setBorder(BorderFactory.createEmptyBorder(8,12,8,12));
 
-                // Left: rank / medal
+                // trái: hạng + huy chương
                 JLabel rankLabel = new JLabel(String.valueOf(index+1));
                 rankLabel.setPreferredSize(new Dimension(36,36));
                 rankLabel.setHorizontalAlignment(SwingConstants.CENTER);
@@ -51,11 +51,11 @@ public class RankingPanel extends JPanel {
                 rankLabel.setForeground(Color.BLACK);
                 rankLabel.setFont(rankLabel.getFont().deriveFont(Font.BOLD, 14f));
 
-                // Center: player name and small subtitle
+                // Giữa: tên và thông tin phụ
                 JPanel center = new JPanel();
                 center.setOpaque(false);
                 center.setLayout(new BoxLayout(center, BoxLayout.Y_AXIS));
-                // add spacing between rank box and player name
+                // thêm khoảng cách bên trái
                 center.setBorder(BorderFactory.createEmptyBorder(0,12,0,0));
                 JLabel name = new JLabel(value.player);
                 name.setForeground(Color.WHITE);
@@ -66,7 +66,7 @@ public class RankingPanel extends JPanel {
                 center.add(name);
                 center.add(subtitle);
 
-                // Right: time
+                // phải: time
                 JLabel time = new JLabel(formatDuration(value.elapsedMs));
                 time.setForeground(Color.WHITE);
                 time.setFont(time.getFont().deriveFont(Font.PLAIN, 14f));
@@ -108,7 +108,7 @@ public class RankingPanel extends JPanel {
             model.addElement(e);
         }
         if (model.isEmpty()) {
-            // add a placeholder entry
+            // thêm chỗ trống nếu không có dữ liệu
             RankingManager.Entry placeholder = new RankingManager.Entry("Chưa có dữ liệu", 0, 0, 0L, 0L);
             model.addElement(placeholder);
         }
@@ -117,12 +117,12 @@ public class RankingPanel extends JPanel {
     @Override
     public void addNotify() {
         super.addNotify();
-        // Make the list area tall enough to show ~10 rows without scrolling
-        int approxRow = 68; // approximate row height with padding
-        int h = approxRow * 8 + 16; // show ~8 rows
+        // làmm mới kích thước để hiển thị đúng số dòng
+        int approxRow = 68; // ước lượng số dòng
+        int h = approxRow * 8 + 16; // hiển thị đủ 8 dòng 
         Dimension pref = new Dimension(760, h);
         if (getLayout() instanceof BorderLayout) {
-            // Try to adjust center scroll if present
+            // Thử điều chỉnh kích thước cuộn ở giữa nếu có
             for (Component c : getComponents()) {
                 if (c instanceof JScrollPane sp) {
                     sp.setPreferredSize(pref);
