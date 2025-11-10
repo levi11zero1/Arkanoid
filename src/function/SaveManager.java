@@ -34,29 +34,6 @@ public class SaveManager {
         } catch (Exception ignored) {}
     }
 
-    /**
-     * Save with a custom user-provided name. The name will be sanitized to a safe filename and '.txt' appended.
-     * If a file with the same name already exists, a numeric suffix _1, _2, ... will be appended.
-     * This method DOES NOT prune old saves; only timestamped auto-saves are pruned elsewhere.
-     */
-    public static void save(GameState state, String customName) throws IOException {
-        Path dir = Path.of(SAVE_DIR);
-        if (!Files.exists(dir)) {
-            Files.createDirectories(dir);
-        }
-        String base = sanitizeName(customName);
-        if (base.isBlank()) base = "save";
-        String fileName = ensureTxtExtension(base);
-        Path target = dir.resolve(fileName);
-        int i = 1;
-        while (Files.exists(target)) {
-            String candidate = base + "_" + i;
-            target = dir.resolve(ensureTxtExtension(candidate));
-            i++;
-        }
-        writeStateToFile(state, target, null);
-    }
-
     // Metadata ghi kèm để nối tiếp phiên chơi sau khi Load
     public static class Metadata {
         public String player;
