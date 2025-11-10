@@ -12,12 +12,15 @@ import javax.swing.*;
 import utils.GameConfig;
 import utils.AudioManager;
 
+/**
+ * MultiplayerPanel cho chế độ chơi đôi người chơi.
+ */
 public class MultiplayerPanel extends JPanel implements ActionListener, KeyListener {
     private static final long serialVersionUID = 1L;
     private Ball ball;
     private Paddle paddleTop;
     private Paddle paddleBottom;
-    private Timer timer;
+    private IGameLoop gameLoop;
     private List<Block> topBlocks;
     private List<Block> bottomBlocks;
     private int scoreTop = 0;
@@ -30,8 +33,6 @@ public class MultiplayerPanel extends JPanel implements ActionListener, KeyListe
     private boolean topRightPressed = false;
     private boolean bottomLeftPressed = false;
     private boolean bottomRightPressed = false;
-
-    private long lastNanos;
 
     public MultiplayerPanel() {
         setPreferredSize(new Dimension(GameConfig.SCREEN_WIDTH, GameConfig.SCREEN_HEIGHT));
@@ -49,19 +50,24 @@ public class MultiplayerPanel extends JPanel implements ActionListener, KeyListe
         bottomBlocks = new ArrayList<>();
         resetBlocks();
 
-        timer = new Timer(GameConfig.TIMER_DELAY, this);
-        timer.start();
-        lastNanos = System.nanoTime();
+        gameLoop = new GameLoop();
+        gameLoop.setTargetFps(60);
+        gameLoop.setTickListener(dt -> {
+            try {
+                updateLogic(dt);
+            } catch (Throwable ignored) {}
+        });
+        gameLoop.start();
 
         Pause.getInstance().setListener(new Pause.PauseListener() {
             @Override
             public void onPause() {
-                timer.stop();
+                if (gameLoop != null) gameLoop.pause();
             }
 
             @Override
             public void onResume() {
-                timer.start();
+                if (gameLoop != null) gameLoop.resume();
             }
         });
 
@@ -114,7 +120,6 @@ public class MultiplayerPanel extends JPanel implements ActionListener, KeyListe
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        // draw ball, paddles, blocks
         ball.draw(g);
         for (Block b : topBlocks)
             b.draw(g);
@@ -123,7 +128,6 @@ public class MultiplayerPanel extends JPanel implements ActionListener, KeyListe
         paddleBottom.draw(g);
         paddleTop.draw(g);
 
-        // HUD
         g.setColor(Color.WHITE);
         g.drawString("Top: A/D", 8, 12);
         g.drawString("Bottom: ←/→", getWidth() - 130, getHeight() - 12);
@@ -133,39 +137,35 @@ public class MultiplayerPanel extends JPanel implements ActionListener, KeyListe
         g.drawString(scoreBottomStr, getWidth() / 2 - 40, getHeight() - 6);
     }
 
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        long now = System.nanoTime();
-        double dt = (now - lastNanos) / 1_000_000_000.0;
-        lastNanos = now;
-
-        // update paddles
+    /**
+     * Cập nhật toàn bộ logic khung hình.
+     * @param dt thời gian trôi qua giữa 2 lần tick (giây). 
+     */
+    private void updateLogic(double dt) {
+        // 1) Cập nhật paddle theo phím nhấn
         paddleTop.update(topLeftPressed, topRightPressed, getWidth(), dt);
         paddleBottom.update(bottomLeftPressed, bottomRightPressed, getWidth(), dt);
 
-        // move ball
+        // 2) Di chuyển bóng
         ball.move();
 
-        // bounce off left/right walls
+        // 3) Va chạm tường trái/phải
         if (ball.getX() <= 0 || ball.getX() + GameConfig.BALL_SIZE >= getWidth()) {
             ball.bounceX();
-            try {
-                AudioManager.playOnce("music/wall.wav", null);
-            } catch (Throwable ignored) {
-            }
+            try { AudioManager.playOnce("music/wall.wav", null); } catch (Throwable ignored) {}
         }
 
-        // Centralized collisions
+        // 4) Va chạm paddle và block (đã tập trung trong CollisionManager)
         topCollisionManager.tickCooldown();
         bottomCollisionManager.tickCooldown();
         topCollisionManager.handleCollisions(ball, paddleTop, topBlocks, true);
         bottomCollisionManager.handleCollisions(ball, paddleBottom, bottomBlocks, false);
 
-        // scoring: ball out of top
+        // 5) Ghi điểm khi bóng lọt qua biên
         if (ball.getY() + GameConfig.BALL_SIZE < 0) {
             scoreBottom++;
             if (scoreBottom >= TARGET_SCORE) {
-                timer.stop();
+                if (gameLoop != null) gameLoop.stop();
                 JOptionPane.showMessageDialog(this, "Bottom player wins " + scoreBottom + " - " + scoreTop + "!");
             } else {
                 resetBlocks();
@@ -173,11 +173,10 @@ public class MultiplayerPanel extends JPanel implements ActionListener, KeyListe
             }
         }
 
-        // scoring: ball out of bottom
         if (ball.getY() > getHeight()) {
             scoreTop++;
             if (scoreTop >= TARGET_SCORE) {
-                timer.stop();
+                if (gameLoop != null) gameLoop.stop();
                 JOptionPane.showMessageDialog(this, "Top player wins " + scoreTop + " - " + scoreBottom + "!");
             } else {
                 resetBlocks();
@@ -185,7 +184,12 @@ public class MultiplayerPanel extends JPanel implements ActionListener, KeyListe
             }
         }
 
+        // 6) Yêu cầu vẽ lại trên EDT
         repaint();
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
     }
 
 

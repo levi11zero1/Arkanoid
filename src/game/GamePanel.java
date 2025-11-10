@@ -24,7 +24,6 @@ import ui.UIManager;
 import utils.GameConfig;
 
 public class GamePanel extends JPanel implements KeyListener {
-    private static final long serialVersionUID = 1L;
     private Ball ball;
     private Paddle paddle;
     private List<Block> blocks;
@@ -57,7 +56,7 @@ public class GamePanel extends JPanel implements KeyListener {
     private boolean rightPressed = false;
 
     private int lives;
-    // Track whether the per-level skill (paddle clones) has been used in the current level
+
     private boolean skillUsedThisLevel = false;
 
     // ==== RUN STATS ====
@@ -79,13 +78,13 @@ public class GamePanel extends JPanel implements KeyListener {
         this.entityManager = new EntityManager();
         this.inputHandler = new InputHandler();
         this.powerUpManager = new PowerUpManager();
-    this.uiManager = new UIManager();
+        this.uiManager = new UIManager();
         this.scoreManager = new ScoreManager();
         this.gameSession = new GameSession(playerName, elapsedMsAccum, levelsCompleted, totalBlocksDestroyed);
-    this.paddleCloneManager = new PaddleCloneManager();
+        this.paddleCloneManager = new PaddleCloneManager();
 
-        // wire game loop để tick
-        this.gameLoop.setTickListener(delta -> onTick(delta));
+        // Gọi vào updateLogic(dt): gom toàn bộ cập nhật logic theo từng khung hình
+        this.gameLoop.setTickListener(delta -> updateLogic(delta));
         this.gameLoop.start();
 
         // tạo game controller
@@ -160,7 +159,6 @@ public class GamePanel extends JPanel implements KeyListener {
             paddleCloneManager.reset();
         }
         gameStarted = false;
-        // reset per-level skill usage allowance
         skillUsedThisLevel = false;
     }
 
@@ -205,7 +203,7 @@ public class GamePanel extends JPanel implements KeyListener {
             ball.detachFromPaddle();
         }
 
-    // 4) Cập nhật lại nền theo level hiện tại
+        // 4) Cập nhật lại nền theo level hiện tại
         this.levelBackground = LevelBackgrounds.getForLevel(levelManager.getCurrentLevel());
 
         // 5) baseline destroyed count for this level (avoid recounting
@@ -289,12 +287,25 @@ public class GamePanel extends JPanel implements KeyListener {
 
     }
 
-    private void onTick(double deltaTime) {
+    /**
+     * Cập nhật toàn bộ logic của một khung hình (frame).
+     * Quy ước: chỉ xử lý logic tại đây, còn việc vẽ do Swing EDT thực hiện khi gọi repaint().
+     * Trình tự:
+     * 1) Cập nhật thực thể (bóng, paddle, blocks, clones, power-up spawn nếu cần)
+     * 2) Kiểm tra trạng thái trò chơi (qua màn, game over…)
+     * 3) Cập nhật thống kê phiên chơi (thời gian, số màn, số block phá)
+     * 4) Cập nhật power-up đang rơi và tương tác
+     * 5) Yêu cầu vẽ lại (repaint) trên EDT
+     */
+    private void updateLogic(double deltaTime) {
+        // 1) Cập nhật thực thể và va chạm
         updateGame(deltaTime);
+
+        // 2) Kiểm tra trạng thái trò chơi (qua màn...)
         checkGameState();
-        // tích lũy thời gian chơi
+
+        // 3) Cập nhật thống kê chạy
         elapsedMsAccum += (long) (deltaTime * 1000);
-        // cập nhật số block phá (delta so với lần đo trước)
         int curDestroyed = countDestroyedDestructable();
         if (curDestroyed > lastDestroyedCountThisLevel) {
             int newly = (curDestroyed - lastDestroyedCountThisLevel);
@@ -308,8 +319,10 @@ public class GamePanel extends JPanel implements KeyListener {
             gameSession.setTotalBlocksDestroyed(totalBlocksDestroyed);
         }
 
+        // 4) Cập nhật power-up
         powerUpManager.updateAll(getHeight(), paddle, entityManager);
 
+        // 5) Yêu cầu vẽ lại trên EDT
         repaint();
     }
 
@@ -449,7 +462,7 @@ public class GamePanel extends JPanel implements KeyListener {
         } catch (Throwable ignore) {
         }
 
-        // 🟢 Khi người chơi nhấn SPACE để bắt đầu game
+        // Khi người chơi nhấn SPACE để bắt đầu game
         if (e.getKeyCode() == KeyEvent.VK_SPACE && !gameStarted) {
             gameStarted = true;
             if (powerUpManager != null) {
@@ -515,7 +528,6 @@ public class GamePanel extends JPanel implements KeyListener {
     public void togglePaddleClones() {
         if (paddleCloneManager != null) {
             if (skillUsedThisLevel) {
-                // already used this level; ignore further activations
                 return;
             }
             paddleCloneManager.toggle(paddle);

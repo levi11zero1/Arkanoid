@@ -23,7 +23,6 @@ public class InputHandler {
             case KeyEvent.VK_R -> {
                 panel.togglePaddleClones();
             }
-            // 'M' key (level map preview) removed - no-op to avoid dev-only UI in runtime
         }
     }
 

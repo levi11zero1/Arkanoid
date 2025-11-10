@@ -7,8 +7,10 @@ import java.awt.Rectangle;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
+
 import utils.GameConfig;
 
 public class Block implements GameObject {
@@ -126,13 +128,13 @@ public class Block implements GameObject {
     private static void ensureBrickImagesLoaded() {
         if (brickImagesInitialized) return;
         brickImagesInitialized = true;
-        brick1 = loadImage("images/Brick1.png");
-        brick2 = loadImage("images/Brick2.png");
-        brick3 = loadImage("images/Brick3.png");
-        brickX = loadImage("images/BrickX.png");
+        brick1 = loadImage("images/skinBrick/Brick1.png");
+        brick2 = loadImage("images/skinBrick/Brick2.png");
+        brick3 = loadImage("images/skinBrick/Brick3.png");
+        brickX = loadImage("images/skinBrick/BrickX.png");
         // Ảnh gạch nứt
-        brick2_broken = loadImage("images/Brick2_broken.png");
-        brick3_broken = loadImage("images/Brick3_broken.png");
+        brick2_broken = loadImage("images/skinBrick/Brick2_broken.png");
+        brick3_broken = loadImage("images/skinBrick/Brick3_broken.png");
     }
 
     private static Image loadImage(String path) {

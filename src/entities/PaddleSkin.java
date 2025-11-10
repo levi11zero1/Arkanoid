@@ -50,10 +50,12 @@ final class PaddleSkin {
 
     private static final Path CONFIG_PATH = Paths.get("saves", "paddle_skin.cfg");
     private static final String DEFAULT_TOKEN = "DEFAULT";
-    // Default paddle skin now set to skinPaddle2 animation (a1..a6). If you prefer
-    // the static skin, change this to images/skinPaddle1.png.
+    // Thư mục mới chứa skin paddle: images/skinPaddle
+    // Mặc định thử chuỗi animation với prefix "Paddle" (ví dụ Paddle1.png..Paddle6.png) nếu có,
+    // hoặc có thể chỉ định file đơn lẻ trong config.
+    private static final String SKIN_DIR = Paths.get("images", "skinPaddle").toString().replace('\\', '/');
     private static final String DEFAULT_SKIN_PATH =
-        Paths.get("images", "skinPaddle2", "a").toString().replace('\\', '/');
+        Paths.get("images", "skinPaddle", "skinPaddle2", "a").toString().replace('\\', '/');
 
     private static boolean attempted;
     private static Skin cached;
@@ -114,10 +116,23 @@ final class PaddleSkin {
     }
 
     private static Skin resolveSelection(String token) {
+        // Mặc định hoặc rỗng -> dùng skin mặc định trong images/skinPaddle
         if (token == null || token.isBlank() || DEFAULT_TOKEN.equalsIgnoreCase(token)) {
             return tryLoad(DEFAULT_SKIN_PATH);
         }
-        Skin skin = tryLoad(token);
+
+        Skin skin = null;
+
+        // 1) Thử nguyên văn token (có thể là đường dẫn đầy đủ hoặc prefix animation)
+        skin = tryLoad(token);
+
+        // 2) Nếu chỉ là tên file không có dấu '/' hoặc '\\', thử ghép vào thư mục SKIN_DIR
+        if (skin == null && !token.contains("/") && !token.contains("\\")) {
+            String candidate = Paths.get(SKIN_DIR, token).toString().replace('\\', '/');
+            skin = tryLoad(candidate);
+        }
+
+        // 3) Fallback: default
         return skin != null ? skin : tryLoad(DEFAULT_SKIN_PATH);
     }
 
