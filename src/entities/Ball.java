@@ -7,6 +7,7 @@ import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.geom.Ellipse2D;
+
 import powerup.PowerUp;
 import utils.AudioManager;
 import utils.GameConfig;
@@ -38,11 +39,6 @@ public class Ball implements GameObject {
         this.y = y;
         this.velocity = velocity;
     }
-
-    public boolean isSlowed() {
-        return slowed;
-    }
-
 
     public void move() {
         if (attachedToPaddle) {
@@ -213,46 +209,10 @@ public class Ball implements GameObject {
     public void setVelocity(Velocity velocity) {
         this.velocity = velocity;
     }
-    public void applyPowerUp(PowerUp.Type type) {
-        if (sizeTimer != null && sizeTimer.isRunning()) {
-            sizeTimer.stop();
-            resetSize();
-        }
-        if (type == PowerUp.Type.BALL_EXPAND) {
-            double cx = x + GameConfig.BALL_SIZE / 2.0;
-            double cy = y + GameConfig.BALL_SIZE / 2.0;
-            GameConfig.BALL_SIZE = (int) Math.round(GameConfig.BALL_SIZE * 1.5);
-            this.x = cx - GameConfig.BALL_SIZE / 2.0;
-            this.y = cy - GameConfig.BALL_SIZE / 2.0;
-        } else if (type == PowerUp.Type.BALL_SHRINK) {
-            double cx = x + GameConfig.BALL_SIZE / 2.0;
-            double cy = y + GameConfig.BALL_SIZE / 2.0;
-            GameConfig.BALL_SIZE = (int) Math.max(4, Math.round(GameConfig.BALL_SIZE / 1.5));
-            this.x = cx - GameConfig.BALL_SIZE / 2.0;
-            this.y = cy - GameConfig.BALL_SIZE / 2.0;
-            setSpeedMultiplier(1.2);
-        } else if (type == PowerUp.Type.BALL_SLOW) {
-            slowDown();
-            return;
-        }
 
-    sizeTimer = new javax.swing.Timer(8000, e -> { if (e != null) { resetSize(); resetSpeed(); sizeTimer.stop(); } });
-        sizeTimer.setRepeats(false);
-        sizeTimer.start();
-    }
-
-    private void slowDown() {
-        if (slowed) return;
-        slowed = true;
-        setSpeedMultiplier(SLOW_MULTIPLIER);
-
-        new Thread(() -> {
-            try {
-                Thread.sleep(7000);
-            } catch (InterruptedException ignored) {}
-            setSpeedMultiplier(1.0);
-            slowed = false;
-        }).start();
+    @Override
+    public Rectangle getBounds() {
+        return new Rectangle(getX(), getY(), GameConfig.BALL_SIZE, GameConfig.BALL_SIZE);
     }
 
 
@@ -293,6 +253,52 @@ public class Ball implements GameObject {
         }
     }
 
+    public void applyPowerUp(PowerUp.Type type) {
+        if (sizeTimer != null && sizeTimer.isRunning()) {
+            sizeTimer.stop();
+            resetSize();
+        }
+        if (type == PowerUp.Type.BALL_EXPAND) {
+            double cx = x + GameConfig.BALL_SIZE / 2.0;
+            double cy = y + GameConfig.BALL_SIZE / 2.0;
+            GameConfig.BALL_SIZE = (int) Math.round(GameConfig.BALL_SIZE * 1.5);
+            this.x = cx - GameConfig.BALL_SIZE / 2.0;
+            this.y = cy - GameConfig.BALL_SIZE / 2.0;
+        } else if (type == PowerUp.Type.BALL_SHRINK) {
+            double cx = x + GameConfig.BALL_SIZE / 2.0;
+            double cy = y + GameConfig.BALL_SIZE / 2.0;
+            GameConfig.BALL_SIZE = (int) Math.max(4, Math.round(GameConfig.BALL_SIZE / 1.5));
+            this.x = cx - GameConfig.BALL_SIZE / 2.0;
+            this.y = cy - GameConfig.BALL_SIZE / 2.0;
+            setSpeedMultiplier(1.2);
+        } else if (type == PowerUp.Type.BALL_SLOW) {
+            slowDown();
+            return;
+        }
+
+    sizeTimer = new javax.swing.Timer(8000, e -> { if (e != null) { resetSize(); resetSpeed(); sizeTimer.stop(); } });
+        sizeTimer.setRepeats(false);
+        sizeTimer.start();
+    }
+
+        public boolean isSlowed() {
+        return slowed;
+    }
+
+    private void slowDown() {
+        if (slowed) return;
+        slowed = true;
+        setSpeedMultiplier(SLOW_MULTIPLIER);
+
+        new Thread(() -> {
+            try {
+                Thread.sleep(7000);
+            } catch (InterruptedException ignored) {}
+            setSpeedMultiplier(1.0);
+            slowed = false;
+        }).start();
+    }
+
     public void resetSpeed() {
         if (slowed) return;
         double angle = Math.atan2(velocity.getDy(), velocity.getDx());
@@ -317,10 +323,6 @@ public class Ball implements GameObject {
         slowTimer.start();
     }
 
-    @Override
-    public Rectangle getBounds() {
-        return new Rectangle(getX(), getY(), GameConfig.BALL_SIZE, GameConfig.BALL_SIZE);
-    }
 
     private void setSpeedMultiplier(double newMultiplier) {
         if (newMultiplier <= 0) return;
