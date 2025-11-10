@@ -4,7 +4,9 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.Rectangle;
+
 import javax.swing.Timer;
+
 import powerup.PowerUp;
 import utils.GameConfig;
 
@@ -18,7 +20,6 @@ public class Paddle implements GameObject {
     private int height;
     private int normalWidth;
     private double normalSpeed;
-    // facingLeft indicates whether the paddle image should be drawn flipped
     private boolean facingLeft = false;
 
     public Paddle(double x, int y) {
@@ -111,6 +112,11 @@ public class Paddle implements GameObject {
         return height;
     }
 
+    @Override
+    public Rectangle getBounds() {
+        return new Rectangle((int) Math.round(x), y, width, height);
+    }
+
     public void resetSize() {
         double centerX = x + width / 2.0;
         width = normalWidth;
@@ -177,10 +183,7 @@ public class Paddle implements GameObject {
         }
     }
 
-    @Override
-    public Rectangle getBounds() {
-        return new Rectangle((int) Math.round(x), y, width, height);
-    }
+
 
     private void applySkin(double centerX) {
         if (useSkin) {

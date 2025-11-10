@@ -14,7 +14,6 @@ import java.nio.file.Paths;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
-import utils.GameConfig;
 
 import utils.GameConfig;
 

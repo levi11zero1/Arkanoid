@@ -7,8 +7,10 @@ import java.awt.Rectangle;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
+
 import utils.GameConfig;
 
 public class Block implements GameObject {
