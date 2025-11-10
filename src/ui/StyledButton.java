@@ -10,6 +10,7 @@ import javax.swing.*;
  * Nút tùy biến: bo góc, màu chủ đạo, hiệu ứng hover/nhấn, con trỏ tay.
  */
 public class StyledButton extends JButton {
+    private static final long serialVersionUID = 1L;
     private Color bg = new Color(0x282B88);        // màu nền mặc định 
     private Color fg = Color.BLACK;                // màu chữ
     private Color bgHover = new Color(0x3793F0);   // khi hover

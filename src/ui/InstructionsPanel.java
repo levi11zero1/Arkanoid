@@ -7,6 +7,7 @@ import javax.swing.*;
  * Màn hình hiển thị hướng dẫn điều khiển.
  */
 public class InstructionsPanel extends JPanel {
+    private static final long serialVersionUID = 1L;
     private final StyledButton backButton = new StyledButton("Quay lại");
 
     public InstructionsPanel() {

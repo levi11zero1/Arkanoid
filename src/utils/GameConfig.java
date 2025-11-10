@@ -20,18 +20,18 @@ public class GameConfig {
     public static final double DEFAULT_PADDLE_SPEED = 320.0;
     public static double PADDLE_SPEED = DEFAULT_PADDLE_SPEED;
     public static final int PADDLE_BOTTOM_MARGIN = 100;
-    public static final int PADDLE_EXTRA_RAISE_PIXELS = 75;
+    public static final int PADDLE_EXTRA_RAISE_PIXELS = 75; // ~2cm at 96 DPI
 
     // Block
     public static final int BLOCK_WIDTH = 40;
     public static final int BLOCK_HEIGHT = 20;
     public static final int BLOCK_SPACING = 45;
     public static final int BLOCK_ROW_SPACING = 25;
-    public static final int UNDESTRUCTABLE_BLOCK = -1; // Value cho block không phá được
+    public static final int UNDESTRUCTABLE_BLOCK = -1; // Special value for undestructable blocks
 
     // Layout
     public static final int BLOCKS_START_X = 50;
-    public static final int BLOCKS_START_Y = 30;
+    public static final int BLOCKS_START_Y = 30;  // Giảm từ 50 -> 30 để block cao hơn
 
     // Game properties
     public static final int TIMER_DELAY = 10;

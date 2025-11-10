@@ -24,6 +24,7 @@ import ui.UIManager;
 import utils.GameConfig;
 
 public class GamePanel extends JPanel implements KeyListener {
+    private static final long serialVersionUID = 1L;
     private Ball ball;
     private Paddle paddle;
     private List<Block> blocks;
@@ -56,6 +57,8 @@ public class GamePanel extends JPanel implements KeyListener {
     private boolean rightPressed = false;
 
     private int lives;
+    // Track whether the per-level skill (paddle clones) has been used in the current level
+    private boolean skillUsedThisLevel = false;
 
     // ==== RUN STATS ====
     private String playerName = "Player";
@@ -157,6 +160,8 @@ public class GamePanel extends JPanel implements KeyListener {
             paddleCloneManager.reset();
         }
         gameStarted = false;
+        // reset per-level skill usage allowance
+        skillUsedThisLevel = false;
     }
 
     // Chuyển trạng thái hiện tại của game panel này thành một GameState để lưu.
@@ -509,7 +514,12 @@ public class GamePanel extends JPanel implements KeyListener {
     // Toggle phân thân paddle (gọi từ InputHandler qua phím R)
     public void togglePaddleClones() {
         if (paddleCloneManager != null) {
+            if (skillUsedThisLevel) {
+                // already used this level; ignore further activations
+                return;
+            }
             paddleCloneManager.toggle(paddle);
+            skillUsedThisLevel = true;
         }
     }
 
