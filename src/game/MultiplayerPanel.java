@@ -25,7 +25,7 @@ public class MultiplayerPanel extends JPanel implements ActionListener, KeyListe
     private List<Block> bottomBlocks;
     private int scoreTop = 0;
     private int scoreBottom = 0;
-    private final int TARGET_SCORE = 5;
+    private final int TARGET_SCORE = 3;
     private final CollisionManager topCollisionManager = new CollisionManager();
     private final CollisionManager bottomCollisionManager = new CollisionManager();
 
@@ -94,22 +94,22 @@ public class MultiplayerPanel extends JPanel implements ActionListener, KeyListe
     }
 
     private void resetRoundAfterScore(boolean topScores) {
-        // place ball at center
+
         int cx = getWidth() > 0 ? getWidth() / 2 : GameConfig.SCREEN_WIDTH / 2;
         int cy = getHeight() > 0 ? getHeight() / 2 : GameConfig.SCREEN_HEIGHT / 2;
         ball.setPosition(cx - GameConfig.BALL_SIZE / 2.0, cy - GameConfig.BALL_SIZE / 2.0);
 
-        // serve toward the player who conceded
+
         double speed = ball.getVelocity().getMagnitude();
         if (topScores) {
-            // send downwards
+
             ball.setVelocity(utils.Velocity.fromAngle(90, Math.max(speed, GameConfig.BALL_DEFAULT_SPEED)));
         } else {
-            // send upwards
+
             ball.setVelocity(utils.Velocity.fromAngle(-90, Math.max(speed, GameConfig.BALL_DEFAULT_SPEED)));
         }
 
-        // center paddles
+
         double midX = (getWidth() > 0 ? getWidth() : GameConfig.SCREEN_WIDTH) / 2.0
                 - GameConfig.DEFAULT_PADDLE_WIDTH / 2.0;
         paddleTop = new Paddle(midX, paddleTop.getY(), false);

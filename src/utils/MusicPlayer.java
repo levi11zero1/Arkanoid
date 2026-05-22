@@ -38,9 +38,7 @@ public class MusicPlayer {
             clip.loop(Clip.LOOP_CONTINUOUSLY);
             currentClip = clip;
         } catch (Throwable t) {
-            // Suppress noisy errors on environments without full audio support.
-            // If debugging is needed, uncomment the line below.
-            // System.err.println("MusicPlayer: cannot play loop via Java Sound: " + t.getMessage());
+
         }
     }
 
@@ -66,9 +64,7 @@ public class MusicPlayer {
             });
             clip.start();
         } catch (Throwable t) {
-            // Suppress noisy errors on environments without full audio support.
-            // If debugging is needed, uncomment the line below.
-            // System.err.println("MusicPlayer: cannot play once via Java Sound: " + t.getMessage());
+
         }
     }
 

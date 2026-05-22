@@ -68,7 +68,7 @@ public class Block implements GameObject {
         // Prefer image-based bricks if available
         ensureBrickImagesLoaded();
 
-    Image img;
+        Image img;
         if (customColor != null) {
             // custom color: still draw colored rect
             img = null;

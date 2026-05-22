@@ -22,65 +22,61 @@ public class CollisionManagerTest {
     void setup() {
         cmTop = new CollisionManager();
         cmBottom = new CollisionManager();
-        // reset a few critical configs if needed (assumes defaults in code)
         GameConfig.BALL_SIZE = GameConfig.DEFAULT_BALL_SIZE;
     }
 
     @Test
     void bottomPaddleBounceUp() {
         Ball ball = new Ball(100, 200);
-        // moving down
+
         ball.setVelocity(new utils.Velocity(0, 5));
-        Paddle paddle = new Paddle(90, 210); // paddle below ball
+        Paddle paddle = new Paddle(90, 210); 
         List<Block> blocks = new ArrayList<>();
 
-        // place ball overlapping paddle area (y+size > paddle.y)
         ball.setPosition(100, paddle.getY() - GameConfig.BALL_SIZE + 2);
         cmBottom.handleCollisions(ball, paddle, blocks, false);
 
-        assertTrue(ball.getVelocity().getDy() < 0, "Ball should bounce upward on bottom paddle");
+        assertTrue(ball.getVelocity().getDy() < 0, "Bóng nên bật lên trên khi va chạm với paddle dưới");
         assertEquals(paddle.getY() - GameConfig.BALL_SIZE - 1, ball.getY(),
-                "Ball should be positioned just above paddle after collision");
+                "Bóng nên được đặt ngay trên paddle sau va chạm");
     }
 
     @Test
     void topPaddleBounceDown() {
         Ball ball = new Ball(100, 60);
-        ball.setVelocity(new utils.Velocity(0, -5)); // moving up
-        Paddle top = new Paddle(90, 30, false); // y small
+        ball.setVelocity(new utils.Velocity(0, -5)); 
+        Paddle top = new Paddle(90, 30, false); 
         List<Block> blocks = new ArrayList<>();
 
-        // overlap with top paddle area (ball intersects paddle rect)
         ball.setPosition(100, top.getY() + top.getHeight() - 2);
         cmTop.handleCollisions(ball, top, blocks, true);
 
-        assertTrue(ball.getVelocity().getDy() > 0, "Ball should bounce downward on top paddle");
+        assertTrue(ball.getVelocity().getDy() > 0, "Bóng nên bật xuống dưới khi va chạm với paddle trên");
         assertEquals(top.getY() + top.getHeight() + 1, ball.getY(),
-                "Ball should be positioned just below top paddle after collision");
+                "Bóng nên được đặt ngay dưới paddle sau va chạm");
     }
 
     @Test
     void blockCollisionDamagesAndBounces() {
         Ball ball = new Ball(50, 50);
-        ball.setVelocity(new utils.Velocity(5, 0)); // moving right
+        ball.setVelocity(new utils.Velocity(5, 0)); 
         Block block = new Block(70, 50, 1);
         List<Block> blocks = new ArrayList<>();
         blocks.add(block);
 
-        // simulate previous position by making one move step to set prevX/prevY
+
     ball.setPosition(40, 50);
-        ball.move(); // now at 65,50 if speed was applied; ensure overlap
-        ball.setPosition(69, 50); // force near collision
+        ball.move(); 
+        ball.setPosition(69, 50); 
 
         double beforeDx = ball.getVelocity().getDx();
         double beforeDy = ball.getVelocity().getDy();
         cmBottom.handleCollisions(ball, new Paddle(0, 9999), blocks, false);
 
-        assertTrue(block.isDestroyed(), "Block should be destroyed after hit (hits=1)");
-        // velocity should change on at least one axis
+        assertTrue(block.isDestroyed(), "Gạch nên bị phá hủy sau khi trúng (hits=1)");
         boolean velocityChanged = (Math.abs(ball.getVelocity().getDx() - beforeDx) > 1e-9)
                 || (Math.abs(ball.getVelocity().getDy() - beforeDy) > 1e-9);
-        assertTrue(velocityChanged, "Ball velocity should change after hitting block");
+        assertTrue(velocityChanged, "Vận tốc bóng nên thay đổi sau khi trúng gạch");
     }
 
     @Test
@@ -93,23 +89,22 @@ public class CollisionManagerTest {
         blocks.add(b1);
         blocks.add(b2);
 
-        // place overlapping first block
+
         ball.setPosition(109, 50);
         cmBottom.handleCollisions(ball, new Paddle(0, 9999), blocks, false);
-        // try again same frame without ticking cooldown
+
         cmBottom.handleCollisions(ball, new Paddle(0, 9999), blocks, false);
 
         int destroyedCount = (b1.isDestroyed() ? 1 : 0) + (b2.isDestroyed() ? 1 : 0);
-        assertEquals(1, destroyedCount, "Only one block should be processed per frame due to cooldown");
+        assertEquals(1, destroyedCount, "Chỉ một viên gạch nên được xử lý mỗi khung hình do cooldown");
 
-        // after ticking cooldown, allow another collision
         cmBottom.tickCooldown();
         cmBottom.tickCooldown();
-        // reposition to overlap second block
+
         ball.setPosition(119, 50);
         cmBottom.handleCollisions(ball, new Paddle(0, 9999), blocks, false);
         destroyedCount = (b1.isDestroyed() ? 1 : 0) + (b2.isDestroyed() ? 1 : 0);
-        assertEquals(2, destroyedCount, "Second block can be hit after cooldown");
+        assertEquals(2, destroyedCount, "Viên gạch thứ hai có thể bị trúng sau khi cooldown");
     }
 
     @Test
